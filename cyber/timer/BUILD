@@ -6,10 +6,12 @@ package(default_visibility = ["//visibility:public"])
 apollo_cc_library(
     name = "cyber_timer",
     srcs = [
+        "sim_timer_registry.cc",
         "timer.cc",
         "timing_wheel.cc",
     ],
     hdrs = [
+        "sim_timer_registry.h",
         "timer.h",
         "timer_task.h",
         "timer_bucket.h",
@@ -26,6 +28,17 @@ apollo_cc_test(
     name = "timer_test",
     size = "small",
     srcs = ["timer_test.cc"],
+    deps = [
+        "//cyber",
+        "@com_google_googletest//:gtest_main",
+    ],
+    linkstatic = True,
+)
+
+apollo_cc_test(
+    name = "sim_timer_registry_test",
+    size = "small",
+    srcs = ["sim_timer_registry_test.cc"],
     deps = [
         "//cyber",
         "@com_google_googletest//:gtest_main",

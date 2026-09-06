@@ -1,0 +1,308 @@
+# Contributing to Rerun
+This guide is for anyone who wants to contribute to the Rerun repository, for employees and outside contributors alike.
+
+## See also
+* [`ARCHITECTURE.md`](ARCHITECTURE.md)
+* [`BUILD.md`](BUILD.md)
+* [`rerun_py/README.md`](rerun_py/README.md) - build instructions for Python SDK
+* [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)
+* [`CODE_STYLE.md`](CODE_STYLE.md)
+* [`RELEASES.md`](RELEASES.md)
+
+## What to contribute
+* **Examples**: We welcome any examples you would like to add. Follow the pattern of existing examples in the [`examples/`](examples) folder.
+* Report bugs and feature requests at <https://github.com/rerun-io/rerun/issues>.
+* Look at our [`good first issue` tag](https://github.com/rerun-io/rerun/labels/good%20first%20issue).
+* We track things we would like implemented in 3rd party crates [here](https://github.com/rerun-io/opensource/issues/1).
+
+Note that maintainers do not have infinite time, and reviews take a lot of it.
+When choosing what to work on, please ensure that it is either:
+
+* A small change (+100-100 at most), or
+* A larger change that has been discussed with one or more maintainers.
+
+You can discuss these changes by:
+
+* Commenting on an existing issue,
+* Creating a new issue, or
+* Pinging one of the Rerun maintainers on our [Discord](https://discord.gg/PXtCgFBSmH)
+
+> [!NOTE]
+> PRs containing large undiscussed changes may be closed without comment.
+> The same applies to issues and PRs opened by bot accounts (e.g. OpenClaw) or that are clearly agent-generated without human review — see [Agents](#agents).
+
+## Pull requests
+We use [Trunk Based Development](https://trunkbaseddevelopment.com/), which means we encourage small, short-lived branches.
+
+* Don't PR from your own `main` branch — it makes it hard for reviewers to add fixes.
+* Add improvements as new commits rather than rebasing, so reviewers can follow progress.
+* All PRs are merged with [`Squash and Merge`](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/about-pull-request-merges#squash-and-merge-your-commits), so you don't need a clean commit history on feature branches. Prefer new commits over rebasing — force-pushing discourages collaboration.
+
+### PR draft
+It can be useful to open a PR in _draft_ mode first. On reason is to get CI to run on it.
+
+Another reason is to ask for early feedback on e.g. the user interaction or the overall design of the PR.
+This can be a great way to discuss architectural ideas before doing the full work of implementing it.
+If you want such early feedback, ask for it explicitly (e.g. ping someone relevant).
+
+Do not un-draft until you have read all your code and _you_ think it is ready to merge.
+
+An un-drafted PR means "ready for review".
+
+### PR description
+- Make sure the PR description is _inviting_ - not too long, not too short
+- Write it yourself
+- Describe _why_ you made this change (and link to any relevant issue/PR)
+- If it makes sense, include an image or a video
+- Describe what you want reviewed, e.g.
+  - The UX — does this feature feel nice to use?
+  - The architecture / design — explain the proposed design in the PR description, and keep the PR in draft mode
+  - The code
+- Express your own confidence in your work
+  - Is this a simple fix for something you understand well, or maybe something well outside your domain that an agent wrote for you?
+
+### Agents
+Coding agents are powerful tools, but like any tool should be used wisely.
+
+If you use an agent to prototype some feature, then the PR should be in draft mode, and you should ask for feedback on the _effect_ of the PR, rather than its contents.
+
+If you use an agent to implement a solution, then you should be able to understand that solution.
+Asking the agent to walk you through the code can help, but doesn't replace reading it yourself.
+LLMs make it easy to produce code quickly, while understanding takes longer.
+Please disclose the level of confidence that you have in your solution.
+
+### Other
+Our CI will [record binary sizes](https://build.rerun.io/graphs/sizes.html) and run [benchmarks](https://build.rerun.io/graphs/crates.html) on each merged PR.
+
+Pull requests from external contributors require approval for CI runs. Click the `Approve and run` button:
+
+![Image showing the approve and run button](https://github.com/rerun-io/rerun/assets/1665677/ead5c04f-df02-4f20-9093-37cfce097b44)
+
+Members of the `rerun-io` organization can enable auto-approval for a single PR by commenting with `@rerun-bot approve`:
+
+![PR comment with the text `@rerun-bot approve`](https://github.com/rerun-io/rerun/assets/1665677/b5f07f3f-ea95-44a4-8eb7-f07c905f96c3)
+
+
+### Labeling of PRs & changelog generation
+
+Org members _must_ label their PRs — labels drive both the [changelog](https://github.com/rerun-io/rerun/blob/main/CHANGELOG.md) and the per-release changeset.
+
+Every PR needs **exactly one** of these four changelog categories:
+
+* `exclude from changelog`: not user-facing — kept out of the changelog entirely.
+* `🪳 bug`: a bug fix — auto-added to `CHANGELOG.md` from the PR **title**. Keep the title informative and concise.
+* `📉 performance`: a performance improvement — auto-added to `CHANGELOG.md` from the PR **title**. Keep the title informative and concise.
+* `include in changelog`: a user-facing feature or breaking change. You **must** add a hand-written entry by copying [`docs/content/changelog/upcoming/_template.md`](./docs/content/changelog/upcoming/_template.md) to `upcoming/<short-slug>.md` and filling it in. One file per PR keeps PRs conflict-free; at release the entries are merged into the release's changeset. It is the reviewer's job to point out a missing changeset entry.
+
+In addition:
+
+* Add at least one category label (e.g. `📺 re_viewer`, `sdk-python`, …) to help with search.
+* When in doubt, add more labels rather than fewer — they help with search.
+
+#### What goes in the changeset?
+
+A changeset entry should link to docs and/or an example, and include a migration guide (breaking changes) or screenshot/GIF (visual features).
+Set `type: highlight|breaking|feature` in the entry's frontmatter so the release merge knows which section it belongs in.
+A `TODO(name): add link` placeholder is fine while iterating, but the release is **blocked** until it is resolved.
+If a user-facing change is not in the changeset, it should stay behind a feature flag.
+
+Err on the side of including entries — if it adds value for a user browsing the changelog, add it.
+Be generous with external contributions — credit where credit is due!
+
+#### Other special labels
+
+* `deploy docs`:
+  Cherry-picked to `docs-latest`, triggering a rebuild of the [doc page](https://www.rerun.io/docs).
+  Use this for doc fixes relevant to the latest release.
+* `do-not-merge`:
+  Fails CI unconditionally. Useful for PRs targeting non-`main` branches or awaiting test results.
+  Alternatively, unticked checkboxes in the PR description will also fail CI ✨
+
+## Contributing to CI
+
+Every CI job should ideally be a single `pixi` (or similar) script invocation that works locally as-is.
+
+Benefits:
+- Scripts in a real programming language instead of Bash embedded in YAML
+- Much lower iteration times when working on CI
+- Ability to manually re-run a job when CI fails
+
+Always output artifacts to GCS instead of GHA artifact storage. This lets anyone download the output of a script and continue from where it failed.
+
+### CI script guidelines
+
+Scripts should be local-first and easy for contributors to run.
+
+Each script should document:
+- Dependencies
+- Files and directories
+- Environment variables
+- Usage examples
+
+Pass inputs explicitly via arguments with sane defaults. Validate inputs as early as possible: auth credentials, numeric ranges, string formats, file path existence, etc.
+
+Support GCS paths (`gs://bucket/blob/path`) and stdin/stdout (`-`) for file I/O where it makes sense.
+
+Write descriptive error messages — they may be the only info someone has when debugging a CI failure. Print frequently to show progress.
+
+Use environment variables only for auth and output config (e.g. disabling color). Prefer SDK default auth where possible (e.g. GCP [Application Default Credentials](https://cloud.google.com/docs/authentication/client-libraries)).
+
+Support `--dry-run` for destructive or irreversible actions.
+
+### Adding dependencies
+Be thoughtful when adding dependencies. Each one adds compile time, binary size, potential breakage, and attack surface. Sometimes 100 lines of code is better than a new dependency.
+
+When adding a dependency in a PR, motivate it:
+* Why use this dependency instead of rolling our own?
+* Why this one over alternatives?
+
+For Rust, use `default-features = false` where it makes sense to minimize new code pulled in.
+
+When reviewing a PR, always check the `Cargo.lock` diff (collapsed by default in GitHub 😤).
+
+Guide for picking good dependencies: <https://gist.github.com/repi/d98bf9c202ec567fd67ef9e31152f43f>.
+
+A full `cargo update` should be its own stand-alone PR. Include the output in the commit message.
+
+
+## Structure
+Main crates are in [`crates/`](crates), examples in [`examples/`](examples).
+
+To get an overview of the crates, read their documentation with:
+
+```
+cargo doc --no-deps --open
+```
+
+To learn about the viewer, run:
+
+```
+cargo run -p rerun -- --help
+```
+
+## Tests
+
+There are various kinds of automated tests throughout the repository.
+Unless noted otherwise, all tests run on CI, though their frequency (per PR, on `main`, nightly) and platform coverage may vary.
+
+### Rust tests
+
+```sh
+cargo test --all-targets --all-features
+```
+or with [cargo nextest](https://nexte.st/):
+```sh
+cargo nextest run --all-targets --all-features
+cargo test --all-features --doc
+```
+
+Runs unit & integration tests for all Rust crates, including the viewer.
+Tests use the standard `#[test]` attribute.
+
+#### `insta` snapshot tests
+
+Some tests use [`insta`](https://docs.rs/insta/latest/insta/) snapshot tests, which compare textual output against checked-in references. They run as part of the regular test suite.
+
+If output changes, they will fail. Review results with `cargo insta review` (install: `cargo install cargo-insta`).
+
+#### Image comparison tests
+
+Some tests render an image and compare it against a checked-in reference image. They run as part of the regular test suite.
+
+These are driven by [egui_kittest](https://github.com/emilk/egui/tree/master/crates/egui_kittest)'s `Harness::snapshot` method.
+We typically use [TestContext](./crates/viewer/re_test_context/src/lib.rs) to mock relevant parts of the viewer.
+
+##### Comparing results & updating images
+
+Each test run produces new images (typically at `<your-test.rs>/snapshots`).
+On failure, a `diff.png` is added highlighting all differences.
+To update references, run with `UPDATE_SNAPSHOTS=1`.
+
+Use `pixi run snapshots` to compare results of all failed tests visually in Rerun.
+You can also update from a failed CI run using `./scripts/update_snapshots_from_ci.sh`.
+Inspect PR diffs (including failed comparisons) via https://rerun-io.github.io/kitdiff/?url=<link to GitHub PR>.
+
+For best practices and unexpected sources of image differences, see the [egui_kittest README](https://github.com/emilk/egui/tree/master/crates/egui_kittest#snapshot-testing).
+
+##### Rendering backend
+
+Image comparison tests require a `wgpu`-compatible driver. Currently they run on Vulkan & Metal.
+For CI / headless environments, we use lavapipe (`llvmpipe`) for software rendering on all platforms.
+On macOS, we use a custom static build from [`rerun-io/lavapipe-build`](https://github.com/rerun-io/lavapipe-build).
+
+For setup details, see the [CI workflow](./.github/workflows/reusable_checks_rust.yml).
+
+
+### Python tests
+
+```sh
+pixi run py-test
+```
+
+Uses [`pytest`](https://docs.pytest.org/). Tests are in [./rerun_py/tests/](./rerun_py/tests/).
+
+### C++ tests
+
+```sh
+pixi run cpp-test
+```
+
+Uses [`catch2`](https://github.com/catchorg/Catch2). Tests are in [./rerun_cpp/tests/](./rerun_cpp/tests/).
+
+
+### Snippet comparison tests
+
+```sh
+pixi run uvpy docs/snippets/compare_snippet_output.py
+```
+
+Verifies that all [snippets](./docs/snippets/) produce the same output across languages, unless configured otherwise in [snippets.toml](./docs/snippets/snippets.toml). More details in [README.md](./docs/snippets/README.md).
+
+### Release checklists
+
+```sh
+pixi run uv run tests/python/release_checklist/main.py
+```
+
+A set of **manual** checklist-style tests run prior to each release. Avoid adding new ones — they add friction and failures are easy to miss. More details in [README.md](./tests/python/release_checklist/README.md).
+
+### Other ad-hoc manual tests
+
+Additional test scenes in [./tests/cpp/](./tests/cpp/), [./tests/python/](./tests/python/), and [./tests/rust/](./tests/rust/).
+These are built on CI but run only irregularly. See respective READMEs for details.
+
+## Tools
+
+We use [`pixi`](https://pixi.sh/) for dev-tool versioning, downloads, and task running. See available tasks with `pixi task list`.
+
+We use [cargo deny](https://github.com/EmbarkStudios/cargo-deny) to check our dependency tree for copyleft licenses, duplicate dependencies, and [rustsec advisories](https://rustsec.org/advisories). Configure in `deny.toml`, run with `cargo deny check`.
+
+Configure your editor to run `cargo fmt` on save, strip trailing whitespace, and end each file with a newline. VSCode settings in `.vscode/` should apply automatically. If you use a different editor, consider adding good settings to this repository!
+
+Run relevant tests locally depending on your changes: `cargo test --all-targets --all-features`, `pixi run py-test`, `pixi run -e cpp cpp-test`. See [Tests](#tests) for details.
+
+We recommend [`cargo nextest`](https://nexte.st/) for running Rust tests — it's faster than `cargo test` with better output. Note that it doesn't support doc tests yet; run those with `cargo test`.
+
+### Linting
+Before pushing, always run `pixi run fast-lint`. It takes seconds on repeated runs and catches trivial issues before wasting CI time.
+
+### Hooks
+We recommend installing the Rerun pre-push hook, which runs `pixi run fast-lint` for you.
+
+Copy it into your local `.git/hooks`:
+```
+cp hooks/pre-push .git/hooks/pre-push
+chmod +x .git/hooks/pre-push
+```
+or configure git to use the hooks directory directly:
+```
+git config core.hooksPath hooks
+```
+
+### Optional
+* [bacon](https://github.com/Canop/bacon) — automatically re-runs `cargo clippy` on save. See [`bacon.toml`](bacon.toml).
+* [`sccache`](https://github.com/mozilla/sccache) — speeds up recompilation (e.g. when switching branches). Set cache size: `export SCCACHE_CACHE_SIZE="256G"`.
+
+### Other
+View higher log levels with `export RUST_LOG=trace`.
+Debug logging is automatically enabled for the viewer when running inside the `rerun` checkout.

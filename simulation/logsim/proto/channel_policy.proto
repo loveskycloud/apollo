@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package apollo.simulation.logsim;
+
+message ChannelPolicy {
+  repeated string inject_channels = 1;
+  repeated string suppress_channels = 2;
+  repeated string record_channels = 3;
+}

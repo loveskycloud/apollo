@@ -1,0 +1,217 @@
+# Redirect Table
+# ==============
+#
+# This file defines hidden redirects for docs pages. These are old URLs that
+# should redirect to their new locations but should NOT appear in navigation.
+#
+# Format: old-path: new-path
+#
+# Paths are relative to /docs/. The destination can be:
+#   - A relative path: "new-section/new-page"
+#   - An external URL: "https://example.com"
+#
+# For redirects that need to appear in navigation (like external API links),
+# use markdown files with frontmatter redirect instead. This ensures the link
+# checker can validate them.
+#
+# NOTE: The build will fail if a markdown file exists for a path that's also
+# defined in this file. Remove one or the other to resolve conflicts.
+
+# Overview section
+overview/installing-viewer: getting-started/install-rerun
+overview/installing-rerun: getting-started/install-rerun
+overview/installing-rerun/python: getting-started/install-rerun/python
+overview/installing-rerun/cpp: getting-started/install-rerun/cpp
+overview/installing-rerun/rust: getting-started/install-rerun/rust
+overview/installing-rerun/viewer: getting-started/install-rerun/viewer
+overview/installing-rerun/troubleshooting: getting-started/install-rerun/troubleshooting
+
+# Getting Started section
+getting-started/what-is-rerun: overview/what-is-rerun
+getting-started/navigating-the-viewer: getting-started/configure-the-viewer/navigating-the-viewer
+getting-started/troubleshooting: getting-started/install-rerun/troubleshooting
+getting-started/installing-viewer: getting-started/install-rerun/viewer
+getting-started/data-out/analyze-and-log: getting-started/data-out/analyze-and-send
+getting-started/data-out/query-data: getting-started/data-out
+getting-started/quick-start: getting-started
+getting-started/quick-start/cpp: getting-started/data-in
+getting-started/quick-start/python: getting-started/data-in
+getting-started/quick-start/rust: getting-started/data-in
+getting-started/data-in/cpp: getting-started/data-in
+getting-started/data-in/python: getting-started/data-in
+getting-started/data-in/rust: getting-started/data-in
+
+# Concepts section (old paths moved to subfolders)
+concepts/app-model: concepts/how-does-rerun-work
+concepts/apps-and-recordings: concepts/logging-and-ingestion/recordings
+concepts/logging-and-ingestion/apps-and-recordings: concepts/logging-and-ingestion/recordings
+concepts/annotation-context: concepts/visualization/annotation-context
+concepts/batches: concepts/logging-and-ingestion/batches
+concepts/blueprint: concepts/visualization/blueprints
+concepts/blueprints: concepts/visualization/blueprints
+concepts/chunks: concepts/logging-and-ingestion/chunks
+concepts/entity-component: concepts/logging-and-ingestion/entity-component
+concepts/entity-path: concepts/logging-and-ingestion/entity-path
+concepts/latest-at: concepts/logging-and-ingestion/latest-at
+concepts/sinks: concepts/logging-and-ingestion/sinks
+concepts/spaces-and-transforms: concepts/logging-and-ingestion/transforms
+concepts/static: concepts/logging-and-ingestion/static
+concepts/timelines: concepts/logging-and-ingestion/timelines
+concepts/transforms: concepts/logging-and-ingestion/transforms
+concepts/visualizers-and-overrides: concepts/visualization/customize-views
+concepts/visualization/visualizers-and-overrides: concepts/visualization/customize-views
+
+# Reference section
+reference/dataframes: concepts/query-and-transform/dataframe-queries
+concepts/query-and-transform/dataframes: concepts/query-and-transform/dataframe-queries
+reference/data-loaders: concepts/logging-and-ingestion/importers/overview
+reference/data-loaders/cpp: concepts/logging-and-ingestion/importers/cpp
+reference/data-loaders/overview: concepts/logging-and-ingestion/importers/overview
+reference/data-loaders/python: concepts/logging-and-ingestion/importers/python
+reference/data-loaders/rust: concepts/logging-and-ingestion/importers/rust
+concepts/logging-and-ingestion/data-loaders: concepts/logging-and-ingestion/importers
+concepts/logging-and-ingestion/data-loaders/overview: concepts/logging-and-ingestion/importers/overview
+concepts/logging-and-ingestion/data-loaders/python: concepts/logging-and-ingestion/importers/python
+concepts/logging-and-ingestion/data-loaders/rust: concepts/logging-and-ingestion/importers/rust
+concepts/logging-and-ingestion/data-loaders/cpp: concepts/logging-and-ingestion/importers/cpp
+reference/entity-queries: concepts/visualization/entity-queries
+reference/mcap: concepts/logging-and-ingestion/mcap/message-formats
+reference/mcap/cli-reference: concepts/logging-and-ingestion/mcap/cli-reference
+reference/mcap/layers-explained: concepts/logging-and-ingestion/mcap/decoders-explained
+reference/mcap/decoders-explained: concepts/logging-and-ingestion/mcap/decoders-explained
+reference/mcap/message-formats: concepts/logging-and-ingestion/mcap/message-formats
+reference/migration-0-9: reference/migration/migration-0-9
+reference/migration/migration-0-34: changelog/changeset-0-34
+reference/migration/migration-0-35: changelog/changeset-0-35
+reference/sdk-micro-batching: reference/sdk/micro-batching
+reference/sdk-operating-modes: reference/sdk/operating-modes
+reference/video: concepts/logging-and-ingestion/video
+
+# Howto section
+howto/build-a-blueprint-programmatically: howto/visualization/build-a-blueprint-programmatically
+howto/callbacks: howto/visualization/callbacks
+howto/configure-viewer-through-code: getting-started/configure-the-viewer/navigating-the-viewer#programmatic-blueprints
+howto/logging-and-ingestion/convert-existing-data: concepts/logging-and-ingestion/chunk-processing-api
+howto/dataframe-api: howto/query-and-transform/get-data-out
+howto/embed-rerun-viewer: howto/integrations/embed-web
+howto/fixed-window-plot: howto/visualization/fixed-window-plot
+howto/get-data-out: howto/query-and-transform/get-data-out
+howto/limit-ram: howto/visualization/limit-ram
+howto/logging: howto/logging-and-ingestion/send-columns
+howto/mcap: howto/logging-and-ingestion/mcap
+howto/notebook: howto/integrations/embed-notebooks
+howto/optimize-chunks: howto/logging-and-ingestion/optimize-chunks
+howto/ros2-nav-turtlebot: howto/integrations/ros2-nav-turtlebot
+howto/send_columns: howto/logging-and-ingestion/send-columns
+howto/shared-recordings: howto/logging-and-ingestion/shared-recordings
+howto/short-lived-entities: howto/logging-and-ingestion/clears
+howto/urdf: howto/logging-and-ingestion/urdf
+howto/using-native-loggers: howto/integrations/integrate-host-loggers
+
+# Howto - logging subfolder
+howto/logging/clears: howto/logging-and-ingestion/clears
+howto/logging/custom-data: howto/logging-and-ingestion/custom-data
+howto/logging/send-columns: howto/logging-and-ingestion/send-columns
+howto/logging/send-partial-updates: howto/logging-and-ingestion/send-partial-updates
+howto/logging/send-table: howto/logging-and-ingestion/send-table
+howto/logging/shared-recordings: howto/logging-and-ingestion/shared-recordings
+
+# Howto - extend subfolder
+howto/extend/custom-data: howto/logging-and-ingestion/custom-data
+howto/extend/extend-ui: howto/visualization/extend-ui
+
+# Howto - train section moves
+howto/integrations/dataloader: howto/train/dataloader
+howto/query-and-transform/lerobot_export: howto/train/lerobot_export
+
+# Changelog - 0.36 upcoming entries merged into the release changeset
+changelog/upcoming/application-id-entry-name-restrictions: changelog/changeset-0-36#entry-name-restrictions-now-apply-to-application-ids
+changelog/upcoming/configurable-3d-view-axes: changelog/changeset-0-36#configurable-axes-for-3d-views
+changelog/upcoming/experimental-gaussian-splats-3d: changelog/changeset-0-36#experimental-3d-gaussian-splat-support
+changelog/upcoming/experimental-viewer-catalog-large-web-files: changelog/changeset-0-36#experimental-viewer-catalog-larger-than-ram-files-on-the-web
+changelog/upcoming/grpc-server-sink-multi-sink: changelog/changeset-0-36#multi-sink-support-for-grpcserversink
+changelog/upcoming/improved-viewer-timeline-navigation: changelog/changeset-0-36#improved-viewer-timeline-navigation
+changelog/upcoming/mcap-info-and-check: changelog/changeset-0-36#better-mcap-file-introspection-via-cli-and-python
+changelog/upcoming/parquet-reader-stream-options: changelog/changeset-0-36#parquetreader-loading-options-moved-to-stream
+changelog/upcoming/rust-rrd-optimize-api: changelog/changeset-0-36#optimize-a-recording-from-rust-with-rrdoptimize
+
+# Types - `datatypes` renamed to `encodings`
+reference/types/datatypes: reference/types/encodings
+reference/types/datatypes/absolute_time_range: reference/types/encodings/absolute_time_range
+reference/types/datatypes/angle: reference/types/encodings/angle
+reference/types/datatypes/annotation_info: reference/types/encodings/annotation_info
+reference/types/datatypes/blob: reference/types/encodings/blob
+reference/types/datatypes/bool: reference/types/encodings/bool
+reference/types/datatypes/channel_count_pair: reference/types/encodings/channel_count_pair
+reference/types/datatypes/channel_datatype: reference/types/encodings/channel_datatype
+reference/types/datatypes/class_description: reference/types/encodings/class_description
+reference/types/datatypes/class_description_map_elem: reference/types/encodings/class_description_map_elem
+reference/types/datatypes/class_id: reference/types/encodings/class_id
+reference/types/datatypes/color_model: reference/types/encodings/color_model
+reference/types/datatypes/dvec2d: reference/types/encodings/dvec2d
+reference/types/datatypes/entity_path: reference/types/encodings/entity_path
+reference/types/datatypes/float32: reference/types/encodings/float32
+reference/types/datatypes/float64: reference/types/encodings/float64
+reference/types/datatypes/image_format: reference/types/encodings/image_format
+reference/types/datatypes/ivec3d: reference/types/encodings/ivec3d
+reference/types/datatypes/keypoint_id: reference/types/encodings/keypoint_id
+reference/types/datatypes/keypoint_pair: reference/types/encodings/keypoint_pair
+reference/types/datatypes/mat3x3: reference/types/encodings/mat3x3
+reference/types/datatypes/mat4x4: reference/types/encodings/mat4x4
+reference/types/datatypes/pixel_format: reference/types/encodings/pixel_format
+reference/types/datatypes/plane3d: reference/types/encodings/plane3d
+reference/types/datatypes/quaternion: reference/types/encodings/quaternion
+reference/types/datatypes/range1d: reference/types/encodings/range1d
+reference/types/datatypes/range2d: reference/types/encodings/range2d
+reference/types/datatypes/rgba32: reference/types/encodings/rgba32
+reference/types/datatypes/rotation_axis_angle: reference/types/encodings/rotation_axis_angle
+reference/types/datatypes/spherical_harmonics3rgb: reference/types/encodings/spherical_harmonics3rgb
+reference/types/datatypes/tensor_buffer: reference/types/encodings/tensor_buffer
+reference/types/datatypes/tensor_data: reference/types/encodings/tensor_data
+reference/types/datatypes/tensor_dimension_index_selection: reference/types/encodings/tensor_dimension_index_selection
+reference/types/datatypes/tensor_dimension_selection: reference/types/encodings/tensor_dimension_selection
+reference/types/datatypes/time_int: reference/types/encodings/time_int
+reference/types/datatypes/time_range: reference/types/encodings/time_range
+reference/types/datatypes/time_range_boundary: reference/types/encodings/time_range_boundary
+reference/types/datatypes/uint16: reference/types/encodings/uint16
+reference/types/datatypes/uint32: reference/types/encodings/uint32
+reference/types/datatypes/uint64: reference/types/encodings/uint64
+reference/types/datatypes/utf8: reference/types/encodings/utf8
+reference/types/datatypes/utf8pair: reference/types/encodings/utf8pair
+reference/types/datatypes/uuid: reference/types/encodings/uuid
+reference/types/datatypes/uvec2d: reference/types/encodings/uvec2d
+reference/types/datatypes/uvec3d: reference/types/encodings/uvec3d
+reference/types/datatypes/uvec4d: reference/types/encodings/uvec4d
+reference/types/datatypes/vec2d: reference/types/encodings/vec2d
+reference/types/datatypes/vec3d: reference/types/encodings/vec3d
+reference/types/datatypes/vec4d: reference/types/encodings/vec4d
+reference/types/datatypes/video_timestamp: reference/types/encodings/video_timestamp
+reference/types/datatypes/view_coordinates: reference/types/encodings/view_coordinates
+reference/types/datatypes/view_dir: reference/types/encodings/view_dir
+reference/types/datatypes/visible_time_range: reference/types/encodings/visible_time_range
+
+# Changelog - 0.37 upcoming entries merged into the release changeset
+changelog/upcoming/a-la-carte-importer-features: changelog/changeset-0-37#a-la-carte-features-for-file-importers
+changelog/upcoming/datafusion-and-dataplatform-extras-removed: changelog/changeset-0-37#rerun-sdkdatafusion-and-rerun-sdkdataplatform-extras-removed
+changelog/upcoming/dataloader-explicit-windows: changelog/changeset-0-37#experimental-dataloader-windows-are-explicit-and-decoder-independent
+changelog/upcoming/dataloader-fetch-decode-pipeline: changelog/changeset-0-37#experimental-dataloader-decoders-now-process-fetch-blocks
+changelog/upcoming/dataloader-manifest-keyframe-scan: changelog/changeset-0-37#faster-manifest-generation-for-video-datasets
+changelog/upcoming/dataloader-skip-missing-samples: changelog/changeset-0-37#experimental-iterable-dataloader-skips-missing-samples
+changelog/upcoming/dataloader-unified-pipeline: changelog/changeset-0-37#experimental-dataloaders-use-a-unified-fetch-and-decode-pipeline
+changelog/upcoming/dataloader-video-decoding-performance: changelog/changeset-0-37#faster-video-decoding-for-training
+changelog/upcoming/dataset-links: changelog/changeset-0-37#links-to-datasets
+changelog/upcoming/datatypes-renamed-to-encodings: changelog/changeset-0-37#datatypes-renamed-to-encodings
+changelog/upcoming/map-dataset-manifest: changelog/changeset-0-37#rerunmapdataset-can-be-built-from-a-manifest
+changelog/upcoming/mp4-reader-sparse-keyframe-marker: changelog/changeset-0-37#mp4reader-emits-is_keyframe-as-a-sparse-marker-chunk
+changelog/upcoming/optimize-own-chunk-components: changelog/changeset-0-37#keyframe-markers-are-kept-out-of-the-video-chunks
+changelog/upcoming/recording-id-no-longer-disables-properties: changelog/changeset-0-37#setting-a-recording-id-no-longer-disables-recording-properties
+changelog/upcoming/rrd-stats-optimization-check: changelog/changeset-0-37#rerun-rrd-stats-tells-you-whether-a-recording-should-be-optimized
+changelog/upcoming/rust-1-96: changelog/changeset-0-37#update-to-rust-196
+changelog/upcoming/selection-panel-navigation: changelog/changeset-0-37#improved-selection-panel-navigation
+changelog/upcoming/split-loggable-trait: changelog/changeset-0-37#loggable-replaced-by-four-deserialization-traits
+changelog/upcoming/state-timeline-cursor-centered: changelog/changeset-0-37#state-timeline-views-keep-the-time-cursor-centered
+changelog/upcoming/state-timeline-entity-drop: changelog/changeset-0-37#drag-entities-onto-state-timeline-views
+changelog/upcoming/state-timeline-visible-time-range: changelog/changeset-0-37#visible-time-range-for-state-timeline-views
+changelog/upcoming/video-frame-reference-video-stream: changelog/changeset-0-37#videoframereference-works-with-videostream
+changelog/upcoming/viewer-loads-asset-data: changelog/changeset-0-37#assets
+changelog/upcoming/web-viewer-save-artifacts: changelog/changeset-0-37#export-recordings-and-blueprints-from-the-web-viewer

@@ -1,0 +1,100 @@
+#pragma once
+
+// Built-in Rerun types (largely generated from an interface definition language)
+#include "rerun/archetypes.hpp"
+#include "rerun/components.hpp"
+#include "rerun/encodings.hpp"
+
+// Deprecated alias: `rerun::datatypes` is now `rerun::encodings`.
+#include "rerun/datatypes.hpp"
+
+// Rerun API.
+#include "rerun/collection.hpp"
+#include "rerun/collection_adapter.hpp"
+#include "rerun/collection_adapter_builtins.hpp"
+#include "rerun/component_descriptor.hpp"
+#include "rerun/config.hpp"
+#include "rerun/entity_path.hpp"
+#include "rerun/error.hpp"
+#include "rerun/image_utils.hpp"
+#include "rerun/recording_stream.hpp"
+#include "rerun/result.hpp"
+#include "rerun/sdk_info.hpp"
+#include "rerun/spawn.hpp"
+
+/// All Rerun C++ types and functions are in the `rerun` namespace or one of its nested namespaces.
+namespace rerun {
+    /// When an external [`Importer`] is asked to import some data that it doesn't know how to handle, it
+    /// should exit with this exit code.
+    // NOTE: Always keep in sync with other languages.
+    constexpr int EXTERNAL_IMPORTER_INCOMPATIBLE_EXIT_CODE = 66;
+
+    /// \deprecated Deprecated since 0.32.0. Use `EXTERNAL_IMPORTER_INCOMPATIBLE_EXIT_CODE` instead.
+    [[deprecated("Deprecated since 0.32.0. Use EXTERNAL_IMPORTER_INCOMPATIBLE_EXIT_CODE instead."
+    )]] constexpr int EXTERNAL_DATA_LOADER_INCOMPATIBLE_EXIT_CODE =
+        EXTERNAL_IMPORTER_INCOMPATIBLE_EXIT_CODE;
+
+    // Archetypes are the quick-and-easy default way of logging data to Rerun.
+    // Make them available in the rerun namespace.
+    using namespace archetypes;
+
+    // Also import any component or datatype that has a unique name:
+    using components::AlbedoFactor;
+    using components::Color;
+    using components::Colormap;
+    using components::FillMode;
+    using components::GeoLineString;
+    using components::GraphType;
+    using components::HalfSize2D;
+    using components::HalfSize3D;
+    using components::ImageBuffer;
+    using components::KeyValuePairs;
+    using components::LatLon;
+    using components::LineStrip2D;
+    using components::LineStrip3D;
+    using components::MarkerShape;
+    using components::MediaType;
+    using components::Position2D;
+    using components::Position3D;
+    using components::Radius;
+    using components::Scalar;
+    using components::Text;
+    using components::TextLogLevel;
+    using components::TransformRelation;
+    using components::TriangleIndices;
+    using components::Vector2D;
+    using components::Vector3D;
+
+    using encodings::Angle;
+    using encodings::AnnotationInfo;
+    using encodings::ChannelDatatype;
+    using encodings::ClassDescription;
+    using encodings::ColorModel;
+    using encodings::DVec2D;
+    using encodings::Float32;
+    using encodings::KeypointPair;
+    using encodings::Mat3x3;
+    using encodings::PixelFormat;
+    using encodings::Quaternion;
+    using encodings::Rgba32;
+    using encodings::RotationAxisAngle;
+    using encodings::TensorBuffer;
+    using encodings::TensorData;
+    using encodings::Vec2D;
+    using encodings::Vec3D;
+    using encodings::Vec4D;
+
+    // Document namespaces that span several files:
+
+    /// All built-in archetypes. See [Types](https://www.rerun.io/docs/reference/types) in the Rerun manual.
+    namespace archetypes {}
+
+    /// All built-in components. See [Types](https://www.rerun.io/docs/reference/types) in the Rerun manual.
+    namespace components {}
+
+    /// All built-in encodings. See [Types](https://www.rerun.io/docs/reference/types) in the Rerun manual.
+    namespace encodings {}
+
+    /// All blueprint types. This is still experimental and subject to change!
+    namespace blueprint {}
+} // namespace rerun

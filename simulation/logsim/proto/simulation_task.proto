@@ -1,0 +1,34 @@
+syntax = "proto2";
+
+package apollo.simulation.logsim;
+
+import "simulation/logsim/proto/channel_policy.proto";
+
+enum SimMode {
+  DEFAULT = 0;
+  ALIGNED = 1;
+  DECOUPLED = 2;
+}
+
+message SimulationTask {
+  optional string scenario_id = 1;
+  optional string task_dir = 2;
+  repeated string record_paths = 3;
+  optional double log_start_s = 4;
+  optional double log_end_s = 5;
+  optional string map_dir = 6;
+  optional string vehicle_config_path = 7;
+  repeated string runtime_modules = 8;
+  optional ChannelPolicy channel_policy = 9;
+  optional string cyber_conf_path = 10;
+  repeated string dag_paths = 11;
+  optional SimMode sim_mode = 12 [default = DEFAULT];
+  optional string frame_meta_path = 13;
+  optional string channel_mapping_path = 14;
+  optional bool enable_onboard_latency = 15 [default = false];
+  // Output bag directory (default: data/simulation). Final file is
+  // <output_record_dir>/<scenario_id>/sim_run_<timestamp>.record
+  optional string output_record_dir = 16;
+  // Absolute override of the output bag path (skips dir/timestamp naming).
+  optional string output_record_path = 17;
+}

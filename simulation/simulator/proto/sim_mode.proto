@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package apollo.simulation.simulator;
+
+enum SimModeType {
+  SIM_MODE_DEFAULT = 0;
+  SIM_MODE_ALIGNED = 1;
+  SIM_MODE_DECOUPLED = 2;
+}

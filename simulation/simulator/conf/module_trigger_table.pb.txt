@@ -1,0 +1,22 @@
+# Default module trigger table (PNC aligned with Apollo DAG)
+modules {
+  module_name: "PREDICTION"
+  kind: DATA_TRIGGERED
+  trigger_channel: "/apollo/perception/obstacles"
+  output_channel: "/apollo/prediction"
+}
+modules {
+  module_name: "PLANNING"
+  kind: DATA_TRIGGERED
+  trigger_channel: "/apollo/prediction"
+  prerequisite_channels: "/apollo/localization/pose"
+  prerequisite_channels: "/apollo/canbus/chassis"
+  output_channel: "/apollo/planning"
+}
+modules {
+  module_name: "CONTROL"
+  kind: PERIODIC_MSG_TRIGGERED
+  timer_interval_ms: 10
+  periodic_trigger_channel: "/apollo/simulation/periodic_trigger/control"
+  output_channel: "/apollo/control"
+}

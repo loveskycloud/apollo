@@ -1,0 +1,9 @@
+# Example LogSim scenario: only enabled modules are loaded by EgoCar.
+name: "pnc_default"
+scenario_id: "pnc_default"
+mode: LOGSIM
+map_dir: "modules/map/data/sunnyvale"
+vehicle: "modules/common/data/vehicle_param.pb.txt"
+enabled_modules: PREDICTION
+enabled_modules: PLANNING
+enabled_modules: CONTROL

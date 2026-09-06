@@ -16,7 +16,9 @@
 
 #include "cyber/component/timer_component.h"
 
+#include "cyber/common/global_data.h"
 #include "cyber/statistics/statistics.h"
+#include "cyber/timer/sim_timer_registry.h"
 #include "cyber/timer/timer.h"
 
 namespace apollo {
@@ -60,6 +62,11 @@ bool TimerComponent::Initialize(const TimerComponentConfig& config) {
     statistics::Statistics::Instance()->SamplingProcLatency<
                   uint64_t>(*role_attr, (end_time-start_time)/1000);
   };
+  if (!common::GlobalData::Instance()->IsRealityMode()) {
+    SimTimerRegistry::Instance()->Register(config.name(), config.interval(),
+                                           func);
+    return true;
+  }
   timer_.reset(new Timer(config.interval(), func, false));
   timer_->Start();
   return true;
