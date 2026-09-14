@@ -1,7 +1,12 @@
 load("//tools:cpplint.bzl", "cpplint")
 load("//tools:apollo_package.bzl", "apollo_cc_binary", "apollo_package")
+load("//tools/install:install.bzl", "install_src_files")
 
 package(default_visibility = ["//visibility:public"])
+
+# The native launcher uses workspace sources; Rust is built by build_viewer.sh.
+# Never dereference runtime task links / copy target or test-artifact trees.
+install_src_files(name = "install_src", type = "neo")
 
 apollo_cc_binary(
     name = "web_monitor_main",

@@ -1,0 +1,26 @@
+# Data cleaner configuration for a 500 GB Orin NVMe disk.
+clean_interval_in_secs: 300
+
+strategies:
+  - name: record cleaner
+    dirs:
+      - /apollo/data/record
+      - /apollo/data/bag
+    patterns:
+      - '.*\.record\.'
+    expired_time_in_hours: 168
+    usage_threshold_in_gb: 160
+
+  - name: log cleaner
+    dirs:
+      - /apollo/data/log
+    expired_time_in_hours: 72
+    usage_threshold_in_gb: 30
+
+  - name: core files cleaner
+    dirs:
+      - /apollo/data/core
+    patterns:
+      - '.*\.core'
+    expired_time_in_hours: 72
+    usage_threshold_in_gb: 10

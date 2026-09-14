@@ -17,6 +17,7 @@ bool ResultSink::Open(const std::string& output_path,
   record_channels_ = record_channels;
   path_ = output_path;
   written_count_ = 0;
+  healthy_ = true;
   records_.clear();
   writer_ = std::make_unique<cyber::record::RecordWriter>();
   if (!writer_->Open(output_path)) {
@@ -40,7 +41,10 @@ void ResultSink::Write(const OutputRecord& record) {
     return;
   }
   records_.push_back(record);
-  writer_->WriteMessage(record.channel, record.content, record.sim_time_ns);
+  if (!writer_->WriteMessage(record.channel, record.content, record.sim_time_ns)) {
+    healthy_ = false;
+    return;
+  }
   ++written_count_;
 }
 

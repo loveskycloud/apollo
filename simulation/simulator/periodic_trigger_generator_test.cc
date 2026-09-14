@@ -3,6 +3,7 @@
  *****************************************************************************/
 
 #include "simulation/simulator/periodic_trigger_generator.h"
+#include <limits>
 
 #include "gtest/gtest.h"
 
@@ -22,6 +23,15 @@ TEST(PeriodicTriggerGeneratorTest, Control10msWindow) {
   EXPECT_EQ(events[1].sim_time_ns, 10u * 1000000ULL);
   EXPECT_EQ(events[2].sim_time_ns, 20u * 1000000ULL);
   EXPECT_EQ(events[3].sim_time_ns, 30u * 1000000ULL);
+}
+
+TEST(PeriodicTriggerGeneratorTest, IncludesSingleTimestampAndAvoidsOverflow) {
+  auto events = PeriodicTriggerGenerator::Generate(123, 123, 10, "timer");
+  ASSERT_EQ(events.size(), 1u);
+  const uint64_t end = std::numeric_limits<uint64_t>::max();
+  events = PeriodicTriggerGenerator::Generate(end - 10000000, end, 10, "timer");
+  ASSERT_EQ(events.size(), 2u);
+  EXPECT_EQ(events.back().sim_time_ns, end);
 }
 
 }  // namespace

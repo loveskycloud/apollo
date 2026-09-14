@@ -57,6 +57,7 @@ class EgoCar {
    * flagfiles before Initialize (preferred).
    */
   bool ReapplyEnvironment();
+  bool VerifyEnvironment() const;
 
   /** Write a flagfile that includes |base_flagfile| then overrides map/vehicle. */
   bool WriteOverrideFlagfile(const std::string& base_flagfile,
@@ -71,6 +72,7 @@ class EgoCar {
   bool InitHdMap();
 
   Options options_;
+  double half_vehicle_width_ = 0.0;
   bool ready_ = false;
 };
 

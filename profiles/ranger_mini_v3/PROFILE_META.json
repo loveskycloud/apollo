@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "vin": "",
+  "model": "ranger_mini_v3",
+  "profile_id": "ranger_mini_v3",
+  "version": "1.0.1",
+  "arch": "aarch64",
+  "channel": "latest",
+  "sha256": "",
+  "created_at": "2026-09-10T07:37:56Z",
+  "source": "pack-apollo-profile.sh"
+}

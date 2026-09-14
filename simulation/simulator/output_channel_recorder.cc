@@ -13,7 +13,9 @@
 #include "modules/common_msgs/localization_msgs/localization.pb.h"
 #include "modules/common_msgs/perception_msgs/perception_obstacle.pb.h"
 #include "modules/common_msgs/planning_msgs/planning.pb.h"
+#include "modules/common_msgs/planning_msgs/planning_command.pb.h"
 #include "modules/common_msgs/prediction_msgs/prediction_obstacle.pb.h"
+#include "modules/common_msgs/routing_msgs/routing.pb.h"
 
 namespace apollo {
 namespace simulation {
@@ -67,10 +69,15 @@ bool OutputChannelRecorder::Start(const std::shared_ptr<cyber::Node>& node,
       added = AddTypedReader<planning::ADCTrajectory>(channel);
     } else if (channel == "/apollo/control") {
       added = AddTypedReader<control::ControlCommand>(channel);
+    } else if (channel == "/apollo/planning/command" || channel == "/apollo/planning_command_history") {
+      added = AddTypedReader<planning::PlanningCommand>(channel);
+    } else if (channel == "/apollo/raw_routing_request") {
+      added = AddTypedReader<routing::RoutingRequest>(channel);
+    } else if (channel == "/apollo/routing_response" || channel == "/apollo/raw_routing_response") {
+      added = AddTypedReader<routing::RoutingResponse>(channel);
     } else {
-      AWARN << "OutputChannelRecorder: no typed binding for channel="
-            << channel << ", skip";
-      continue;
+      AERROR << "OutputChannelRecorder: no typed binding for channel=" << channel;
+      return false;
     }
     if (!added) {
       ok = false;

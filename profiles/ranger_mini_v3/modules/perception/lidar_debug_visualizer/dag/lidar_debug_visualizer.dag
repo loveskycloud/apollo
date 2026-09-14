@@ -1,0 +1,17 @@
+module_config {
+  module_library : "modules/perception/lidar_debug_visualizer/liblidar_debug_visualizer_component.so"
+  components {
+    class_name : "LidarDebugVisualizerComponent"
+    config {
+      name : "LidarDebugVisualizer"
+      config_file_path : "/apollo/modules/perception/lidar_debug_visualizer/conf/lidar_debug_visualizer_config.pb.txt"
+      flag_file_path: "/apollo/modules/perception/data/flag/perception_common.flag"
+      readers {
+        # Detection output retains ROI/ground indices and additionally contains
+        # lidar-local boxes and object polygons.
+        # channel: "/perception/lidar/detection"
+        channel: "/perception/lidar/detection_filter"
+      }
+    }
+  }
+}

@@ -17,7 +17,9 @@
 namespace apollo {
 namespace simulation {
 
-enum class SourceType { RECORD_FILE };
+enum class SourceType { RECORD_FILE, WORLD_SCENARIO };
+
+class MessageConsumer;
 
 struct SourceConfig {
   SourceType type = SourceType::RECORD_FILE;
@@ -26,6 +28,9 @@ struct SourceConfig {
   uint64_t end_ns = std::numeric_limits<uint64_t>::max();
   std::set<std::string> whitelist;
   std::set<std::string> blacklist;
+  uint32_t step_ms = 10;
+  std::string ego_model = "perfect_planning";
+  MessageConsumer* consumer = nullptr;
 };
 
 class IMessageSource {

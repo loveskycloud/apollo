@@ -1,0 +1,15 @@
+# GMSL2 Camera - Single Camera DAG
+# Use this for testing a single camera
+# Example: cyber_launch start modules/drivers/camera/launch/gmsl2_camera_single.launch
+
+module_config {
+    module_library : "modules/drivers/camera/libgmsl2_camera_component.so"
+
+    components {
+      class_name : "GMSL2CameraComponent"
+      config {
+        name : "gmsl2_cam0"
+        config_file_path : "/apollo/modules/drivers/camera/conf/gmsl2_camera_cam0.pb.txt"
+      }
+    }
+}

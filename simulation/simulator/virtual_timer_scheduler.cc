@@ -14,11 +14,25 @@ namespace simulation {
 std::vector<SimEvent> VirtualTimerScheduler::BuildEvents(
     uint64_t begin_ns, uint64_t end_ns) const {
   std::vector<SimEvent> all;
+  if (begin_ns > end_ns) { return all; }
   for (const auto& entry : cyber::SimTimerRegistry::Instance()->GetAll()) {
     auto events = PeriodicTriggerGenerator::Generate(
-        begin_ns, end_ns, entry.interval_ms,
+        begin_ns, begin_ns, entry.interval_ms,
         "/apollo/simulation/periodic_trigger/" + entry.name);
-    all.insert(all.end(), events.begin(), events.end());
+    for (auto& event : events) {
+      event.type = SimEventType::TIMER_FIRE;
+      event.module_name = entry.name;
+      event.interval_ns = static_cast<uint64_t>(entry.interval_ms) * 1000000;
+      event.repeat_end_ns = end_ns;
+      event.process = [process = entry.process]() {
+        if (!process) {
+          return false;
+        }
+        process();
+        return true;
+      };
+      all.push_back(std::move(event));
+    }
   }
   return all;
 }

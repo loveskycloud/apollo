@@ -44,12 +44,15 @@ PLANNER_CONTENTS = [
 ]
 
 PERCEPTION_CONTENTS = [
-    "hdmap/**",
-    "vehicle/**",
-    "lidar/**",
-    "vehicle/lidar/**",
-    "perception/**",
-    "obstacles/**",
+    # Do NOT use /** — VideoStream under /camera/** triggers
+    # "2D visualizers require a pinhole ancestor" inside Spatial3D.
+    "+ /lidar/**",
+    "+ /vehicle/**",
+    "+ /tf/**",
+    "+ /foxglove/**",
+    "+ /hdmap/**",
+    "+ /perception/**",
+    "+ /obstacles/**",
 ]
 
 CONTROL_CONTENTS = [

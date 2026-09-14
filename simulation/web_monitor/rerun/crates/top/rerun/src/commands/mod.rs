@@ -25,9 +25,13 @@ impl CallSource {
 mod auth;
 mod download;
 
+#[cfg(all(feature = "server", feature = "web_viewer"))]
+mod debug_query;
 mod entrypoint;
 #[cfg(feature = "importers")]
 mod mcap;
+#[cfg(all(feature = "server", feature = "web_viewer"))]
+mod playback_cache;
 mod rrd;
 mod stdio;
 #[cfg(feature = "importers")]

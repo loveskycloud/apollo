@@ -12,6 +12,21 @@ if [[ -f "${HOME}/.cargo/env" ]]; then
   source "${HOME}/.cargo/env"
 fi
 
+# Binaryen 105 (Ubuntu 22.04) corrupts the exported externref table used by
+# current wasm-bindgen, causing WebAssembly.Table.grow() to fail at startup.
+if [[ -x "${HOME}/.local/opt/binaryen-version_130/bin/wasm-opt" ]]; then
+  export PATH="${HOME}/.local/opt/binaryen-version_130/bin:${PATH}"
+fi
+if ! command -v wasm-opt >/dev/null 2>&1; then
+  echo "Binaryen >= 130 is required for the release web viewer." >&2
+  exit 1
+fi
+binaryen_version="$(wasm-opt --version | sed -n 's/.*version \([0-9]*\).*/\1/p')"
+if [[ -z "${binaryen_version}" || "${binaryen_version}" -lt 130 ]]; then
+  echo "Binaryen >= 130 is required; found $(wasm-opt --version)." >&2
+  exit 1
+fi
+
 if ! command -v cargo >/dev/null 2>&1; then
   echo "cargo not found. Install Rust toolchain first (rustup)." >&2
   exit 1
@@ -26,13 +41,7 @@ rustup target add wasm32-unknown-unknown
 echo "[web_monitor] Building web viewer wasm/js assets..."
 # MCAP/image/video importers come from re_viewer/re_data_source Cargo features
 # (workspace disables re_importer default-features; see docs P23).
-# --release requires wasm-opt (binaryen). Fall back to --debug assets if missing.
-if command -v wasm-opt >/dev/null 2>&1; then
-  cargo run -p re_dev_tools --release -- build-web-viewer --release -g
-else
-  echo "[web_monitor] wasm-opt not found; building debug web viewer assets"
-  cargo run -p re_dev_tools --release -- build-web-viewer --debug
-fi
+cargo run -p re_dev_tools --release -- build-web-viewer --release -g
 
 echo "[web_monitor] Building rerun-cli (release, web_viewer)..."
 cargo build -p rerun-cli --release --no-default-features --features "native_viewer,web_viewer" -j "${JOBS}"

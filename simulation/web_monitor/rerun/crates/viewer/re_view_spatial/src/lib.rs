@@ -2,6 +2,7 @@
 //!
 //! Views that show entities in a 2D or 3D spatial relationship.
 
+mod ad_dashboard;
 mod caches;
 mod contexts;
 mod eye;

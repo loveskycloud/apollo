@@ -31,4 +31,15 @@ message SimulationTask {
   optional string output_record_dir = 16;
   // Absolute override of the output bag path (skips dir/timestamp naming).
   optional string output_record_path = 17;
+  // Shared runtime contract. Namespace retained for existing task files.
+  enum InputKind { BAG = 0; WORLD = 1; }
+  optional InputKind input_kind = 18 [default = BAG];
+  optional string world_scenario_path = 19;
+  optional uint64 world_start_ns = 20 [default = 1000000000];
+  optional uint32 step_ms = 21 [default = 10];
+  optional string ego_model = 22 [default = "perfect_planning"];
+  optional uint64 random_seed = 23 [default = 1];
+  optional string profile_path = 24;
+  // Run-local progress, never overwrite shared map/profile configuration.
+  optional string progress_path = 25;
 }

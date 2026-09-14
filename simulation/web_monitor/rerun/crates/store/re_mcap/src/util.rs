@@ -83,9 +83,12 @@ pub fn log_and_publish_timepoint_from_msg(
 ) -> TimePoint {
     let log_time_cell = TimestampCell::from_nanos_default(msg.log_time, time_type);
     let publish_time_cell = TimestampCell::from_nanos_default(msg.publish_time, time_type);
+    if msg.channel.metadata.get("message_time_available").is_some_and(|v| v == "false") {
+        return re_chunk::TimePoint::from([("publish_time", publish_time_cell.into_time_cell())]);
+    }
     re_chunk::TimePoint::from([
-        ("message_log_time", log_time_cell.into_time_cell()),
-        ("message_publish_time", publish_time_cell.into_time_cell()),
+        ("message_time", log_time_cell.into_time_cell()),
+        ("publish_time", publish_time_cell.into_time_cell()),
     ])
 }
 

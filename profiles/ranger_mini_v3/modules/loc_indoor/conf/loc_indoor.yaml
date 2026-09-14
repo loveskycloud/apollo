@@ -1,0 +1,330 @@
+# RANGER_MINI_V3 RELEASE configuration, applied by em profile use ranger_mini_v3.
+# Vehicle calibration and algorithm parameters stay in this profile.
+# PCD, map images and coordinate metadata follow the globally selected map.
+channels:
+  pointcloud: "/apollo/sensor/rslidar/up/PointCloud2"
+  imu: "/apollo/sensor/rslidar/up/Imu"
+  pose: "/apollo/localization/pose"
+
+frames:
+  # Previous TF contract (kept only for rollback reference):
+  # map: "map"
+  # child: "rear_axis_center"
+  # The published rear-axis-centered localization pose is now exposed as
+  # world -> localization.
+  map: "world"
+  child: "localization"
+  publish_tf: true
+
+# Calibrated T_rear_axis_center_imu from the 2026-08-27 browser stationary
+# gravity alignment (988 samples over 10.000030 s). The ESKF remains
+# T_map_imu internally. The same transform is also used to convert the
+# operator-provided T_map_rear initialization prior into T_map_imu:
+#   T_map_imu = T_map_rear * T_rear_imu
+# The pose/TF/debug output boundary computes:
+#   T_map_rear = T_map_imu * inverse(T_rear_imu)
+pose_output:
+  parent_frame: "rear_axis_center"
+  child_frame: "imu"
+  translation_xyz_m: [0.0, 0.61, 0.67]
+  rotation_matrix_row_major: [0.999934552352555, 0.0, 0.011440760966657,
+                              0.008355701602849, -0.683078549088292, -0.730297116265810,
+                              0.007814938401570, 0.730344915622361, -0.683033843204234]
+
+# Output coordinate offsets and tile geometry come from loc_indoor_map.yaml
+# inside FLAGS_map_dir. They are never inherited from the debug YAML.
+
+# Browser-based RViz-style initial-pose selector. The Stage 3 tile map uses
+# translated coordinates for its Apollo tile indices. Map metadata supplies
+# the tile offset; the browser submits local PCD-map x/y to this component.
+initial_pose_ui:
+  enabled: true
+  # Enables the 3D PCD and registration-cloud debug view. When false, the
+  # service keeps only the lightweight 2D BEV initial-pose interaction.
+  init_debug: false
+  port: 12323
+  # Relative to the installed loc_indoor frontend/ directory.
+  document_root: "initial_pose"
+  # Map assets are relative to FLAGS_map_dir (selected by em/Dreamview).
+  map_images_path: "map_images"
+  # The Stage 2 PCD has the mean IMU trajectory at Z=0. The calibrated IMU
+  # origin is about 0.67 m above rear_axis_center for a level vehicle.
+  default_rear_z_m: -0.67
+
+map:
+  pcd_path: "global.pcd"
+  metadata: "loc_indoor_map.yaml"
+  voxel_size: 0.15
+  ivox_resolution: 0.15
+  ivox_capacity: 2000000
+  nearby_type: 18
+
+initialization:
+  # USER_SET: wait for the browser pose and return the registration result.
+  # RECOVER_POSE: initialize from pose_file without starting the browser UI.
+  mode: "USER_SET"
+  # Format: x y z qx qy qz qw. This test pose comes from mapping's IMU
+  # trajectory after subtracting gnss-map-offset, so it is T_pcd_imu.
+  pose_file: "recover_pose.txt"
+  # "lidar": convert T_map_lidar to the ESKF's T_map_imu using T_imu_lidar.
+  # "imu": the file already contains T_map_imu and needs no conversion.
+  pose_frame: "imu"
+  # recover_pose is only an initial guess; the accepted initialization pose
+  # must be determined by LiDAR scan-to-map registration.
+  enable_search: true
+  # RECOVER_POSE retries on later scans up to this count. USER_SET performs
+  # one full search per browser confirmation and then reports success/failure.
+  max_attempts: 10
+
+  # Initialization-only height crop. Each LiDAR point is transformed into
+  # rear_axis_center and only this Z interval enters NDT/ICP. Tracking scans,
+  # ESKF prediction and normal map observations do not use this filter.
+  height_filter_rear_axis_center:
+    enabled: true
+    min_z_m: 0.1
+    max_z_m: 3.0
+
+  # OpenCV-free BEV coarse registration. global.pcd is already expressed with
+  # the mean IMU trajectory near Z=0, so this height band removes floor/roof.
+  # A cell becomes occupied only when it contains vertically contiguous
+  # support, suppressing horizontal clutter and isolated map changes.
+  bev_correlative:
+    enabled: true
+    map_z_min_m: -0.5
+    map_z_max_m: 2.0
+    grid_resolution_m: 0.15
+    z_bin_resolution_m: 0.15
+    min_contiguous_z_bins: 3
+    scan_z_min_m: -0.5
+    scan_z_max_m: 2.0
+    scan_z_bin_resolution_m: 0.15
+    scan_min_contiguous_z_bins: 3
+    source_xy_voxel_m: 0.15
+    min_source_points: 60
+
+    # Bounded exhaustive coarse search followed by local refinement.
+    xy_search_range_m: 3.0
+    coarse_xy_step_m: 0.50
+    yaw_search_range_deg: 35.0
+    coarse_yaw_step_deg: 2.0
+    fine_xy_range_m: 0.30
+    fine_xy_step_m: 0.10
+    fine_yaw_range_deg: 2.0
+    fine_yaw_step_deg: 0.5
+    num_threads: 4
+
+    # Top-K contains only local maxima of the coarse x/y/yaw score volume.
+    # Smooth shoulders around one peak are not treated as independent modes;
+    # only the best local maximum is allowed to seed NDT.
+    top_k: 5
+    mode_separation_translation_m: 0.50
+    mode_separation_yaw_deg: 5.0
+    likelihood_sigma_m: 0.35
+    translation_delta_cost_weight: 0.10
+    rotation_delta_cost_weight: 0.50
+    min_score: 0.35
+    min_score_margin: 0.05
+
+    # NDT/ICP may make a small local correction, but cannot leave the accepted
+    # BEV basin or materially reduce its geometric likelihood.
+    min_final_score: 0.30
+    max_final_score_drop: 0.10
+    max_final_translation_from_mode_m: 0.75
+    max_final_yaw_from_mode_deg: 5.0
+
+  # Default: Autoware-style prior sampling + batched TPE + parallel PCL NDT.
+  # GRID_ICP keeps the previous deterministic grid search as a fallback.
+  search_method: "NDT_TPE"
+  ndt_particles_num: 200
+  ndt_startup_trials: 80
+  ndt_batch_size: 20
+  # 0 uses the OpenMP maximum. Eight avoids excessive duplicated NDT target
+  # memory while keeping browser initialization latency low on this platform.
+  ndt_num_threads: 8
+  # Fixed covariance contract for the browser pose prior. XY/Z are Gaussian.
+  # The browser arrow is now an authoritative local prior. Global-yaw
+  # particles are disabled because a geometrically repetitive area can make a
+  # 180-degree-wrong basin look numerically valid.
+  ndt_xy_stddev_m: 1.5
+  ndt_z_stddev_m: 0.15
+  ndt_yaw_stddev_deg: 15.0
+  ndt_global_yaw_fraction: 0.0
+  ndt_xy_max_offset_m: 3.0
+  ndt_z_max_offset_m: 0.5
+  # Each OpenMP worker constructs this cropped target once, then reuses its
+  # NDT voxel grid for every particle assigned to that worker.
+  ndt_submap_radius_m: 35.0
+  ndt_submap_half_height_m: 5.0
+  ndt_source_voxel_size_m: 0.15
+  ndt_target_voxel_size_m: 0.15
+  # NDT resolution is its Gaussian covariance cell, not a downsampling voxel.
+  # It must contain several 0.15 m target points to estimate a valid covariance.
+  ndt_resolution_m: 1.0
+  ndt_step_size: 0.5
+  ndt_transform_epsilon: 0.05
+  # A particle that reaches this limit is rejected even if PCL sets
+  # hasConverged(), matching Autoware's iteration-count validation intent.
+  ndt_max_iterations: 18
+  ndt_min_probability: 0.3
+  ndt_max_fitness: 1.0
+  ndt_max_translation_from_prior_m: 3.0
+  ndt_max_z_from_prior_m: 0.5
+  ndt_max_yaw_from_prior_deg: 35.0
+  # Roll/pitch are gravity-constrained; only yaw is allowed to explore globally.
+  ndt_max_tilt_correction_deg: 10.0
+  # Only these best NDT particles enter the IVox point-to-plane verification;
+  # one final winner enters ICP.
+  ndt_refine_top_k: 8
+
+  # Legacy GRID_ICP fallback parameters.
+  coarse_xy_range: 3.0
+  coarse_xy_step: 1.0
+  coarse_yaw_range_deg: 180.0
+  coarse_yaw_step_deg: 30.0
+  coarse_top_k: 3
+  fine_xy_range: 0.5
+  fine_xy_step: 0.1
+  fine_yaw_range_deg: 10.0
+  fine_yaw_step_deg: 2.0
+  min_effective_points: 150
+  min_score: 75.0
+  # Absolute point count alone admits partial matches. Overall overlap is
+  # necessary, but floor/ceiling matches cannot prove XY/yaw correctness.
+  min_effective_ratio: 0.25
+  # These gates count only inliers whose fitted plane normal has sufficient XY
+  # component (walls, columns, racks). No point is removed from registration.
+  min_xy_observable_points: 80
+  min_xy_observable_ratio: 0.05
+  min_xy_observable_azimuth_sectors: 4
+  # Final NDT+ICP result must remain inside the operator-prior capture range.
+  final_max_translation_from_prior_m: 3.0
+  final_max_z_from_prior_m: 0.5
+  final_max_yaw_from_prior_deg: 35.0
+  icp_verify_enable: true
+  icp_max_iterations: 30
+  icp_transform_epsilon: 1.0e-6
+  icp_fitness_threshold: 0.3
+  icp_max_correspondence_distance: 1.0
+  # Final 6DoF ICP safety gates relative to the best NDT/grid candidate.
+  # These reject implausible corrections; they are not guaranteed capture ranges.
+  icp_max_correction_translation_m: 1.0
+  icp_max_correction_angle_deg: 12.0
+
+pointcloud:
+  # Airy spinning LiDAR: 96 channels.
+  # The Apollo PointCloud preprocessing path is model-neutral; type 2 selects
+  # its generic spinning-LiDAR behavior.
+  lidar_type: 2       # 1=AVIA, 2=generic spinning LiDAR, 3=OUST64
+  scan_lines: 96
+  # Main ESKF LiDAR frame ratio during TRACKING. This value is a frame stride,
+  # not the literal number of consecutive frames discarded:
+  #   0 or 1 -> process 1/1 frames (10 Hz input -> nominal 10 Hz main ESKF)
+  #   2      -> process 1/2 frames (10 Hz input -> nominal 5 Hz main ESKF)
+  #   3      -> process 1/3 frames (10 Hz input -> nominal 3.33 Hz main ESKF)
+  #   N >= 2 -> process 1/N frames (nominal input_frequency / N)
+  # The drop happens before point conversion, filtering and timestamp sorting.
+  # Cyber message reception/deserialization still runs at the input rate.
+  # Initialization always processes 1/1 frames so IMU readiness, pose requests
+  # and one-shot registration keep their existing state-transition behavior.
+  # All IMU samples are retained; the next selected scan propagates the main
+  # ESKF across the complete interval. The independent high-frequency ESKF also
+  # continues to ingest every IMU and publish at output_frequency_hz.
+  # If high-frequency extrapolation is disabled, pose output follows this
+  # selected main ESKF LiDAR rate.
+  # Frame-begin timestamp rollback is still monitored on skipped messages, but
+  # their per-point timestamps are intentionally not scanned. Do not change
+  # min/max_scan_duration: each selected physical scan is still about 0.1 s.
+  # A selected-frame timing, IMU, point-count, map-update or HF-correction
+  # failure resets the stride phase so the next raw LiDAR frame is processed.
+  # Large values increase IMU-only drift, matching error and the risk of
+  # exhausting the IMU queue/history before the next selected LiDAR correction.
+  skip_lidar_num: 2
+  point_filter_num: 1
+  blind_distance: 0.5
+  max_radius: 25.0
+  scan_voxel_size: 0.15
+  min_scan_points: 100
+  min_scan_duration: 0.05
+  max_scan_duration: 0.15
+  point_time_tolerance: 0.002
+
+imu:
+  # Same stationary-window contract as mapping.
+  init_duration: 0.5
+  init_max_gyro: 0.05
+  init_max_gyro_std: 0.02
+  init_max_acc_std: 0.25
+  init_min_acc_norm: 7.0
+  init_max_acc_norm: 12.0
+  # No recover-pose gravity gate: relocalization orientation comes exclusively
+  # from LiDAR scan-to-map. This stationary window only estimates IMU bias/noise.
+  gyro_noise: 0.1
+  acc_noise: 0.1
+  gyro_bias_noise: 0.0001
+  acc_bias_noise: 0.0001
+
+# Exact ranger_mini_v3 hardware DIFOP T_imu_lidar. This must match the mapping
+# profile used to generate global.pcd.
+# Point conversion: p_imu = R_I_L * p_lidar + t_I_L; rotation is row-major.
+extrinsic:
+  # LiDAR pose expressed in the physical IMU frame.
+  translation: [0.0041643003, 0.0042534284, -0.0044714036]
+  rotation: [0.0057904142, -0.9999812047, 0.0020152848,
+             -0.9999724135, -0.0057997156, -0.0046406317,
+             0.0046522326, -0.0019883581, -0.9999872015]
+
+ieskf:
+  max_iterations: 5
+  convergence_epsilon: 0.001
+  observation_noise: 0.001
+
+map_observation:
+  num_match_points: 5
+  min_match_points: 3
+  plane_threshold: 0.08
+  max_match_distance: 4.0
+  estimate_extrinsic: false
+  robust_kernel: true
+  robust_delta: 2.0
+  min_effective_points: 100
+  plane_search_iterations: 1
+
+runtime:
+  imu_queue_size: 2000
+  lidar_queue_size: 20
+  max_imu_interval: 0.03
+
+# Independent high-rate error-state EKF. The scan-to-map iESKF above remains
+# unchanged and supplies authoritative low-rate T_map_imu corrections. This
+# filter propagates only with IMU and publishes at the configured rate.
+high_frequency_extrapolation:
+  enabled: true
+  output_frequency_hz: 100.0
+  # USER_SET registration takes about 2 s; retain its complete IMU interval
+  # so the successful LiDAR-time pose can be replayed to current IMU time.
+  history_duration_s: 5.0
+  max_correction_delay_s: 5.0
+  max_imu_interval_s: 0.03
+  # Chi-square-like gate over position, velocity and SO(3) innovation (9 DoF).
+  mahalanobis_gate: 50.0
+  process_noise:
+    gyro: 0.015
+    acceleration: 0.15
+    gyro_bias: 0.0001
+    acceleration_bias: 0.001
+  # These values set the correction gain and therefore the smoothness. Larger
+  # values make LIO correction softer; do not add a pose low-pass filter.
+  lio_measurement_std:
+    position_m: 0.08
+    velocity_mps: 0.15
+    orientation_deg: 1.5
+    gyro_bias: 0.01
+    acceleration_bias: 0.10
+
+debug:
+  # Each module start truncates the previous run. When false, no files are
+  # created or written. Enable only for an explicit evaluation run.
+  enabled: false
+  # Output root: module/data/evaluation in debug, /apollo/output/loc_indoor in release.
+  trajectory_file: "localization_trajectory.txt"
+  diagnostics_file: "localization_diagnostics.csv"

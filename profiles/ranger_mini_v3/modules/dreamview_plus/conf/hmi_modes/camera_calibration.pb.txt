@@ -1,0 +1,18 @@
+cyber_modules {
+  key: "Camera"
+  value: {
+    dag_files: "modules/drivers/camera/dag/camera.dag"
+    required_for_safety: false
+  }
+}
+cyber_modules {
+  key: "Lidar"
+  value: {
+    dag_files: "modules/drivers/lidar/dag/lidar.dag"
+  }
+}
+layout: {
+    type: "CameraCalibration"
+}
+operations: None
+default_operation: None

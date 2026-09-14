@@ -84,7 +84,9 @@ pub struct AppState {
     #[serde(skip)]
     welcome_screen: crate::ui::WelcomeScreen,
 
-    #[serde(skip)]
+    // Persist the Custom blueprint and its default-layout choice. Runtime streams,
+    // requests and clock state are individually skipped by AdShell.
+    #[serde(default)]
     ad_shell: crate::ui::AdShell,
 
     #[serde(skip)]
@@ -616,6 +618,13 @@ impl AppState {
 
                 // Left AD shell FIRST so the bottom playback bar does not run under the sidebar.
                 self.ad_shell.show(&ctx, ui);
+                self.ad_shell
+                    .show_panel_secondary(&ctx, &viewport_ui.blueprint, ui);
+                self.ad_shell
+                    .show_viewport_layers_picker(&ctx, &viewport_ui.blueprint, ui);
+                ctx.egui_ctx().data_mut(|d| d.insert_temp(egui::Id::new("ad_layout_state"), serde_json::json!({
+                    "views": viewport_ui.blueprint.views.values().map(|v| serde_json::json!({"id":v.id.to_string(), "name":v.display_name, "origin":v.space_origin.to_string()})).collect::<Vec<_>>()
+                })));
 
                 // Selection Panel (right)
                 let selection_was_expanded = app_blueprint.selection_panel_state().is_expanded();

@@ -192,7 +192,7 @@
 
 - **现象**：开启 MCAP feature 后不再出现 `No importer support`；改为 `Invalid schema apollo.localization.LocalizationEstimate: imported file '.../header.proto' has not been added`。
 - **原因**：该 MCAP 内的 protobuf schema 依赖未内嵌的 `.proto` 文件（Apollo `common_msgs`），Rerun 的 protobuf decoder 无法解析。
-- **处理方向**（未完）：转换时写入完整 `FileDescriptorSet` / 自包含 schema；或 `rerun mcap convert` 选用合适 decoder；或先落到 `.rrd`。与 P23（缺 importer feature）是不同问题。
+- **处理**（已完，见 P30 / v6+）：透传改 `raw` encoding；protobuf decoder 软跳过坏 FDS；可视化只依赖自包含 Foxglove schema。与 P23 不同。
 
 
 ### P25 — 网页无法打开大 `.rrd` / `.mcap`（“文件太大” / 整包进浏览器）
@@ -249,6 +249,17 @@
 - **处理**：`recv` 改为短超时循环并释放锁；打开新 recording 时 `ensure_layout_for_active_recording` 把 AD layout 重绑到该 store。
 - **验收**：Browse 大 `.rrd` → 无拒载 → 点云/相机出现 → 可 scrub/播放完整时段。
 - **附**：`web_monitor_main` 传 `--server-memory-limit 8GiB`，避免 proxy 1GiB 默认丢历史。
+
+
+### P30 — Convert / Loaded 后仍无法播放（游标错位 + 透传膨胀）
+
+- **现象**：转换 100% 且 `Loaded …mcap`，视口空白；Host 未必有 `Failed to load`。
+- **根因**：
+  1. 播放头停在 0，而 bag 时间为绝对 ns → LatestAt 空（产品时钟仍只有 Publish / Message 两种）；
+  2. 全量 Apollo **raw payload** 透传使 cache 达数 GB，UI 在 stream attach 时即报 Loaded；
+  3. 历史：残缺 protobuf FDS 整包失败（P24）——已用 encoding=`raw` 的 topic 注册 + soft-fail。
+- **处理**：打开后夹游标到时间轴 range 起点；`v7` 默认 schemas-only（不写 raw payload）；专文 `docs/PLAYBACK_AFTER_CONVERT.md`。
+- **验收**：见该专文清单。
 
 ### Adaptation — layout apply（无 FileContents）
 

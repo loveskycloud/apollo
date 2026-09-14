@@ -18,27 +18,34 @@ import rerun.blueprint as rrb
 ROOT = Path(__file__).resolve().parents[1]
 
 PLANNER_CONTENTS = [
-    "hdmap/**",
-    "trajectory",
-    "vehicle/**",
-    "planning/**",
-    "routing/**",
-    "prediction/**",
+    "+ /lidar/**",
+    "+ /vehicle/**",
+    "+ /planning/**",
+    "+ /perception/**",
+    "+ /hdmap/**",
+    "+ /routing/**",
+    "+ /prediction/**",
 ]
 PERCEPTION_CONTENTS = [
-    "hdmap/**",
-    "vehicle/**",
-    "lidar/**",
-    "vehicle/lidar/**",
-    "perception/**",
-    "obstacles/**",
+    # Do NOT use /** — VideoStream under /camera/** triggers
+    # "2D visualizers require a pinhole ancestor" inside Spatial3D.
+    "+ /lidar/**",
+    "+ /vehicle/**",
+    "+ /planning/**",
+    "+ /prediction/**",
+    "+ /tf/**",
+    "+ /foxglove/**",
+    "+ /hdmap/**",
+    "+ /perception/**",
+    "+ /obstacles/**",
 ]
 CONTROL_CONTENTS = [
-    "hdmap/**",
-    "trajectory",
-    "vehicle/**",
-    "control/**",
-    "chassis/**",
+    "+ /lidar/**",
+    "+ /vehicle/**",
+    "+ /planning/**",
+    "+ /perception/**",
+    "+ /prediction/**",
+    "+ /hdmap/**",
 ]
 DEFAULT_CAMERAS = ["Front120", "Front30", "FrontLeft", "FrontRight"]
 
@@ -48,44 +55,37 @@ def _cams(names: list[str]) -> list[rrb.Spatial2DView]:
 
 
 def _spatial(name: str, contents: list[str]) -> rrb.Spatial3DView:
-    return rrb.Spatial3DView(origin="/", name=name, contents=contents)
+    # Anchor on lidar so Points3D+CoordinateFrame resolve without a map TF root.
+    return rrb.Spatial3DView(origin="/lidar/up/points", name=name, contents=contents,
+        eye_controls=rrb.EyeControls3D(position=(14, -18, 22), look_target=(0, 0, 0), eye_up=(0, 0, 1)))
+
+
+def _debug(name: str, preset: str) -> rrb.View:
+    return rrb.View(class_identifier="AdDebug", origin=f"/debug/{preset}", contents=[], name=name)
 
 
 def build(layout: str) -> rrb.Blueprint:
     cams = DEFAULT_CAMERAS
     if layout == "planner":
         root = rrb.Horizontal(
-            _spatial("Planner 3D", PLANNER_CONTENTS),
-            rrb.Vertical(*_cams(cams[:2]), row_shares=[1, 1], name="Planner Cams"),
-            column_shares=[3, 2],
+            rrb.Vertical(_spatial("Planning 3D", PLANNER_CONTENTS), _debug("Trajectory XY", "trajectory"), row_shares=[3, 2]),
+            rrb.Vertical(_debug("Planning profile", "profile"), _debug("Planning message", "planning"), row_shares=[1, 1]),
+            column_shares=[1.5, 1],
             name="Planner",
         )
     elif layout == "perception":
         root = rrb.Horizontal(
             _spatial("Perception 3D", PERCEPTION_CONTENTS),
             rrb.Grid(contents=_cams(cams), grid_columns=2, name="Cameras"),
-            column_shares=[3, 2],
+            column_shares=[1.5, 1],
             name="Perception",
         )
     elif layout == "control":
-        root = rrb.Vertical(
-            rrb.Horizontal(
-                _spatial("Control 3D", CONTROL_CONTENTS),
-                rrb.Spatial2DView(origin="camera/Front120", name="Front120"),
-                column_shares=[3, 2],
-                name="Control Scene",
-            ),
-            rrb.Horizontal(
-                rrb.TimeSeriesView(
-                    origin="control", name="Control Signals", contents=["control/**"]
-                ),
-                rrb.TimeSeriesView(
-                    origin="chassis", name="Chassis", contents=["chassis/**"]
-                ),
-                column_shares=[1, 1],
-                name="Control Plots",
-            ),
-            row_shares=[3, 2],
+        root = rrb.Horizontal(
+            rrb.Vertical(_spatial("Control 3D", CONTROL_CONTENTS), _debug("State transitions", "states"), row_shares=[3, 2]),
+            rrb.Vertical(_debug("Speed tracking", "speed"), _debug("Steering feedback", "steering")),
+            rrb.Vertical(_debug("Tracking errors", "errors"), _debug("Pedals", "pedals")),
+            column_shares=[4/3, 1, 1],
             name="Control",
         )
     else:
@@ -123,20 +123,17 @@ def main() -> int:
     out = Path(args.output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
+    # Must match ad_shell.rs AD_APPLICATION_ID so blueprints activate on the AD workspace.
+    application_id = "apollo_ad_viewer"
     mapping = {
         "planner": "planner",
         "perception": "perception",
         "control": "control",
     }
-    prev = Path.cwd()
-    os.chdir(out)
-    try:
-        for layout, stem in mapping.items():
-            build(layout).save(stem)
-            path = out / f"{stem}.rbl"
-            print(f"Wrote {path} ({path.stat().st_size} bytes) sdk={rr.__version__}")
-    finally:
-        os.chdir(prev)
+    for layout, stem in mapping.items():
+        path = out / f"{stem}.rbl"
+        build(layout).save(application_id, path=path)
+        print(f"Wrote {path} ({path.stat().st_size} bytes) sdk={rr.__version__}")
 
     embed = (args.also_embed_dir or "").strip()
     if embed:

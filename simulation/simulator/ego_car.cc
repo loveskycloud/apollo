@@ -5,6 +5,8 @@
 #include "simulation/simulator/ego_car.h"
 
 #include <fstream>
+#include <iomanip>
+#include <limits>
 
 #include "cyber/common/file.h"
 #include "cyber/common/log.h"
@@ -12,6 +14,7 @@
 #include "modules/common/configs/config_gflags.h"
 #include "modules/common/configs/vehicle_config_helper.h"
 #include "modules/map/hdmap/hdmap_util.h"
+#include "simulation/simulator/environment_tools.h"
 
 namespace apollo {
 namespace simulation {
@@ -73,7 +76,8 @@ bool EgoCar::Init(const Options& opts) {
     return false;
   }
 
-  if (!ApplyGflags()) {
+  if (!ReadHalfVehicleWidth(options_.vehicle_config_path, &half_vehicle_width_) ||
+      !ApplyGflags()) {
     return false;
   }
   if (!InitVehicleConfig()) {
@@ -92,12 +96,13 @@ bool EgoCar::Init(const Options& opts) {
 }
 
 bool EgoCar::ApplyGflags() {
-  google::SetCommandLineOption("map_dir", options_.map_dir.c_str());
-  google::SetCommandLineOption("vehicle_config_path",
-                               options_.vehicle_config_path.c_str());
-  FLAGS_map_dir = options_.map_dir;
-  FLAGS_vehicle_config_path = options_.vehicle_config_path;
-  return true;
+  return ApplyMapVehicleFlags(options_.map_dir, options_.vehicle_config_path,
+                              half_vehicle_width_);
+}
+
+bool EgoCar::VerifyEnvironment() const {
+  return VerifyMapVehicleFlags(options_.map_dir, options_.vehicle_config_path,
+                               half_vehicle_width_);
 }
 
 bool EgoCar::ReapplyEnvironment() {
@@ -136,6 +141,18 @@ bool EgoCar::WriteOverrideFlagfile(const std::string& base_flagfile,
   }
   ofs << "--map_dir=" << options_.map_dir << "\n";
   ofs << "--vehicle_config_path=" << options_.vehicle_config_path << "\n";
+  ofs << "--half_vehicle_width="
+      << std::setprecision(std::numeric_limits<double>::max_digits10)
+      << half_vehicle_width_ << "\n";
+  // Freeze algorithm scheduling too, not only the publisher's clock. These are
+  // run-local overrides and never change the selected profile on disk.
+  if (out_path.find("PREDICTION") != std::string::npos) {
+    ofs << "--enable_multi_thread=false\n--max_thread_num=1\n--max_caution_thread_num=1\n";
+  }
+  if (out_path.find("PLANNING") != std::string::npos) {
+    ofs << "--enable_reference_line_provider_thread=false\n"
+           "--use_multi_thread_to_add_obstacles=false\n";
+  }
   ofs.close();
   AINFO << "EgoCar wrote override flagfile: " << out_path
         << " map_dir=" << options_.map_dir;

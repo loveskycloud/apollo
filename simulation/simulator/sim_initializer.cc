@@ -19,13 +19,11 @@
 #include "cyber/common/log.h"
 #include "cyber/cyber.h"
 #include "cyber/init.h"
+#include "cyber/time/clock.h"
 #include "google/protobuf/text_format.h"
 
 #include "simulation/logsim/record_file_source.h"
 #include "simulation/simulator/message_source_factory.h"
-#include "simulation/simulator/module_replay_service.h"
-#include "simulation/simulator/proto/module_trigger.pb.h"
-#include "simulation/simulator/sim_scheduler.h"
 
 namespace apollo {
 namespace simulation {
@@ -68,19 +66,6 @@ bool SimInitializer::LoadTask(const std::string& task_dir,
     return false;
   }
   return google::protobuf::TextFormat::ParseFromString(content, task);
-}
-
-bool SimInitializer::LoadTriggerTable(const std::string& path,
-                                      ComputationalGraph* graph) {
-  simulator::ModuleTriggerTable table;
-  std::string content;
-  if (!cyber::common::GetContent(path, &content)) {
-    return false;
-  }
-  if (!google::protobuf::TextFormat::ParseFromString(content, &table)) {
-    return false;
-  }
-  return graph->LoadFromTable(table);
 }
 
 bool SimInitializer::SetupCyber(const logsim::SimulationTask& task) {
@@ -131,8 +116,12 @@ bool SimInitializer::SetupCyber(const logsim::SimulationTask& task) {
   AINFO << "SetupCyber: CYBER_PATH=" << abs_work_root
         << " conf=" << conf_dst;
 
-  cyber::Init("logsim_main");
+  if (!cyber::Init("simulator_main")) {
+    AERROR << "cyber::Init failed";
+    return false;
+  }
   cyber::common::GlobalData::Instance()->EnableSimulationMode();
+  cyber::Clock::SetMode(cyber::proto::MODE_MOCK);
   AINFO << "SetupCyber: cyber::Init done, simulation mode enabled";
   return true;
 }
@@ -154,20 +143,13 @@ bool SimInitializer::Init(const std::string& task_dir, Context* ctx) {
     AERROR << "SetupCyber failed";
     return false;
   }
-  const std::string trigger_path =
-      "simulation/simulator/conf/module_trigger_table.pb.txt";
-  if (!LoadTriggerTable(trigger_path, &ctx->graph)) {
-    AERROR << "LoadTriggerTable failed: " << trigger_path;
-    return false;
-  }
-  AINFO << "trigger table loaded, modules=" << ctx->graph.modules().size();
   if (!Warmup(ctx->task)) {
     ctx->monitor.AddFatal("warmup failed: map or vehicle not configured");
     AERROR << "Warmup failed";
     return false;
   }
 
-  auto node_up = cyber::CreateNode("logsim_main");
+  auto node_up = cyber::CreateNode("simulator_main");
   if (!node_up) {
     AERROR << "CreateNode failed";
     return false;
@@ -196,6 +178,17 @@ bool SimInitializer::Init(const std::string& task_dir, Context* ctx) {
   if (ctx->task.log_end_s() > 0) {
     src_cfg.end_ns = static_cast<uint64_t>(ctx->task.log_end_s() * 1e9);
   }
+  for (const auto& channel : inject_channels) {
+    src_cfg.whitelist.insert(channel);
+  }
+  if (ctx->task.input_kind() == logsim::SimulationTask::WORLD) {
+    src_cfg.type = SourceType::WORLD_SCENARIO;
+    src_cfg.paths = {ctx->task.world_scenario_path()};
+    src_cfg.begin_ns = ctx->task.world_start_ns();
+    src_cfg.step_ms = ctx->task.step_ms();
+    src_cfg.ego_model = ctx->task.ego_model();
+    src_cfg.consumer = &ctx->consumer;
+  }
   AINFO << "opening record source, paths=" << src_cfg.paths.size();
   auto source = MessageSourceFactory::Create(src_cfg);
   if (!source || !source->Open(src_cfg)) {
@@ -208,21 +201,11 @@ bool SimInitializer::Init(const std::string& task_dir, Context* ctx) {
         << " total=" << source->total_messages();
   const uint64_t record_begin_ns = source->begin_ns();
   const uint64_t record_end_ns = source->end_ns();
-
-  SimScheduler::Instance()->Init(&ctx->graph);
-  for (const auto& pair : ctx->graph.modules()) {
-    auto service =
-        std::make_shared<ModuleReplayService>(pair.second.module_name());
-    service->SetSpec(pair.second);
-    SimScheduler::Instance()->RegisterService(pair.first, service);
-  }
-  AINFO << "ModuleReplayService registered";
+  cyber::Clock::SetNow(cyber::Time(record_begin_ns));
 
   EmulatorController::Options ec_opts;
   ec_opts.source = std::move(source);
   ec_opts.consumer = &ctx->consumer;
-  ec_opts.scheduler = SimScheduler::Instance();
-  ec_opts.global_buffer = &ctx->global_buffer;
   ec_opts.channel_policy = ctx->task.channel_policy();
   if (!ctx->controller.Init(ec_opts)) {
     ctx->monitor.AddFatal("emulator controller init failed");
@@ -262,13 +245,14 @@ bool SimInitializer::Init(const std::string& task_dir, Context* ctx) {
                                              record_channels.end());
   if (!ctx->output_recorder.Start(ctx->node, &ctx->result_sink,
                                   recorder_channels)) {
-    AWARN << "OutputChannelRecorder start incomplete; bag may miss channels";
+    AERROR << "OutputChannelRecorder failed; refusing incomplete simulation bag";
+    return false;
   }
 
   SimProgressState ps;
   ps.scenario_id = ctx->task.scenario_id();
-  ps.begin_s = ctx->task.log_start_s();
-  ps.end_s = ctx->task.log_end_s();
+  ps.begin_s = static_cast<double>(record_begin_ns) / 1e9;
+  ps.end_s = static_cast<double>(record_end_ns) / 1e9;
   ctx->progress.Init(ps);
 
   SimEngine::Options eng_opts;
@@ -280,6 +264,7 @@ bool SimInitializer::Init(const std::string& task_dir, Context* ctx) {
   eng_opts.monitor = &ctx->monitor;
   eng_opts.begin_ns = record_begin_ns;
   eng_opts.end_ns = record_end_ns;
+  eng_opts.progress_path = ctx->task.progress_path();
   if (!ctx->engine.Init(eng_opts)) {
     AERROR << "SimEngine::Init failed";
     return false;

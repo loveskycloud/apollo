@@ -7,12 +7,44 @@
 #include "simulation/simulator/scenario_util.h"
 
 #include "gtest/gtest.h"
+#include "gflags/gflags.h"
+#include <unistd.h>
+#include <cstdio>
+#include <fstream>
+#include "modules/common/configs/config_gflags.h"
+#include "simulation/simulator/environment_tools.h"
 
 #include "simulation/simulator/module_catalog.h"
 
 namespace apollo {
 namespace simulation {
 namespace {
+
+TEST(EnvironmentToolsTest, WidthIsReadBeforeMapLoadAndCheckedAfterModules) {
+  google::FlagSaver saved;
+  char path[] = "/tmp/sim-vehicle-width-XXXXXX";
+  const int fd = mkstemp(path);
+  ASSERT_GE(fd, 0);
+  close(fd);
+  {
+    std::ofstream file(path);
+    file << "vehicle_param { width: 0.86 }";
+  }
+  double half = 0.0;
+  ASSERT_TRUE(ReadHalfVehicleWidth(path, &half));
+  EXPECT_DOUBLE_EQ(half, 0.43);
+  ASSERT_TRUE(ApplyMapVehicleFlags("/selected/map", path, half));
+  EXPECT_DOUBLE_EQ(FLAGS_half_vehicle_width, 0.43);
+  EXPECT_TRUE(VerifyMapVehicleFlags("/selected/map", path, half));
+  FLAGS_half_vehicle_width = 1.05;
+  EXPECT_FALSE(VerifyMapVehicleFlags("/selected/map", path, half));
+  {
+    std::ofstream file(path);
+    file << "vehicle_param {}";
+  }
+  EXPECT_FALSE(ReadHalfVehicleWidth(path, &half));
+  std::remove(path);
+}
 
 TEST(ScenarioUtilTest, BuildAndEnable) {
   auto scenario = ScenarioUtil::BuildFromRuntimeModules(

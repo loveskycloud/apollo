@@ -1,0 +1,55 @@
+# GMSL2 IMX390 Camera DAG Configuration
+# This DAG runs all 5 GMSL2 cameras simultaneously
+# Make sure drivers are loaded before starting:
+#   sudo insmod max9295.ko
+#   sudo insmod max9296.ko
+#   sudo insmod sgx-yuv-gmsl2.ko gmsl_mode=0,0,0,0
+
+module_config {
+    module_library : "modules/drivers/camera/libgmsl2_camera_component.so"
+
+    # Camera 0 (CAM0 FAKRA port) - front
+    components {
+      class_name : "GMSL2CameraComponent"
+      config {
+        name : "gmsl2_cam0"
+        config_file_path : "/apollo/modules/drivers/camera/conf/gmsl2_camera_cam0.pb.txt"
+      }
+    }
+
+    # Camera 1 (CAM1 FAKRA port) - left_back
+    components {
+      class_name : "GMSL2CameraComponent"
+      config {
+        name : "gmsl2_cam1"
+        config_file_path : "/apollo/modules/drivers/camera/conf/gmsl2_camera_cam1.pb.txt"
+      }
+    }
+
+    # Camera 2 (CAM2 FAKRA port) - left_front
+    components {
+      class_name : "GMSL2CameraComponent"
+      config {
+        name : "gmsl2_cam2"
+        config_file_path : "/apollo/modules/drivers/camera/conf/gmsl2_camera_cam2.pb.txt"
+      }
+    }
+
+    # Camera 3 (CAM3 FAKRA port) - right_back
+    components {
+      class_name : "GMSL2CameraComponent"
+      config {
+        name : "gmsl2_cam3"
+        config_file_path : "/apollo/modules/drivers/camera/conf/gmsl2_camera_cam3.pb.txt"
+      }
+    }
+
+    # Camera 4 (CAM4 FAKRA port) - right_front
+    components {
+      class_name : "GMSL2CameraComponent"
+      config {
+        name : "gmsl2_cam4"
+        config_file_path : "/apollo/modules/drivers/camera/conf/gmsl2_camera_cam4.pb.txt"
+      }
+    }
+}

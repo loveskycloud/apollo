@@ -49,6 +49,12 @@
         height: 100%;
       }
 
+      /* eframe's transparent IME proxy follows the text caret. It must remain
+         keyboard-focusable without intercepting clicks intended for egui. */
+      #the_canvas_id + input[type="text"][autocapitalize="off"] {
+        pointer-events: none;
+      }
+
       /* Unused legacy header styles kept inert (AD full-bleed). */
       .header {
         display: none;
@@ -207,6 +213,12 @@
         }
       }
 
+      var urlWebGl = new URL(window.location);
+      urlWebGl.searchParams.set("renderer", "webgl");
+
+      var urlWebGpu = new URL(window.location);
+      urlWebGpu.searchParams.set("renderer", "webgpu");
+
       function show_unsupported_browser() {
         show_center_html(`
           <p class="strong">
@@ -224,7 +236,47 @@
         `);
       }
 
-      // On mobile platforms show a warning, but provide a link to try anyways
+      // Do this check before starting the Wasm application. Rerun's WebGL
+      // backend otherwise reports the low-level wgpu error
+      // `canvas.getContext() returned null`, which does not tell the operator
+      // whether the problem is the server or the browser's GPU policy.
+      //
+      // Never probe `#the_canvas_id`: a canvas is permanently associated with
+      // the first graphics context created for it, so probing the application
+      // canvas could itself prevent wgpu from creating its surface.
+      function webgl2_available() {
+        try {
+          const probe = document.createElement("canvas");
+          return probe.getContext("webgl2") !== null;
+        } catch (error) {
+          console.warn("WebGL2 probe failed:", error);
+          return false;
+        }
+      }
+
+      function show_graphics_unavailable() {
+        show_center_html(`
+          <p class="strong">
+            WebGL 2 is unavailable in this browser.
+          </p>
+          <p>
+            Rerun's web viewer needs WebGL 2 or WebGPU; the HTTP service is reachable,
+            but the browser cannot create a graphics canvas.
+          </p>
+          <p>
+            Open this page in Chrome or Edge with hardware acceleration enabled, then
+            restart the browser. If this is a VM, remote desktop session, or container,
+            expose a GPU/WebGL-capable browser session instead.
+          </p>
+          <p>
+            If this browser supports WebGPU, you can also try<br>
+            <a href="${urlWebGpu}">${urlWebGpu}</a>
+          </p>
+        `);
+      }
+
+      // On mobile platforms show a warning, but provide a link to try anyways.
+      // On desktop fail early with an actionable graphics diagnosis.
       if (
         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
           navigator.userAgent,
@@ -250,15 +302,18 @@
           });
       } else if (!has_wasm_simd()) {
         show_unsupported_browser();
+      // Auto-selection falls back to WebGL even when `navigator.gpu` exists
+      // but WebGPU adapter creation later fails. Do not enter that path when
+      // WebGL2 is unavailable: only an explicit `?renderer=webgpu` request
+      // may try WebGPU without a WebGL2 fallback.
+      } else if (
+        !webgl2_available() &&
+        new URLSearchParams(window.location.search).get("renderer") !== "webgpu"
+      ) {
+        show_graphics_unavailable();
       } else {
         load_wasm();
       }
-
-      var urlWebGl = new URL(window.location);
-      urlWebGl.searchParams.set("renderer", "webgl");
-
-      var urlWebGpu = new URL(window.location);
-      urlWebGpu.searchParams.set("renderer", "webgpu");
 
       const forceWgpuBackendInfoParagraph = `
         <p>
@@ -377,8 +432,45 @@
           persist: Option<bool>,
           theme: Option<String>,
         */
+        // AD web_monitor: when the user opens the bare HTTP URL (no ?url=…),
+        // automatically point the viewer at the gRPC proxy on the same host
+        // (or whatever `?grpc_host=` / `?grpc_port=` overrides say). The browser
+        // already knows the correct public host via `location.hostname`, which
+        // is the right answer behind load balancers / reverse proxies — only
+        // override it for unusual topologies.
+        // History/bookmarks can contain ?url=. An empty source must not disable
+        // the host data connection while the HTTP replay APIs keep working.
+        const user_urls = query.getAll("url").map(url => url.trim()).filter(Boolean);
+        let effective_urls = user_urls;
+        if (effective_urls.length === 0) {
+          const grpc_host = query.get("grpc_host") || window.location.hostname;
+          // Port resolution: ?grpc_port= > default 9876.
+          // NOTE: do NOT fall back to window.location.port — that is the HTTP
+          // web-viewer port (9090), not the gRPC proxy port.
+          let grpc_port = query.get("grpc_port");
+          if (grpc_port === null || grpc_port === "") {
+            grpc_port = "9876";
+          }
+          effective_urls = [
+            "rerun+http://" + grpc_host + ":" + grpc_port + "/proxy",
+          ];
+          console.debug(
+            "[web_monitor] default url = " + effective_urls[0] +
+              " (override with ?url=, ?grpc_host=, ?grpc_port=)",
+          );
+        }
+
+        // Local replay must be able to restore its subscription after a source
+        // is closed or the server restarts. Keep the configured proxy separate
+        // from the recording selected by browser history.
+        const configured_proxy = effective_urls.find(url => /^rerun\+https?:\/\/.+\/proxy\/?$/.test(url));
+        const proxy_host = query.get("grpc_host") || window.location.hostname;
+        const proxy_port = query.get("grpc_port") || "9876";
+        window.__web_monitor_proxy_url = configured_proxy ||
+          "rerun+http://" + proxy_host + ":" + proxy_port + "/proxy";
+
         const options = {
-          url: query.getAll("url"),
+          url: effective_urls,
           manifest_url: query.get("manifest_url"),
           render_backend: query.get("renderer"),
           video_decoder: query.get("video_decoder"),

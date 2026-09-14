@@ -18,6 +18,7 @@ bool SimEngine::Init(const Options& opts) {
   monitor_ = opts.monitor;
   begin_ns_ = opts.begin_ns;
   end_ns_ = opts.end_ns;
+  progress_path_ = opts.progress_path;
   return controller_ != nullptr;
 }
 
@@ -34,9 +35,17 @@ int SimEngine::RunAFAP() {
   }
   uint64_t published = 0;
   while (controller_->WaitAndPublishNext(std::chrono::milliseconds(5000))) {
+    if (result_sink_ && !result_sink_->healthy()) {
+      AERROR << "Simulation record write failed";
+      return 1;
+    }
     ++published;
     if (progress_) {
-      progress_->OnEvent(begin_ns_, "publish");
+      progress_->OnEvent(controller_->current_time_ns(),
+                         controller_->current_channel());
+      if (!progress_path_.empty() && (published % 100 == 0)) {
+        progress_->WriteJson(progress_path_);
+      }
     }
     if (monitor_) {
       monitor_->IncInjected();
@@ -46,6 +55,16 @@ int SimEngine::RunAFAP() {
     }
   }
   AINFO << "SimEngine::RunAFAP done, published=" << published;
+  if (!controller_->error().empty()) {
+    AERROR << controller_->error();
+    if (monitor_) {
+      monitor_->AddFatal(controller_->error());
+    }
+    return 1;
+  }
+  if (progress_ && !progress_path_.empty()) {
+    progress_->WriteJson(progress_path_);
+  }
   if (monitor_ && monitor_->HasFatal()) {
     return 1;
   }

@@ -217,7 +217,13 @@ impl App {
 
             LogDataSource::RedapProxy(uri) => {
                 let new_source = LogSource::MessageProxy(uri.clone());
-                if all_sources.any(|source| source.is_same_ignoring_uri_fragments(&new_source)) {
+                // A proxy is a live subscription, not a completed file download.
+                // Cached recordings survive disconnects and must not suppress
+                // reconnecting the transport after a restart or source removal.
+                if active_sources
+                    .iter()
+                    .any(|source| source.is_same_ignoring_uri_fragments(&new_source))
+                {
                     drop(all_sources);
                     self.try_make_recording_from_source_active(egui_ctx, store_hub, &new_source);
                     return;

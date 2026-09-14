@@ -28,6 +28,7 @@ class SimEngine {
     SimMonitor* monitor = nullptr;
     uint64_t begin_ns = 0;
     uint64_t end_ns = 0;
+    std::string progress_path;
   };
 
   bool Init(const Options& opts);
@@ -42,6 +43,7 @@ class SimEngine {
   SimMonitor* monitor_ = nullptr;
   uint64_t begin_ns_ = 0;
   uint64_t end_ns_ = 0;
+  std::string progress_path_;
 };
 
 }  // namespace simulation

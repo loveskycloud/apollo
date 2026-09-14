@@ -1,0 +1,15 @@
+total_time: 7.0
+boundary_buffer: 0.25
+max_centric_acceleration_limit: 4.0
+point_extension: 0.0
+lowest_speed: 0.1
+static_obs_nudge_speed_ratio: 0.6
+dynamic_obs_nudge_speed_ratio: 0.8
+enable_nudge_slowdown: true
+lane_change_obstacle_nudge_l_buffer: 0.3
+max_trajectory_len: 1000.0
+# Apollo10 unsupported: static_obstacle_st_l_buffer: 0.1
+# Apollo10 unsupported: nonstatic_obstacle_st_l_buffer: 0.4
+# Apollo10 unsupported: offroad_unknown_obstacle_st_l_buffer: 0.0
+# Apollo10 unsupported: offroad_unknown_movable_obstacle_st_l_buffer: 0.15
+# Apollo10 unsupported: clear_offroad_st_l_distance: 0.2

@@ -79,6 +79,26 @@ struct Points3DCpu {
     sort_order_caches: Mutex<Vec<SortOrderCache>>,
 }
 
+// Fixed sensor-Z bands, not per-frame normalization. Explicit point colors win.
+fn lidar_height_color(z: f32) -> egui::Color32 {
+    let stops = [
+        (0.0, [255.0, 216.0, 64.0]),
+        (2.0, [255.0, 145.0, 48.0]),
+        (5.0, [240.0, 84.0, 114.0]),
+        (10.0, [175.0, 130.0, 255.0]),
+    ];
+    for pair in stops.windows(2) {
+        if z <= pair[1].0 {
+            let t = ((z - pair[0].0) / (pair[1].0 - pair[0].0)).clamp(0.0, 1.0);
+            let c = std::array::from_fn::<_, 3, _>(|i| {
+                (pair[0].1[i] + t * (pair[1].1[i] - pair[0].1[i])) as u8
+            });
+            return egui::Color32::from_rgb(c[0], c[1], c[2]);
+        }
+    }
+    egui::Color32::from_rgb(175, 130, 255)
+}
+
 impl Points3DCpu {
     fn compute(
         ctx: &QueryContext<'_>,
@@ -119,13 +139,17 @@ impl Points3DCpu {
             data.radii,
             Points3D::descriptor_radii().component,
         );
-        let colors = process_color_slice(
-            ctx,
-            Points3D::descriptor_colors().component,
-            num_instances,
-            &annotation_infos,
-            data.colors,
-        );
+        let colors = if data.colors.is_empty() && entity_path.to_string().starts_with("/lidar/") {
+            positions.iter().map(|p| lidar_height_color(p.z)).collect()
+        } else {
+            process_color_slice(
+                ctx,
+                Points3D::descriptor_colors().component,
+                num_instances,
+                &annotation_infos,
+                data.colors,
+            )
+        };
 
         let position_radii = PositionRadius::from_many(positions, &radii);
 

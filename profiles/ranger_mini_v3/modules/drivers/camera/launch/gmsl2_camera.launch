@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<apollo>
+    <comment>
+        GMSL2 IMX390 Camera Launch
+        Loads all 5 GMSL2 cameras via DAG
+        Make sure drivers are loaded before starting
+    </comment>
+    <module name="gmsl2_camera">
+        <dagconf>/apollo/modules/drivers/camera/dag/gmsl2_camera.dag</dagconf>
+    </module>
+</apollo>

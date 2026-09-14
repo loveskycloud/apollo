@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<apollo>
+    <comment>
+        GMSL2 IMX390 Camera - Single Camera Launch
+        Use for testing a single camera
+    </comment>
+    <module name="gmsl2_camera_single">
+        <dagconf>/apollo/modules/drivers/camera/dag/gmsl2_camera_single.dag</dagconf>
+    </module>
+</apollo>

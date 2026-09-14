@@ -460,6 +460,235 @@ impl WebHandle {
         Some(recording.store_id().recording_id().to_string())
     }
 
+    /// Read-only diagnostics for paused-frame and buffering verification.
+    /// Uses the same LatestAt query and positions component as Points3D rendering.
+    #[wasm_bindgen]
+    pub fn get_point_cloud_state(&self, entity_path: &str) -> Result<JsValue, JsValue> {
+        let app = self
+            .runner
+            .app_mut::<crate::App>()
+            .ok_or_else(|| JsValue::from_str("Viewer is not running"))?;
+        let store_id = app
+            .active_recording_id()
+            .ok_or_else(|| JsValue::from_str("No active recording"))?;
+        let db = app
+            .store_hub
+            .as_ref()
+            .and_then(|hub| hub.entity_db(store_id))
+            .ok_or_else(|| JsValue::from_str("Recording unavailable"))?;
+        let tc = app
+            .state
+            .time_control(store_id)
+            .ok_or_else(|| JsValue::from_str("No playback clock"))?;
+        let time = tc
+            .time_int()
+            .ok_or_else(|| JsValue::from_str("No playhead"))?;
+        let query = re_chunk_store::LatestAtQuery::new(*tc.timeline_name(), time);
+        let component = re_sdk_types::archetypes::Points3D::descriptor_positions().component;
+        let result = db.latest_at(
+            &query,
+            &re_log_types::EntityPath::from(entity_path),
+            [component],
+        );
+        let positions = result.component_batch_raw(component);
+        let cached = app
+            .egui_ctx
+            .data(|d| d.get_temp::<Vec<(i64, i64)>>(egui::Id::new("web_monitor_cached_ranges_ns")))
+            .unwrap_or_default();
+        let value = serde_json::json!({
+            "timeline": tc.timeline_name().as_str(),
+            "playhead_ns": time.as_i64().to_string(),
+            "sample_ns": positions.as_ref().map(|_| result.max_index().0.as_i64().to_string()),
+            "points": positions.as_ref().map_or(0, |p| p.len()),
+            "cached_ranges_ns": cached.iter().map(|(b,e)| [b.to_string(),e.to_string()]).collect::<Vec<_>>(),
+        });
+        js_sys::JSON::parse(&value.to_string())
+    }
+
+    /// Read-only state for end-to-end debug-panel acceptance tests.
+    #[wasm_bindgen]
+    pub fn get_ad_scene_state(&self) -> Result<JsValue, JsValue> {
+        let app = self
+            .runner
+            .app_mut::<crate::App>()
+            .ok_or_else(|| JsValue::from_str("Viewer unavailable"))?;
+        let store = app
+            .active_recording_id()
+            .ok_or_else(|| JsValue::from_str("No recording"))?;
+        let db = app
+            .store_hub
+            .as_ref()
+            .and_then(|h| h.entity_db(store))
+            .ok_or_else(|| JsValue::from_str("No database"))?;
+        let tc = app
+            .state
+            .time_control(store)
+            .ok_or_else(|| JsValue::from_str("No clock"))?;
+        let time = tc
+            .time_int()
+            .ok_or_else(|| JsValue::from_str("No playhead"))?;
+        let query = re_chunk_store::LatestAtQuery::new(*tc.timeline_name(), time);
+        use re_sdk_types::archetypes::{Asset3D, InstancePoses3D, LineStrips3D, Mesh3D};
+        let mut value = serde_json::json!({
+            "playhead_ns":time.as_i64().to_string(),
+            "clock": tc.timeline_name().as_str(),
+            "playback_speed": tc.speed(),
+            "timelines": db.timelines().keys().map(|t| t.as_str()).collect::<Vec<_>>(),
+        });
+        for (name, path, component) in [
+            (
+                "ego_model",
+                "/vehicle",
+                Asset3D::descriptor_blob().component,
+            ),
+            (
+                "ego_pose",
+                "/vehicle",
+                InstancePoses3D::descriptor_translations().component,
+            ),
+            (
+                "planned_path",
+                "/planning/trajectory",
+                LineStrips3D::descriptor_strips().component,
+            ),
+        ] {
+            let result = db.latest_at(&query, &path.into(), [component]);
+            let batch = result.component_batch_raw(component);
+            value[name] = serde_json::json!({"count":batch.as_ref().map_or(0, |a| a.len()), "sample_ns":batch.map(|_|result.max_index().0.as_i64().to_string())});
+            if name == "ego_pose" {
+                value[name]["translation"] = serde_json::json!(
+                    result
+                        .component_mono::<re_sdk_types::components::Translation3D>(component)
+                        .map(|p| p.0.0)
+                );
+            }
+            if name == "planned_path"
+                && let Some(strip) =
+                    result.component_mono::<re_sdk_types::components::LineStrip3D>(component)
+            {
+                value[name]["point_count"] = serde_json::json!(strip.0.len());
+                value[name]["first"] = serde_json::json!(strip.0.first().map(|p| p.0));
+                value[name]["last"] = serde_json::json!(strip.0.last().map(|p| p.0));
+            }
+        }
+        value["layout"] = app
+            .egui_ctx
+            .data(|d| d.get_temp::<serde_json::Value>(egui::Id::new("ad_layout_state")))
+            .unwrap_or_default();
+        for layer in ["road_surface", "lane_boundaries", "lane_centerlines"] {
+            let component = Mesh3D::descriptor_vertex_positions().component;
+            let result = db.latest_at(
+                &query,
+                &format!("/hdmap/{layer}").as_str().into(),
+                [component],
+            );
+            value["map"][layer] = serde_json::json!({
+                "vertices":result.component_batch_raw(component).map_or(0, |b|b.len()),
+                "static":result.max_index().0 == re_log_types::TimeInt::STATIC,
+                "first":result.component_batch::<re_sdk_types::components::Position3D>(component).and_then(|p|p.first().map(|p|p.0.0)),
+            });
+        }
+        js_sys::JSON::parse(&value.to_string())
+    }
+
+    /// Read-only diagnostics for host replay connection and initialization.
+    #[wasm_bindgen]
+    pub fn get_playback_state(&self) -> Result<JsValue, JsValue> {
+        let app = self
+            .runner
+            .app_mut::<crate::App>()
+            .ok_or_else(|| JsValue::from_str("Viewer unavailable"))?;
+        let mut value = app
+            .egui_ctx
+            .data(|d| d.get_temp::<serde_json::Value>(egui::Id::new("ad_playback_state")))
+            .unwrap_or(serde_json::Value::Null);
+        if let Some(pos) = app
+            .egui_ctx
+            .data(|d| d.get_temp::<egui::Pos2>(egui::Id::new("ad_playback_retry")))
+        {
+            value["retry"] = serde_json::json!([pos.x, pos.y]);
+        }
+        if let Some(rects) = app.egui_ctx.data(|d| {
+            d.get_temp::<std::collections::BTreeMap<String, [f32; 4]>>(egui::Id::new(
+                "ad_media_bar_rects",
+            ))
+        }) {
+            value["media_bar"] = serde_json::json!(rects);
+        }
+        if let Some((text, error, editing)) = app
+            .egui_ctx
+            .data(|d| d.get_temp::<(String, String, bool)>(egui::Id::new("ad_media_timestamp")))
+        {
+            value["media_timestamp"] =
+                serde_json::json!({"text":text,"error":error,"editing":editing});
+        }
+        if let Some(source_ui) = app
+            .egui_ctx
+            .data(|d| d.get_temp::<serde_json::Value>(egui::Id::new("ad_source_ui")))
+        {
+            value["source_ui"] = source_ui;
+        }
+        js_sys::JSON::parse(&value.to_string())
+    }
+
+    /// Read-only state for end-to-end debug-panel acceptance tests.
+    #[wasm_bindgen]
+    pub fn get_debug_panels_state(&self) -> Result<JsValue, JsValue> {
+        let app = self
+            .runner
+            .app_mut::<crate::App>()
+            .ok_or_else(|| JsValue::from_str("Viewer is not running"))?;
+        let state = app
+            .egui_ctx
+            .data(|d| d.get_temp::<serde_json::Value>(egui::Id::new("ad_debug_panel_state")))
+            .unwrap_or_else(|| serde_json::json!([]));
+        js_sys::JSON::parse(&state.to_string())
+    }
+
+    /// Read-only display-layer state and checkbox geometry for browser verification.
+    #[wasm_bindgen]
+    pub fn get_display_layers_state(&self) -> Result<JsValue, JsValue> {
+        let app = self
+            .runner
+            .app_mut::<crate::App>()
+            .ok_or_else(|| JsValue::from_str("Viewer is not running"))?;
+        let state = app
+            .egui_ctx
+            .data(|d| d.get_temp::<serde_json::Value>(egui::Id::new("ad_layer_state")))
+            .unwrap_or_else(|| serde_json::json!({}));
+        js_sys::JSON::parse(&state.to_string())
+    }
+
+    /// Read-only rendered HUD data, pane geometry and camera state for browser tests.
+    #[wasm_bindgen]
+    pub fn get_vehicle_dashboard_state(&self) -> Result<JsValue, JsValue> {
+        let app = self
+            .runner
+            .app_mut::<crate::App>()
+            .ok_or_else(|| JsValue::from_str("Viewer is not running"))?;
+        let value = app.egui_ctx.data(|d| {
+            serde_json::json!({
+                "data":d.get_temp::<serde_json::Value>(egui::Id::new("ad_dashboard_data")),
+                "views":d.get_temp::<serde_json::Value>(egui::Id::new("ad_dashboard_views"))
+            })
+        });
+        js_sys::JSON::parse(&value.to_string())
+    }
+
+    #[wasm_bindgen]
+    pub fn get_simulation_state(&self) -> Result<JsValue, JsValue> {
+        let app = self
+            .runner
+            .app_mut::<crate::App>()
+            .ok_or_else(|| JsValue::from_str("Viewer is not running"))?;
+        let value = app
+            .egui_ctx
+            .data(|d| d.get_temp::<serde_json::Value>(egui::Id::new("ad_sim_diagnostic")));
+        js_sys::JSON::parse(
+            &serde_json::to_string(&value).map_err(|e| JsValue::from_str(&e.to_string()))?,
+        )
+    }
+
     //TODO(#10737): we should refer to logical recordings using store id (recording id is ambiguous)
     #[wasm_bindgen]
     pub fn set_active_recording_id(&self, recording_id: &str) {

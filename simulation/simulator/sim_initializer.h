@@ -10,7 +10,6 @@
 
 #include "cyber/node/node.h"
 #include "simulation/logsim/proto/simulation_task.pb.h"
-#include "simulation/simulator/computational_graph.h"
 #include "simulation/simulator/emulator_controller.h"
 #include "simulation/simulator/message_consumer.h"
 #include "simulation/simulator/output_channel_recorder.h"
@@ -27,8 +26,6 @@ class SimInitializer {
   struct Context {
     logsim::SimulationTask task;
     std::shared_ptr<cyber::Node> node;
-    ComputationalGraph graph;
-    MessageBuffer global_buffer;
     MessageConsumer consumer;
     EmulatorController controller;
     FabricatedMessageQueue fabricated;
@@ -45,7 +42,6 @@ class SimInitializer {
 
  private:
   bool LoadTask(const std::string& task_dir, logsim::SimulationTask* task);
-  bool LoadTriggerTable(const std::string& path, ComputationalGraph* graph);
   bool SetupCyber(const logsim::SimulationTask& task);
   bool Warmup(const logsim::SimulationTask& task);
 };

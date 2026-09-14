@@ -1422,8 +1422,7 @@ fn serve_web(
 
     // Keepalive so the gRPC forwarder thread never exits when the initial set is empty /
     // after a file finishes streaming — we need it alive for later `/api/open_local` opens.
-    let (_keepalive_tx, keepalive_rx) =
-        re_log_channel::log_channel(re_log_channel::LogSource::Sdk);
+    let (_keepalive_tx, keepalive_rx) = re_log_channel::log_channel(re_log_channel::LogSource::Sdk);
     // Leak the sender so the channel never closes for the lifetime of the process.
     std::mem::forget(_keepalive_tx);
     receive_set.add(keepalive_rx);
@@ -1460,12 +1459,14 @@ fn serve_web(
     urls_to_pass_on_to_viewer.push(proxy_url);
 
     let mcap_topic_cache = std::sync::Arc::new(parking_lot::Mutex::new(McapTopicCache::default()));
+    let open_local_dedup = std::sync::Arc::new(parking_lot::Mutex::new(OpenLocalDedup::default()));
 
     let open_local: re_web_viewer_server::OpenLocalHandler = {
         let receive_set = std::sync::Arc::clone(&receive_set);
         let async_runtime = async_runtime.clone();
         let connection_registry = connection_registry.clone();
         let topic_cache = std::sync::Arc::clone(&mcap_topic_cache);
+        let dedup = std::sync::Arc::clone(&open_local_dedup);
         std::sync::Arc::new(move |path: &str| -> Result<(), String> {
             open_local_path_into_receive_set(
                 path,
@@ -1473,6 +1474,7 @@ fn serve_web(
                 async_runtime.clone(),
                 connection_registry.clone(),
                 Some(std::sync::Arc::clone(&topic_cache)),
+                Some(std::sync::Arc::clone(&dedup)),
             )
         })
     };
@@ -1493,9 +1495,39 @@ fn serve_web(
     let convert_mgr = convert_record::ConvertManager::new();
     {
         let mgr = std::sync::Arc::clone(&convert_mgr);
-        web_server.set_convert_record_handler(std::sync::Arc::new(move |path: &str| {
-            let pb = resolve_record_path(path)?;
-            mgr.start_or_cached(pb)
+        web_server.set_convert_record_handler(std::sync::Arc::new(move |body: &str| {
+            let (path, map) = if body.starts_with('{') {
+                let request: serde_json::Value =
+                    serde_json::from_str(body).map_err(|e| e.to_string())?;
+                let path = request["path"]
+                    .as_str()
+                    .ok_or("Missing record path")?
+                    .to_owned();
+                let map = request["map"]
+                    .as_str()
+                    .filter(|m| !m.trim().is_empty())
+                    .map(str::to_owned);
+                (path, map)
+            } else {
+                (body.to_owned(), None)
+            };
+            let pb = resolve_record_path(&path)?;
+            let map = map
+                .map(|m| {
+                    let path =
+                        rewrite_apollo_workspace_aliases(&std::path::PathBuf::from(m.trim()));
+                    let path = path
+                        .canonicalize()
+                        .map_err(|e| format!("HD map path: {e}"))?;
+                    if std::env::var_os("WEB_MONITOR_OPEN_ROOTS").is_some()
+                        && !open_local_roots().iter().any(|r| path.starts_with(r))
+                    {
+                        return Err("HD map is outside WEB_MONITOR_OPEN_ROOTS".to_owned());
+                    }
+                    Ok(path)
+                })
+                .transpose()?;
+            mgr.start_or_cached(pb, map)
         }));
     }
     {
@@ -1506,14 +1538,19 @@ fn serve_web(
     }
     {
         let topic_cache = std::sync::Arc::clone(&mcap_topic_cache);
-        web_server.set_mcap_topics_handler(std::sync::Arc::new(move |path: Option<&str>| {
-            match path {
+        web_server.set_mcap_topics_handler(std::sync::Arc::new(
+            move |path: Option<&str>| match path {
                 None => {
                     let cache = topic_cache.lock().clone();
                     if cache.path.is_empty() {
                         Err("no MCAP topics cached yet — open an .mcap first".into())
                     } else {
-                        Ok(mcap_topics_json(&cache.path, &cache.topics))
+                        Ok(mcap_topics_json(
+                            &cache.path,
+                            &cache.topics,
+                            cache.begin_ns,
+                            cache.end_ns,
+                        ))
                     }
                 }
                 Some(p) => {
@@ -1528,7 +1565,7 @@ fn serve_web(
                     }
                     #[cfg(feature = "importers")]
                     {
-                        let topics = list_mcap_summary_topics(&pb)?;
+                        let (topics, begin_ns, end_ns) = list_mcap_summary_meta(&pb)?;
                         let path_s = pb.display().to_string();
                         re_log::info!(
                             "web_monitor mcap_topics: {} channels from {}",
@@ -1538,8 +1575,15 @@ fn serve_web(
                         *topic_cache.lock() = McapTopicCache {
                             path: path_s.clone(),
                             topics: topics.clone(),
+                            begin_ns,
+                            end_ns,
                         };
-                        Ok(mcap_topics_json(&path_s, &topics))
+                        let mut response: serde_json::Value = serde_json::from_str(
+                            &mcap_topics_json(&path_s, &topics, begin_ns, end_ns),
+                        )
+                        .map_err(|e| e.to_string())?;
+                        response["source"] = playback_source_descriptor(&pb, &topics)?;
+                        Ok(response.to_string())
                     }
                     #[cfg(not(feature = "importers"))]
                     {
@@ -1547,8 +1591,76 @@ fn serve_web(
                         Err("importers feature required for mcap_topics".into())
                     }
                 }
+            },
+        ));
+    }
+    {
+        let sim_worker = parking_lot::Mutex::new(None::<super::debug_query::DebugWorker>);
+        web_server.set_simulation_handler(std::sync::Arc::new(move |body: &str| {
+            let request: serde_json::Value = serde_json::from_str(body)
+                .map_err(|e| format!("Invalid simulation request: {e}"))?;
+            let mut worker = sim_worker.lock();
+            if worker.is_none() {
+                let script = std::env::var("WEB_MONITOR_SIM_SERVICE").unwrap_or_else(|_| {
+                    "/apollo_workspace/simulation/simulator/task_service.py".into()
+                });
+                *worker = Some(super::debug_query::DebugWorker::start_script(&script)?);
             }
+            let result = worker
+                .as_mut()
+                .ok_or("Simulation service unavailable")?
+                .query(&request);
+            if result.is_err() {
+                *worker = None;
+            }
+            result
         }));
+        web_server.set_topic_debug_handler(std::sync::Arc::new(
+            move |mcap: &str, topic: &str, at_ns: Option<i64>| topic_debug_json(mcap, topic, at_ns),
+        ));
+        let worker = parking_lot::Mutex::new(None::<super::debug_query::DebugWorker>);
+        web_server.set_debug_query_handler(std::sync::Arc::new(move |body: &str| {
+            let mut request: serde_json::Value =
+                serde_json::from_str(body).map_err(|e| format!("Invalid debug query JSON: {e}"))?;
+            let path = request["mcap"].as_str().ok_or("Missing mcap path")?;
+            let path = resolve_open_local_path(path)?;
+            if path.extension().and_then(|e| e.to_str()) != Some("mcap") || !path.is_file() {
+                return Err("Debug queries require an existing MCAP file".into());
+            }
+            request["mcap"] = path.to_string_lossy().to_string().into();
+            let mut guard = worker.lock();
+            if guard.is_none() {
+                *guard = Some(super::debug_query::DebugWorker::start()?);
+            }
+            let result = guard
+                .as_mut()
+                .ok_or("Debug worker unavailable")?
+                .query(&request);
+            if result.is_err() {
+                *guard = None; // kill failed worker; report error, no silent retry
+            }
+            result
+        }));
+    }
+    {
+        let receive_set = std::sync::Arc::clone(&receive_set);
+        let session = std::sync::Arc::new(parking_lot::Mutex::new(std::collections::HashMap::<
+            String,
+            PlaybackSession,
+        >::new()));
+        web_server.set_playback_window_handler(std::sync::Arc::new(
+            move |mcap: &str, begin_ns: u64, end_ns: u64, reset: bool, topics: &[String]| {
+                playback_window_into_receive_set(
+                    mcap,
+                    begin_ns,
+                    end_ns,
+                    reset,
+                    topics,
+                    std::sync::Arc::clone(&receive_set),
+                    std::sync::Arc::clone(&session),
+                )
+            },
+        ));
     }
 
     web_server.block();
@@ -1562,13 +1674,74 @@ fn serve_web(
 struct McapTopicCache {
     path: String,
     topics: Vec<String>,
+    begin_ns: Option<u64>,
+    end_ns: Option<u64>,
 }
 
-/// Read channel topics from the MCAP summary only (no message decode).
+/// Stable recording identity across successive `/api/playback_window` imports.
+#[cfg(all(feature = "server", feature = "web_viewer"))]
+#[derive(Default)]
+struct PlaybackSession {
+    identity: Option<(String, String)>,
+    recording_id: Option<re_log_types::RecordingId>,
+    /// True while a window import thread is still running.
+    in_flight: bool,
+    coverage: super::playback_cache::PlaybackCoverage,
+}
+
+#[cfg(all(feature = "server", feature = "web_viewer"))]
+fn playback_source_descriptor(
+    path: &std::path::Path,
+    topics: &[String],
+) -> Result<serde_json::Value, String> {
+    let meta = std::fs::metadata(path).map_err(|e| format!("Recording source stat failed: {e}"))?;
+    let modified = meta
+        .modified()
+        .map_err(|e| e.to_string())?
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| e.to_string())?
+        .as_nanos();
+    Ok(
+        serde_json::json!({"version":1,"path":path.display().to_string(),"size":meta.len().to_string(),"modified_ns":modified.to_string(),"topics":topics}),
+    )
+}
+
+/// Deduplicate consecutive `/api/open_local` calls for the same resolved path.
+///
+/// Importing the same MCAP twice attaches two full streams to the proxy and can
+/// deadlock the browser behind gRPC backpressure. Opening a different path resets
+/// the guard, so A → B → A remains possible.
+#[cfg(all(feature = "server", feature = "web_viewer"))]
+#[derive(Default)]
+struct OpenLocalDedup {
+    last_path: String,
+}
+
+#[cfg(all(feature = "server", feature = "web_viewer"))]
+impl OpenLocalDedup {
+    /// Returns true if this is the same path as the previous accepted open.
+    fn should_skip(&mut self, path: &str) -> bool {
+        if self.last_path == path {
+            return true;
+        }
+        self.last_path = path.to_owned();
+        false
+    }
+
+    fn clear_if(&mut self, path: &str) {
+        if self.last_path == path {
+            self.last_path.clear();
+        }
+    }
+}
+
+/// Read channel topics + message time bounds from the MCAP summary (no message decode).
 #[cfg(all(feature = "server", feature = "web_viewer", feature = "importers"))]
-fn list_mcap_summary_topics(path: &std::path::Path) -> Result<Vec<String>, String> {
-    let file = std::fs::File::open(path)
-        .map_err(|err| format!("open {}: {err}", path.display()))?;
+fn list_mcap_summary_meta(
+    path: &std::path::Path,
+) -> Result<(Vec<String>, Option<u64>, Option<u64>), String> {
+    let file =
+        std::fs::File::open(path).map_err(|err| format!("open {}: {err}", path.display()))?;
     let summary = re_mcap::read_summary(file)
         .map_err(|err| format!("mcap summary {}: {err}", path.display()))?
         .ok_or_else(|| format!("no MCAP summary in {}", path.display()))?;
@@ -1579,15 +1752,53 @@ fn list_mcap_summary_topics(path: &std::path::Path) -> Result<Vec<String>, Strin
         .collect();
     topics.sort();
     topics.dedup();
-    Ok(topics)
+
+    let (begin_ns, end_ns) = if let Some(stats) = summary.stats.as_ref() {
+        if stats.message_count > 0 {
+            (Some(stats.message_start_time), Some(stats.message_end_time))
+        } else {
+            (None, None)
+        }
+    } else if summary.chunk_indexes.is_empty() {
+        (None, None)
+    } else {
+        let start = summary
+            .chunk_indexes
+            .iter()
+            .map(|c| c.message_start_time)
+            .min();
+        let end = summary
+            .chunk_indexes
+            .iter()
+            .map(|c| c.message_end_time)
+            .max();
+        (start, end)
+    };
+
+    Ok((topics, begin_ns, end_ns))
 }
 
 #[cfg(all(feature = "server", feature = "web_viewer"))]
-fn mcap_topics_json(path: &str, topics: &[String]) -> String {
+fn mcap_topics_json(
+    path: &str,
+    topics: &[String],
+    begin_ns: Option<u64>,
+    end_ns: Option<u64>,
+) -> String {
     let mut body = String::from("{\"path\":");
     body.push_str(&json_string(path));
     body.push_str(",\"count\":");
     body.push_str(&topics.len().to_string());
+    body.push_str(",\"begin_ns\":");
+    match begin_ns {
+        Some(v) => body.push_str(&v.to_string()),
+        None => body.push_str("null"),
+    }
+    body.push_str(",\"end_ns\":");
+    match end_ns {
+        Some(v) => body.push_str(&v.to_string()),
+        None => body.push_str("null"),
+    }
     body.push_str(",\"topics\":[");
     for (i, t) in topics.iter().enumerate() {
         if i > 0 {
@@ -1597,6 +1808,78 @@ fn mcap_topics_json(path: &str, topics: &[String]) -> String {
     }
     body.push_str("]}");
     body
+}
+
+/// Dreamview-style on-demand DebugString via host Python (fail loud, no UI freeze).
+#[cfg(all(feature = "server", feature = "web_viewer"))]
+fn topic_debug_json(mcap: &str, topic: &str, at_ns: Option<i64>) -> Result<String, String> {
+    let pb = resolve_open_local_path(mcap)?;
+    let ext = pb
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    if ext != "mcap" {
+        return Err(format!("topic_debug expects .mcap, got .{ext}"));
+    }
+    if !pb.is_file() {
+        return Err(format!("mcap not found: {}", pb.display()));
+    }
+
+    let script = if let Ok(p) = std::env::var("WEB_MONITOR_TOPIC_DEBUG") {
+        std::path::PathBuf::from(p)
+    } else {
+        std::path::PathBuf::from("/apollo_workspace/tools/apollo_record_tools/mcap_topic_debug.py")
+    };
+    if !script.is_file() {
+        return Err(format!(
+            "topic_debug script missing: {} (set WEB_MONITOR_TOPIC_DEBUG)",
+            script.display()
+        ));
+    }
+
+    let mut cmd = std::process::Command::new("python3");
+    cmd.env("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python")
+        .env(
+            "PYTHONPATH",
+            std::env::var("PYTHONPATH").unwrap_or_else(|_| "/opt/apollo/neo/python".into()),
+        )
+        .arg(&script)
+        .arg("--mcap")
+        .arg(&pb)
+        .arg("--topic")
+        .arg(topic);
+    if let Some(ns) = at_ns {
+        cmd.arg("--at-ns").arg(ns.to_string());
+    }
+
+    let out = cmd
+        .output()
+        .map_err(|e| format!("failed to spawn topic_debug: {e}"))?;
+    let stdout = String::from_utf8_lossy(&out.stdout).trim().to_owned();
+    let stderr = String::from_utf8_lossy(&out.stderr).trim().to_owned();
+    if stdout.is_empty() {
+        return Err(if stderr.is_empty() {
+            format!(
+                "topic_debug produced no output (exit {:?})",
+                out.status.code()
+            )
+        } else {
+            format!("topic_debug failed: {stderr}")
+        });
+    }
+    // Script always prints JSON; non-zero exit still carries {"status":"error",...}.
+    if !out.status.success() {
+        // Prefer structured JSON error from the script.
+        if stdout.contains("\"status\"") {
+            return Ok(stdout);
+        }
+        return Err(format!(
+            "topic_debug exit {:?}: {stdout} {stderr}",
+            out.status.code()
+        ));
+    }
+    Ok(stdout)
 }
 
 #[cfg(all(feature = "server", feature = "web_viewer"))]
@@ -1618,7 +1901,6 @@ fn json_string(s: &str) -> String {
     out
 }
 
-
 /// Native-read a host `.rrd` / `.rbl` / `.mcap` and attach its log stream to the gRPC proxy.
 ///
 /// Validation is synchronous; the actual import runs on a background thread so the HTTP
@@ -1631,6 +1913,7 @@ fn open_local_path_into_receive_set(
     async_runtime: re_async::AsyncRuntimeHandle,
     connection_registry: re_redap_client::ConnectionRegistryHandle,
     topic_cache: Option<std::sync::Arc<parking_lot::Mutex<McapTopicCache>>>,
+    open_dedup: Option<std::sync::Arc<parking_lot::Mutex<OpenLocalDedup>>>,
 ) -> Result<(), String> {
     let path = path.trim().trim_matches('"');
     if path.is_empty() {
@@ -1655,30 +1938,67 @@ fn open_local_path_into_receive_set(
 
     let path_owned = pb.display().to_string();
 
+    if let Some(dedup) = open_dedup.as_ref() {
+        if dedup.lock().should_skip(&path_owned) {
+            re_log::info!("web_monitor open_local: skip consecutive duplicate open ({path_owned})");
+            return Ok(());
+        }
+    }
+
     // Cache MCAP channel topics from the file summary (header) before streaming.
     if ext == "mcap" {
         #[cfg(feature = "importers")]
         if let Some(cache) = topic_cache.as_ref() {
-            match list_mcap_summary_topics(&pb) {
-                Ok(topics) => {
-                    re_log::info!(
-                        "web_monitor open_local: cached {} MCAP topics from summary ({path_owned})",
-                        topics.len()
-                    );
+            let topics = match list_mcap_summary_meta(&pb) {
+                Ok((topics, begin_ns, end_ns)) => {
                     *cache.lock() = McapTopicCache {
                         path: path_owned.clone(),
-                        topics,
+                        topics: topics.clone(),
+                        begin_ns,
+                        end_ns,
                     };
+                    topics
                 }
                 Err(err) => {
-                    re_log::warn!("web_monitor open_local: MCAP topic cache failed: {err}");
+                    if let Some(dedup) = open_dedup.as_ref() {
+                        dedup.lock().clear_if(&path_owned);
+                    }
+                    return Err(format!(
+                        "MCAP summary validation failed for {path_owned}: {err}"
+                    ));
                 }
-            }
+            };
+            re_log::info!(
+                "web_monitor open_local: cached {} MCAP topics from summary ({path_owned})",
+                topics.len()
+            );
         }
         #[cfg(not(feature = "importers"))]
         let _ = topic_cache;
     }
-    std::thread::Builder::new()
+    // Drop any previously attached host file streams before starting a new one.
+    // Stacked MCAP imports fill the gRPC proxy and freeze playback ("Sender blocked").
+    let dropped = {
+        let mut n = 0usize;
+        receive_set.retain(|r| match r.source() {
+            re_log_channel::LogSource::File { .. } => {
+                n += 1;
+                false
+            }
+            _ => true,
+        });
+        n
+    };
+    if dropped > 0 {
+        re_log::info!(
+            "web_monitor open_local: dropped {dropped} prior file stream(s) before {path_owned}"
+        );
+    }
+
+    let dedup_for_thread = open_dedup.clone();
+    let path_for_thread_release = path_owned.clone();
+    let path_for_spawn_failure = path_owned.clone();
+    let spawn_result = std::thread::Builder::new()
         .name(format!(
             "open_local({})",
             pb.file_name().and_then(|s| s.to_str()).unwrap_or("file")
@@ -1698,12 +2018,356 @@ fn open_local_path_into_receive_set(
                 }
                 Err(err) => {
                     re_log::error!("web_monitor open_local failed for {path_owned}: {err}");
+                    if let Some(dedup) = dedup_for_thread.as_ref() {
+                        dedup.lock().clear_if(&path_for_thread_release);
+                    }
                 }
             }
-        })
-        .map_err(|err| format!("failed to spawn open_local thread: {err}"))?;
+        });
+    if let Err(err) = spawn_result {
+        if let Some(dedup) = open_dedup.as_ref() {
+            dedup.lock().clear_if(&path_for_spawn_failure);
+        }
+        return Err(format!("failed to spawn open_local thread: {err}"));
+    }
 
     Ok(())
+}
+
+/// Escape a topic name so TopicFilter include patterns match it exactly.
+#[cfg(all(feature = "server", feature = "web_viewer", feature = "importers"))]
+fn regex_escape_literal(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() * 2);
+    for c in s.chars() {
+        if matches!(
+            c,
+            '\\' | '.' | '+' | '*' | '?' | '(' | ')' | '[' | ']' | '{' | '}' | '|' | '^' | '$'
+        ) {
+            out.push('\\');
+        }
+        out.push(c);
+    }
+    out
+}
+
+/// Native-read a filtered MCAP time window and attach it to the gRPC proxy.
+///
+/// Uses the same `RecordingId` for successive windows of the same path so chunks merge
+/// into one recording. `reset=true` drops prior File streams and starts a new recording.
+#[cfg(all(feature = "server", feature = "web_viewer"))]
+fn playback_window_into_receive_set(
+    path: &str,
+    begin_ns: u64,
+    end_ns: u64,
+    reset: bool,
+    topics: &[String],
+    receive_set: std::sync::Arc<LogReceiverSet>,
+    session: std::sync::Arc<parking_lot::Mutex<std::collections::HashMap<String, PlaybackSession>>>,
+) -> Result<String, String> {
+    #[cfg(not(feature = "importers"))]
+    {
+        let _ = (path, begin_ns, end_ns, reset, topics, receive_set, session);
+        return Err("importers feature required for playback_window".into());
+    }
+
+    #[cfg(feature = "importers")]
+    {
+        use re_log_types::{ApplicationId, RecordingId};
+        use re_mcap::{SelectedDecoders, TopicFilter};
+        use re_sdk::external::re_importer::{Importer as _, ImporterSettings, McapImporter};
+        use re_span::Span;
+
+        // Empty topic list with reset: still run a filtered import that matches nothing so the
+        // viewer gets a fresh empty recording (prior topics disappear from the active store).
+        let topics_for_filter: Vec<String> = if topics.is_empty() {
+            if !reset {
+                return Err(
+                    "playback_window: no topics selected — enable topics in Topics picker".into(),
+                );
+            }
+            vec!["__web_monitor_no_topics__".to_owned()]
+        } else {
+            topics.to_vec()
+        };
+
+        if end_ns <= begin_ns {
+            return Err(format!(
+                "playback_window: begin_ns ({begin_ns}) must be < end_ns ({end_ns})"
+            ));
+        }
+
+        let path = path.trim().trim_matches('"');
+        if path.is_empty() {
+            return Err("playback_window: empty path".into());
+        }
+        if path.contains('\0') || path.contains("..") {
+            return Err("playback_window: invalid path".into());
+        }
+
+        let pb = resolve_open_local_path(path)?;
+        let ext = pb
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if ext != "mcap" {
+            return Err(format!("playback_window expects .mcap, got .{ext}"));
+        }
+
+        let path_owned = pb.display().to_string();
+        let source_descriptor = playback_source_descriptor(&pb, topics)?;
+        let plan_output = std::process::Command::new("python3")
+            .arg("/apollo_workspace/tools/apollo_record_tools/mcap_playback_plan.py")
+            .arg(&pb)
+            .arg(begin_ns.to_string())
+            .arg(end_ns.to_string())
+            .arg(if reset { "1" } else { "0" })
+            .args(&topics_for_filter)
+            .output()
+            .map_err(|err| format!("Playback index failed: {err}"))?;
+        if !plan_output.status.success() {
+            return Err(format!(
+                "Playback index failed: {}",
+                String::from_utf8_lossy(&plan_output.stderr)
+            ));
+        }
+        let plan: serde_json::Value = serde_json::from_slice(&plan_output.stdout)
+            .map_err(|err| format!("Invalid playback plan: {err}"))?;
+        let import_begin_ns = plan["import_begin_ns"]
+            .as_u64()
+            .ok_or("Missing import begin")?;
+        let end_ns = plan["end_ns"].as_u64().ok_or("Missing import end")?;
+        let seek_ns = plan["seek_ns"].as_u64().ok_or("Missing seek time")?;
+        let ready_ns = plan["ready_ns"].as_u64().ok_or("Missing ready time")?;
+        let topics_for_filter: Vec<String> = serde_json::from_value(plan["topics"].clone())
+            .map_err(|err| format!("Invalid playback topics: {err}"))?;
+        let topic_ranges: Vec<(String, Vec<(u64, u64)>)> = topics_for_filter
+            .iter()
+            .map(|topic| {
+                serde_json::from_value(plan["topic_import_ranges"][topic].clone())
+                    .map(|ranges| (topic.clone(), ranges))
+                    .map_err(|err| format!("Invalid import ranges for topic {topic}: {err}"))
+            })
+            .collect::<Result<_, _>>()?;
+        Span::try_from_start_end(import_begin_ns, end_ns)
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| {
+                format!("playback_window: invalid half-open range [{begin_ns}, {end_ns})")
+            })?;
+
+        let (recording_id, imports) = {
+            let mut sessions = session.lock();
+            let sess = sessions.entry(path_owned.clone()).or_default();
+            let identity = (
+                source_descriptor["size"]
+                    .as_str()
+                    .expect("descriptor size")
+                    .to_owned(),
+                source_descriptor["modified_ns"]
+                    .as_str()
+                    .expect("descriptor mtime")
+                    .to_owned(),
+            );
+            let source_changed = sess.identity.as_ref().is_some_and(|old| old != &identity);
+            if !reset && source_changed {
+                return Err(
+                    "Recording source changed during playback; reopen the intended file.".into(),
+                );
+            }
+            if sess.in_flight {
+                return Err(
+                    "playback_window busy — prior window still importing; retry shortly".into(),
+                );
+            }
+            sess.identity = Some(identity);
+            let recording_id = if source_changed || sess.recording_id.is_none() {
+                // Other pages may be consuming a different recording. Never
+                // discard their queued streams or replace an unchanged source's
+                // identity when another page reloads it. Otherwise the first
+                // page loses its cached windows and cursor on the next receipt.
+                let id = RecordingId::random();
+                sess.recording_id = Some(id.clone());
+                sess.coverage.clear();
+                sess.in_flight = true;
+                id
+            } else {
+                sess.in_flight = true;
+                sess.recording_id.clone().expect("checked above")
+            };
+            let mut imports = std::collections::BTreeMap::<(u64, u64), Vec<String>>::new();
+            for (topic, ranges) in &topic_ranges {
+                for &(topic_begin, topic_end) in ranges {
+                    // Reset is a CLIENT bootstrap: re-send its requested data
+                    // even if server coverage predates proxy cache eviction.
+                    // Keep the immutable recording identity for existing pages.
+                    let missing = if reset {
+                        vec![(topic_begin, topic_end)]
+                    } else {
+                        sess.coverage.missing(topic, topic_begin, topic_end)
+                    };
+                    for range in missing {
+                        imports.entry(range).or_default().push(topic.clone());
+                    }
+                }
+            }
+            (recording_id, imports)
+        };
+
+        let application_id = pb
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .map(|s| s.replace('.', "_"))
+            .and_then(|name| ApplicationId::try_new(name).ok())
+            .unwrap_or_else(|| ApplicationId::try_new("apollo_playback").expect("valid"));
+
+        let settings = ImporterSettings {
+            application_id: Some(application_id),
+            force_store_info: true,
+            ..ImporterSettings::recommended(recording_id)
+        };
+
+        let (log_tx, log_rx) =
+            re_log_channel::log_channel(re_log_channel::LogSource::File { path: pb.clone() });
+        receive_set.add(log_rx);
+
+        let topics_owned: Vec<String> = topics.to_vec();
+        let topic_count = topics_owned.len();
+        let session_for_thread = std::sync::Arc::clone(&session);
+        let path_for_response = path_owned.clone();
+        let receipt = format!("/__web_monitor_buffer/{}", re_chunk::RowId::new());
+        let receipt_for_thread = receipt.clone();
+        let spawn_result = std::thread::Builder::new()
+            .name(format!("playback_window({begin_ns}..{end_ns})"))
+            .spawn(move || -> Result<(), String> {
+                re_log::info!(
+                    "web_monitor playback_window: [{begin_ns}, {end_ns}) topics={topic_count} path={path_owned}"
+                );
+
+                for ((start, end), topics) in imports {
+                    let include: Vec<_> = topics.iter()
+                        .map(|t| format!("^{}$", regex_escape_literal(t))).collect();
+                    let topic_filter = TopicFilter::default().with_include_patterns(&include)
+                        .map_err(|err| err.to_string())?;
+                    let span = Span::try_from_start_end(start, end).ok_or("Invalid import range")?;
+                    let importer = McapImporter::new(&SelectedDecoders::All)
+                    .with_topic_filter(topic_filter)
+                    .with_time_range(Some(span));
+
+                let (imp_tx, imp_rx) = crossbeam::channel::unbounded();
+                if let Err(err) = importer.import_from_path(&settings, pb.clone(), imp_tx) {
+                    re_log::error!("playback_window import failed: {err}");
+                    let _ = log_tx.quit(Some(Box::new(std::io::Error::other(err.to_string()))));
+                    session_for_thread.lock().get_mut(&path_owned).expect("session exists").in_flight = false;
+                    return Err(format!("Playback import failed: {err}"));
+                }
+
+                for data in imp_rx {
+                    match data.into_log_msg() {
+                        Ok(msg) => {
+                            if log_tx.send(msg.into()).is_err() {
+                                return Err("Playback stream disconnected".into());
+                            }
+                        }
+                        Err(err) => {
+                            return Err(format!("Playback chunk serialization failed: {err}"));
+                        }
+                    }
+                }
+                    let mut sessions = session_for_thread.lock();
+                    let session = sessions.get_mut(&path_owned).expect("session exists");
+                    for topic in topics { session.coverage.insert(topic, start, end); }
+                }
+                // Source ownership survives proxy replay/new tabs. This is static
+                // metadata, not another timeline and not a global last-file guess.
+                let source = re_chunk::Chunk::builder("/__web_monitor_session/source")
+                    .with_archetype(re_chunk::RowId::new(), re_log_types::TimePoint::STATIC,
+                        &re_sdk_types::archetypes::TextDocument::new(source_descriptor.to_string()))
+                    .build().map_err(|e| e.to_string())?;
+                log_tx.send(re_log_types::LogMsg::ArrowMsg(settings.recommended_store_id(),
+                    source.to_arrow_msg().map_err(|e| e.to_string())?).into()).map_err(|e| e.to_string())?;
+                // Ordered after all payloads on the same stream. The browser only
+                // marks a window cached when this entity arrives in its EntityDb.
+                let marker = re_chunk::Chunk::builder(receipt_for_thread)
+                    .with_archetype(
+                        re_chunk::RowId::new(),
+                        // Static chunks are replayed first to late subscribers.
+                        // Keep receipts temporal so they stay after their payloads.
+                        re_log_types::TimePoint::from_iter([
+                            (re_log_types::Timeline::new_timestamp("publish_time"), begin_ns as i64),
+                            (re_log_types::Timeline::new_timestamp("message_time"), begin_ns as i64),
+                        ]),
+                        &re_sdk_types::archetypes::TextDocument::new("buffered"),
+                    )
+                    .build().map_err(|err| err.to_string())?;
+                let marker = re_log_types::LogMsg::ArrowMsg(
+                    settings.recommended_store_id(),
+                    marker.to_arrow_msg().map_err(|err| err.to_string())?,
+                );
+                log_tx.send(marker.into()).map_err(|err| err.to_string())?;
+                let _ = log_tx.quit(None);
+                session_for_thread.lock().get_mut(&path_owned).expect("session exists").in_flight = false;
+                re_log::info!(
+                    "web_monitor playback_window: finished [{begin_ns}, {end_ns}) topics={topic_count}"
+                );
+                Ok(())
+            });
+
+        let result = spawn_result
+            .map_err(|err| format!("failed to spawn playback_window thread: {err}"))
+            .and_then(|thread| {
+                thread
+                    .join()
+                    .map_err(|_| "Playback import panicked".to_owned())
+            })
+            .and_then(|result| result);
+        session
+            .lock()
+            .get_mut(&path_for_response)
+            .expect("session exists")
+            .in_flight = false;
+        result?;
+
+        Ok(format!(
+            r#"{{"status":"ok","path":{},"begin_ns":{begin_ns},"end_ns":{end_ns},"seek_ns":{seek_ns},"ready_ns":{ready_ns},"receipt":{},"topics":{topic_count},"reset":{}}}"#,
+            json_string(&path_for_response),
+            json_string(&receipt),
+            if reset { "true" } else { "false" }
+        ))
+    }
+}
+
+/// Map host checkout paths ↔ in-container `/apollo_workspace` (aem bind-mount).
+///
+/// Browser/users often paste `/home/.../code/apollo/...` while the viewer process
+/// only sees `/apollo_workspace/...`. Without rewrite, convert/open fails with
+/// "file not found" and Source shows no recording.
+#[cfg(all(feature = "server", feature = "web_viewer"))]
+fn rewrite_apollo_workspace_aliases(path: &std::path::Path) -> std::path::PathBuf {
+    use std::path::{Path, PathBuf};
+
+    let workspace = std::env::var("APOLLO_ENV_WORKSPACE")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "/home/wangsheng/code/apollo".into());
+    let workroot = std::env::var("APOLLO_ENV_WORKROOT")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "/apollo_workspace".into());
+
+    if let Ok(rel) = path.strip_prefix(Path::new(&workspace)) {
+        let mapped = Path::new(&workroot).join(rel);
+        // Prefer container path when host path is invisible inside aem.
+        if mapped.exists() || !path.exists() {
+            return mapped;
+        }
+    }
+    if let Ok(rel) = path.strip_prefix(Path::new(&workroot)) {
+        let mapped = Path::new(&workspace).join(rel);
+        if mapped.exists() && !path.exists() {
+            return mapped;
+        }
+    }
+    path.to_path_buf()
 }
 
 /// Absolute path, or basename resolved under `WEB_MONITOR_OPEN_ROOTS` / Apollo bag dirs.
@@ -1711,12 +2375,15 @@ fn open_local_path_into_receive_set(
 fn resolve_open_local_path(path: &str) -> Result<std::path::PathBuf, String> {
     use std::path::PathBuf;
 
-    let candidate = PathBuf::from(path);
+    let candidate = rewrite_apollo_workspace_aliases(&PathBuf::from(path));
     let roots = open_local_roots();
 
     if candidate.is_absolute() {
         if !candidate.is_file() {
-            return Err(format!("file not found: {path}"));
+            return Err(format!(
+                "file not found: {path} (resolved {})",
+                candidate.display()
+            ));
         }
         // Optional allow-list when WEB_MONITOR_OPEN_ROOTS is set.
         if std::env::var_os("WEB_MONITOR_OPEN_ROOTS").is_some() {
@@ -1773,7 +2440,10 @@ fn resolve_record_path(path: &str) -> Result<std::path::PathBuf, String> {
 }
 
 #[cfg(all(feature = "server", feature = "web_viewer"))]
-fn resolve_open_local_path_any(path: &str, allow_record: bool) -> Result<std::path::PathBuf, String> {
+fn resolve_open_local_path_any(
+    path: &str,
+    allow_record: bool,
+) -> Result<std::path::PathBuf, String> {
     use std::path::PathBuf;
 
     let path = path.trim().trim_matches('"');
@@ -1784,19 +2454,20 @@ fn resolve_open_local_path_any(path: &str, allow_record: bool) -> Result<std::pa
         return Err("invalid path".into());
     }
 
-    let candidate = PathBuf::from(path);
+    let candidate = rewrite_apollo_workspace_aliases(&PathBuf::from(path));
     let roots = open_local_roots();
 
     let resolved = if candidate.is_absolute() {
         if !candidate.is_file() {
-            return Err(format!("file not found: {path}"));
+            return Err(format!(
+                "file not found: {path} (resolved {}) — use /apollo_workspace/... inside aem, or host path under APOLLO_ENV_WORKSPACE",
+                candidate.display()
+            ));
         }
         if std::env::var_os("WEB_MONITOR_OPEN_ROOTS").is_some() {
             let ok = roots.iter().any(|root| candidate.starts_with(root));
             if !ok {
-                return Err(format!(
-                    "path not under WEB_MONITOR_OPEN_ROOTS: {path}"
-                ));
+                return Err(format!("path not under WEB_MONITOR_OPEN_ROOTS: {path}"));
             }
         }
         candidate
@@ -1906,7 +2577,6 @@ fn find_named_file(
     }
     walk(root, name, 0, max_depth)
 }
-
 
 #[cfg(feature = "server")]
 fn serve_grpc(

@@ -58,9 +58,19 @@ bool RecordFileSource::LoadAll(const SourceConfig& cfg) {
     ev.type = SimEventType::FILE_MESSAGE;
     ev.tie_breaker = 10;
     ev.channel = it->channel_name;
+    // Apollo's periodically latched command carries the same PlanningCommand
+    // schema. Re-inject into the live command input, retaining record time.
+    if (ev.channel == "/apollo/planning_command_history") {
+      ev.channel = "/apollo/planning/command";
+    }
     ev.payload = it->content;
+    ev.sequence = total_messages_;
     events_.push(ev);
     ++total_messages_;
+  }
+  if (total_messages_ == 0) {
+    AERROR << "No messages in requested record window / channel selection";
+    return false;
   }
   return true;
 }

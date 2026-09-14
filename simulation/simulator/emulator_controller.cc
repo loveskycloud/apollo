@@ -35,9 +35,9 @@ bool EmulatorController::ShouldSuppress(const std::string& channel) const {
 bool EmulatorController::Init(const Options& opts) {
   source_ = opts.source;
   consumer_ = opts.consumer;
-  scheduler_ = opts.scheduler;
-  global_buffer_ = opts.global_buffer;
   channel_policy_ = opts.channel_policy;
+  error_.clear();
+  frozen_clock_ns_ = 0;
   return source_ != nullptr && consumer_ != nullptr;
 }
 
@@ -45,16 +45,8 @@ bool EmulatorController::LoadFromSource() {
   if (!source_) {
     return false;
   }
-  while (source_->HasNext()) {
-    SimEvent ev;
-    if (!source_->Next(&ev)) {
-      break;
-    }
-    if (ShouldSuppress(ev.channel)) {
-      continue;
-    }
-    message_queue_.Push(std::move(ev));
-  }
+  // Keep the source lazy: a world tick must see outputs from the preceding
+  // round, not precompute an open-loop movie before algorithms are started.
   return true;
 }
 
@@ -67,51 +59,61 @@ void EmulatorController::MergeFabricated(FabricatedMessageQueue* fabricated) {
   }
 }
 
-void EmulatorController::BufferMessage(const SimEvent& ev) {
-  if (!global_buffer_) {
-    return;
-  }
-  BufferedMessage msg;
-  msg.timestamp_ns = ev.sim_time_ns;
-  msg.channel = ev.channel;
-  msg.payload = ev.payload;
-  global_buffer_->Push(msg);
-  if (scheduler_) {
-    scheduler_->OnMessageReceived(msg, ev.sim_time_ns);
-  }
-}
-
 bool EmulatorController::PublishNext() {
   SimEvent ev;
-  if (!message_queue_.Pop(&ev)) {
-    return false;
+  while (true) {
+    SimEvent input, timer;
+    const bool has_input = source_->Peek(&input);
+    const bool has_timer = message_queue_.Peek(&timer);
+    if (!has_input && source_->HasNext()) {
+      error_ = "source Peek failed before EOF";
+      return false;
+    }
+    if (!has_input && !has_timer) {
+      return false;
+    }
+    if (has_input && (!has_timer || !(timer < input))) {
+      if (!source_->Next(&ev)) {
+        error_ = "source Next failed before EOF";
+        return false;
+      }
+    } else if (!message_queue_.Pop(&ev)) {
+      error_ = "timer queue changed during synchronous execution";
+      return false;
+    }
+    if (ev.process || ev.type == SimEventType::TIMER_FIRE ||
+        (!ShouldSuppress(ev.channel) && ShouldInject(ev.channel))) {
+      break;
+    }
   }
-  if (!ShouldInject(ev.channel)) {
-    BufferMessage(ev);
-    return true;
+  if (ev.sim_time_ns < frozen_clock_ns_) {
+    error_ = "non-monotonic event time on " + ev.channel;
+    return false;
   }
   cyber::Clock::SetNow(cyber::Time(ev.sim_time_ns));
   frozen_clock_ns_ = ev.sim_time_ns;
-  round_active_ = true;
-  if (!consumer_->Publish(ev.channel, ev.payload)) {
+  current_channel_ = ev.channel;
+  // MODE_SIMULATION Intra publication completes its dependent callbacks before
+  // returning. Advancing the clock before this returns would violate causality.
+  const bool ok = ev.process ? ev.process()
+                            : ev.type != SimEventType::TIMER_FIRE &&
+                                  consumer_->Publish(ev.channel, ev.payload);
+  if (!ok) {
+    error_ = "event execution failed: " + ev.channel;
     return false;
   }
-  BufferMessage(ev);
-  if (scheduler_ && global_buffer_) {
-    scheduler_->RunOneRound(frozen_clock_ns_, global_buffer_);
-  }
-  round_active_ = false;
-  if (scheduler_) {
-    scheduler_->SignalFeedback();
+  if (ev.interval_ns > 0 && ev.repeat_end_ns >= ev.sim_time_ns &&
+      ev.repeat_end_ns - ev.sim_time_ns >= ev.interval_ns) {
+    ev.sim_time_ns += ev.interval_ns;
+    ++ev.sequence;
+    message_queue_.Push(std::move(ev));
   }
   return true;
 }
 
 bool EmulatorController::WaitAndPublishNext(
     std::chrono::milliseconds feedback_timeout) {
-  if (scheduler_ && round_active_) {
-    scheduler_->WaitForFeedback(feedback_timeout);
-  }
+  (void)feedback_timeout;  // Synchronous in-process round, no wall-time pacing.
   return PublishNext();
 }
 

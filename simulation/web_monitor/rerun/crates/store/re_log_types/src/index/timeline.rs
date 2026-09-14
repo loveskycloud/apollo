@@ -123,8 +123,8 @@ impl Timeline {
     /// Pick the most likely "default" timeline from a set of candidates.
     ///
     /// Priority (highest first):
-    /// 1. `message_publish_time` (MCAP publish / Cyber publish — AD default)
-    /// 2. `message_log_time` (MCAP log_time / measurement time)
+    /// 1. `publish_time` (MCAP publish / Cyber publish — AD default)
+    /// 2. `message_time` (MCAP log_time / measurement time)
     /// 3. Other user-defined timelines
     /// 4. `log_time`
     /// 5. `log_tick`
@@ -138,8 +138,8 @@ impl Timeline {
     ) -> Self {
         fn priority(timeline: &Timeline) -> u8 {
             match timeline.name().as_str() {
-                "message_publish_time" => 4,
-                "message_log_time" => 3,
+                "publish_time" => 4,
+                "message_time" => 3,
                 _ if *timeline == Timeline::log_tick() => 0,
                 _ if *timeline == Timeline::log_time() => 1,
                 _ => 2, // user-defined
@@ -235,25 +235,22 @@ mod tests {
             custom_timeline1
         );
 
-        // `message_log_time` beats generic user timelines / log_time.
-        let message_log_time = Timeline::new("message_log_time", TimeType::TimestampNs);
+        // `message_time` beats generic user timelines / log_time.
+        let message_time = Timeline::new("message_time", TimeType::TimestampNs);
         assert_eq!(
-            Timeline::pick_best_timeline([&custom_timeline0, &message_log_time, &log_time], equal),
-            message_log_time
+            Timeline::pick_best_timeline([&custom_timeline0, &message_time, &log_time], equal),
+            message_time
         );
         assert_eq!(
-            Timeline::pick_best_timeline([&log_time, &log_tick, &message_log_time], equal),
-            message_log_time
+            Timeline::pick_best_timeline([&log_time, &log_tick, &message_time], equal),
+            message_time
         );
 
-        // `message_publish_time` is the AD/MCAP default and beats message_log_time.
-        let message_publish_time = Timeline::new("message_publish_time", TimeType::TimestampNs);
+        // `publish_time` is the AD/MCAP default and beats message_time.
+        let publish_time = Timeline::new("publish_time", TimeType::TimestampNs);
         assert_eq!(
-            Timeline::pick_best_timeline(
-                [&message_log_time, &message_publish_time, &custom_timeline0],
-                equal,
-            ),
-            message_publish_time
+            Timeline::pick_best_timeline([&message_time, &publish_time, &custom_timeline0], equal,),
+            publish_time
         );
     }
 }

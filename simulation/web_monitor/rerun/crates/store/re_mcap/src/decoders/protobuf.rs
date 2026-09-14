@@ -57,6 +57,7 @@ struct ProtobufMessageParser {
 
     /// Cached grouped fields for the top-level message, avoiding re-computation per message.
     grouped_fields: Vec<GroupedField>,
+    scene_chunks: Vec<Chunk>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -103,6 +104,7 @@ impl ProtobufMessageParser {
             message_descriptor,
             builder,
             grouped_fields,
+            scene_chunks: Vec::new(),
         }
     }
 }
@@ -169,7 +171,7 @@ fn append_message_fields(
 }
 
 impl MessageParser for ProtobufMessageParser {
-    fn append(&mut self, _ctx: &mut ParserContext, msg: &mcap::Message<'_>) -> anyhow::Result<()> {
+    fn append(&mut self, ctx: &mut ParserContext, msg: &mcap::Message<'_>) -> anyhow::Result<()> {
         re_tracing::profile_function!();
         let dynamic_message =
             DynamicMessage::decode(self.message_descriptor.clone(), msg.data.as_ref()).map_err(
@@ -181,8 +183,36 @@ impl MessageParser for ProtobufMessageParser {
             )?;
 
         let struct_builder = self.builder.values();
+        if self.message_descriptor.full_name() == "foxglove.PointCloud"
+            && let Some(frame) = dynamic_message.get_field_by_name("frame_id")
+            && let Value::String(frame) = frame.as_ref()
+            && frame.starts_with("isolated_sensor/")
+        {
+            re_log::warn_once!(
+                "Missing lidar-to-localization TF in this bag. Lidar is shown in an isolated sensor frame; ego/planning cannot be overlaid. Supply the recorded sensor extrinsics."
+            );
+        }
         append_message_fields(&dynamic_message, struct_builder, &self.grouped_fields)?;
         self.builder.append(true);
+
+        if self.scene_chunks.is_empty()
+            && msg.channel.topic == "/vehicle"
+            && self.message_descriptor.full_name() == "foxglove.PoseInFrame"
+        {
+            let model = re_sdk_types::archetypes::Asset3D::from_file_contents(
+                include_bytes!("../../assets/ego_vehicle.glb").to_vec(),
+                Some("model/gltf-binary"),
+            );
+            self.scene_chunks.push(
+                Chunk::builder(ctx.entity_path().clone())
+                    .with_archetype(
+                        re_chunk::RowId::new(),
+                        crate::util::log_and_publish_timepoint_from_msg(msg, ctx.time_type()),
+                        &model,
+                    )
+                    .build()?,
+            );
+        }
 
         Ok(())
     }
@@ -196,6 +226,7 @@ impl MessageParser for ProtobufMessageParser {
             message_descriptor,
             mut builder,
             grouped_fields: _,
+            mut scene_chunks,
         } = *self;
 
         let message_chunk = Chunk::from_auto_row_ids(
@@ -212,7 +243,8 @@ impl MessageParser for ProtobufMessageParser {
         )
         .map_err(Error::other)?;
 
-        Ok(vec![message_chunk])
+        scene_chunks.push(message_chunk);
+        Ok(scene_chunks)
     }
 }
 
@@ -838,16 +870,30 @@ impl MessageDecoder for McapProtobufDecoder {
                 continue;
             }
 
-            let pool = DescriptorPool::decode(schema.data.as_ref()).map_err(|err| {
-                Error::InvalidSchema {
-                    schema: schema.name.clone(),
-                    source: err.into(),
+            // Incomplete FDS must not abort the whole MCAP load, but must not look "fine":
+            // escalate to error so Host logs expose the topic; Topic View uses host DebugString.
+            let pool = match DescriptorPool::decode(schema.data.as_ref()) {
+                Ok(pool) => pool,
+                Err(err) => {
+                    re_log::error!(
+                        "Invalid protobuf schema '{}' on topic '{}' — skipped Arrow decode \
+                         (fix ProtoDesc→FDS / re-convert semantic-mcap-v10+): {err}",
+                        schema.name,
+                        channel.topic
+                    );
+                    continue;
                 }
-            })?;
+            };
 
-            let message_descriptor = pool
-                .get_message_by_name(schema.name.as_str())
-                .ok_or_else(|| Error::NoSchema(schema.name.clone()))?;
+            let Some(message_descriptor) = pool.get_message_by_name(schema.name.as_str()) else {
+                re_log::error!(
+                    "Protobuf schema '{}': message type not found in descriptor set \
+                     (topic '{}') — skipped Arrow decode; fix FDS / re-convert",
+                    schema.name,
+                    channel.topic
+                );
+                continue;
+            };
 
             let found = self
                 .descrs_per_topic
@@ -876,6 +922,16 @@ impl MessageDecoder for McapProtobufDecoder {
         num_rows: usize,
     ) -> Option<Box<dyn MessageParser>> {
         let message_descriptor = self.descrs_per_topic.get(&channel.topic)?;
+        if message_descriptor.full_name() == "webmonitor.MapMesh" {
+            return Some(Box::new(super::ad_scene::MapMeshParser::new(
+                message_descriptor.clone(),
+            )));
+        }
+        if message_descriptor.full_name() == "webmonitor.PlannedPath" {
+            return Some(Box::new(super::ad_scene::PlannedPathParser::new(
+                message_descriptor.clone(),
+            )));
+        }
         Some(Box::new(ProtobufMessageParser::new(
             num_rows,
             message_descriptor.clone(),

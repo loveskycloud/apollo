@@ -188,6 +188,7 @@ impl EyeInterpolation {
 /// Note: we use "eye" so we don't confuse this with logged camera.
 #[derive(Default, Clone, Debug, PartialEq, re_byte_size::SizeBytes)]
 pub struct EyeState {
+    pub(crate) ad_navigation: AdNavigation,
     /// Vertical field of view in radians.
     fov_y: Option<f32>,
 
@@ -229,6 +230,96 @@ enum GamepadNavigationStatus {
     Disconnected,
     ConnectedInactive,
     Active,
+}
+
+/// Vehicle-follow and planar navigation are explicit modes, not repeated focus commands.
+#[derive(Clone, Debug, PartialEq, re_byte_size::SizeBytes)]
+pub(crate) struct AdNavigation {
+    pub overhead: bool,
+    pub following: bool,
+    pub center: Vec3,
+    pub planar_up: Vec3,
+    pub saved_offset: Vec3,
+    pub saved_up: Vec3,
+    pub chase_distance: f32,
+    pub top_height: f32,
+}
+
+impl Default for AdNavigation {
+    fn default() -> Self {
+        Self {
+            overhead: false,
+            following: false,
+            center: Vec3::ZERO,
+            planar_up: Vec3::Y,
+            saved_offset: Vec3::new(0.0, -40.0, 30.0),
+            saved_up: Vec3::Z,
+            chase_distance: 50.0,
+            top_height: 70.0,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct EgoPose {
+    pub position: Vec3,
+    /// Horizontal forward direction from the actual Apollo +Y vehicle axis.
+    pub heading: Vec3,
+    pub sample_ns: i64,
+}
+
+impl AdNavigation {
+    pub fn managed(&self) -> bool {
+        self.overhead || self.following
+    }
+
+    fn control(
+        &mut self,
+        controller: &mut EyeController,
+        response: &egui::Response,
+        ego: Option<EgoPose>,
+    ) {
+        let distance = if self.overhead {
+            &mut self.top_height
+        } else {
+            &mut self.chase_distance
+        };
+        if response.hovered() {
+            let zoom = response.ctx.input(|i| {
+                i.zoom_delta() * ((i.smooth_scroll_delta.x + i.smooth_scroll_delta.y) / 200.0).exp()
+            });
+            *distance = (*distance / zoom).clamp(20.0, 250.0);
+        }
+        if self.following {
+            if let Some(ego) = ego {
+                self.center = ego.position;
+                self.planar_up = ego.heading;
+            } else {
+                // Freeze the last valid view; toolbar reports the missing pose/TF.
+                return;
+            }
+        } else if self.overhead {
+            let scale = 2.0 * self.top_height * (Eye::DEFAULT_FOV_Y / 2.0).tan()
+                / response.rect.height().max(1.0);
+            let delta = response.drag_delta();
+            let right = self.planar_up.cross(Vec3::Z);
+            self.center += (-right * delta.x + self.planar_up * delta.y) * scale;
+            if response.dragged() {
+                response.request_focus();
+            }
+        }
+        controller.look_target = self.center;
+        if self.overhead {
+            controller.pos = self.center + Vec3::Z * self.top_height;
+            controller.eye_up = self.planar_up;
+        } else {
+            // 37 degrees down from behind the vehicle; never inherit an arbitrary orbit.
+            controller.pos = self.center - self.planar_up * (0.8 * self.chase_distance)
+                + Vec3::Z * (0.6 * self.chase_distance);
+            controller.eye_up = Vec3::Z;
+        }
+        controller.kind = Eye3DKind::Orbital;
+    }
 }
 
 /// Utility struct for handling eye control parameter changes,
@@ -1188,8 +1279,33 @@ impl EyeState {
         pinhole_cameras: &[PinholeWrapper],
         bounding_boxes: &SceneBoundingBoxes,
         enable_gamepad_navigation: bool,
+        ego: Option<EgoPose>,
     ) -> Result<Eye, ViewPropertyQueryError> {
         let eye_property = ViewProperty::from_archetype::<EyeControls3D>(ctx);
+
+        if self.ad_navigation.managed() {
+            let mut controller = EyeController::from_blueprint(ctx, &eye_property, self.fov_y)?;
+            if let (Some(eye), Some(target), Some(up)) =
+                (self.last_eye, self.last_look_target, self.last_eye_up)
+            {
+                controller.pos = eye.pos_in_world();
+                controller.look_target = target;
+                controller.eye_up = up;
+            }
+            self.ad_navigation.control(&mut controller, response, ego);
+            // No orbit/roll/spin/gamepad or blueprint writes in a managed mode.
+            // Direct current-pose updates also keep paused seeks exact (no animated lag).
+            self.stop_interpolation();
+            self.spin = None;
+            self.velocity = Vec3::ZERO;
+            self.gamepad_interaction = None;
+            let eye = controller.get_eye();
+            self.last_eye = Some(eye);
+            self.last_look_target = Some(controller.look_target);
+            self.last_eye_up = Some(controller.up());
+            self.last_orbit_radius = Some(controller.radius());
+            return Ok(eye);
+        }
 
         let target_eye = self.control_and_sync_with_blueprint(
             ctx,

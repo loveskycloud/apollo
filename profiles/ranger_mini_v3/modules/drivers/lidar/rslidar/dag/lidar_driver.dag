@@ -1,0 +1,10 @@
+module_config {
+    module_library : "modules/drivers/lidar/rslidar/liblidar_driver_component.so"
+    components {
+        class_name : "LidarDriverComponent"
+        config {
+          name : "RSAIRY_NativeFrame_Driver"
+          config_file_path : "modules/drivers/lidar/rslidar/conf/rslidar.pb.txt"
+        }
+    }
+}

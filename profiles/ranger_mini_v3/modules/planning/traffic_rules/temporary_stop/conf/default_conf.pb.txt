@@ -1,0 +1,4 @@
+stop_buffer: 0.2
+stop_distance: 0.0
+stop_wall_width: 4.0
+fallback_max_deceleration: 1.0

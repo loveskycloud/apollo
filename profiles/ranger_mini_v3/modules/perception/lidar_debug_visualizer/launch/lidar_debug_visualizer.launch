@@ -1,0 +1,10 @@
+<cyber>
+    <desc>Lidar Debug Visualizer</desc>
+    <version>1.0.0</version>
+    <module>
+        <name>lidar_debug_visualizer</name>
+        <dag_conf>profiles/ranger_mini_v3/modules/perception/lidar_debug_visualizer/dag/lidar_debug_visualizer.dag</dag_conf>
+        <process_name>lidar_debug_visualizer</process_name>
+        <version>1.0.0</version>
+    </module>
+</cyber>

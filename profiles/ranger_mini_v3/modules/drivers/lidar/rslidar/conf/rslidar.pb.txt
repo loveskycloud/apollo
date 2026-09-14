@@ -1,0 +1,41 @@
+config_base {
+  scan_channel: "/apollo/sensor/rslidar/up/Scan"
+  point_cloud_channel: "/apollo/sensor/rslidar/up/PointCloud2"
+  frame_id: "rslidar_up"
+
+  # sample ONLINE_LIDAR, RAW_PACKET
+  source_type: ONLINE_LIDAR
+}
+
+# IMU channel for RSAIRY lidar (原始倾斜坐标系)
+imu_channel: "/apollo/sensor/rslidar/up/Imu"
+
+# Virtual IMU channel (虚拟水平坐标系，经过安装角度补偿)
+virtual_imu_channel: "/apollo/sensor/rslidar/up/VirtualImu"
+
+# 雷达安装倾斜角度（度），绕Y轴逆时针旋转的角度 40.0
+install_angle_deg: 0.0
+
+# sample: "RS16", "RS32", "RS80", "RS128", "RSBP", "RSHELIOS", "RSHELIOS_16P", "RSM1", "RSAIRY"
+model: "RSAIRY"
+ip: "192.168.1.200"
+host_address: "0.0.0.0"
+msop_port: 6699
+difop_port: 7788
+imu_port: 6688
+echo_mode: 1
+start_angle: 0
+end_angle: 360
+min_distance: 0.2
+max_distance: 200
+cut_angle: 0
+split_frame_node: 1
+num_pkts_split: 0
+use_lidar_clock: true
+dense_points: false
+ts_first_point: true
+wait_for_difop: true
+config_from_file: false
+angle_path: ""
+split_angle: 0.0
+send_raw_packet: true

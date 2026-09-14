@@ -232,14 +232,14 @@ impl TimePanel {
         // etc.)
         let screen_header_height = ui.cursor().top();
 
-        // AD media-bar chrome (Carolanne).
+        // Match scene_editor's compact playback-row chrome.
         panel_frame.fill = crate::time_control_ui::panel_fill();
         panel_frame.stroke = crate::time_control_ui::panel_stroke();
         panel_frame.corner_radius = egui::CornerRadius::ZERO;
-        panel_frame.inner_margin.left = 10;
+        panel_frame.inner_margin.left = 12;
         panel_frame.inner_margin.right = 12;
-        panel_frame.inner_margin.top = 6;
-        panel_frame.inner_margin.bottom = 6;
+        panel_frame.inner_margin.top = 8;
+        panel_frame.inner_margin.bottom = 8;
 
         if state.is_expanded() {
             // Since we use scroll bars we want to fill the whole vertical space downwards:
@@ -263,10 +263,11 @@ impl TimePanel {
             .default_size((0.25 * window_height).clamp(min_height, 250.0).round());
 
         if can_collapse_to_bar {
+            let compact = crate::time_control_ui::media_bar_is_compact(ui.available_width());
             let collapsed = egui::Panel::bottom(id.with("time_panel_collapsed"))
                 .resizable(true)
                 .frame(panel_frame)
-                .exact_size(56.0);
+                .exact_size(if compact { 74.0 } else { 42.0 });
 
             egui::Panel::show_switched(
                 ui,
@@ -285,8 +286,8 @@ impl TimePanel {
                     } else {
                         // Collapsed AD media bar — single centered row.
                         ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                            ui.set_min_height(44.0);
-                            ui.visuals_mut().button_frame = false;
+                            ui.set_min_height(if compact { 56.0 } else { 24.0 });
+                            ui.visuals_mut().button_frame = true;
                             self.collapsed_ui(store_ctx, viewer_ctx, ui, &mut time_commands);
                         });
                     }
@@ -420,52 +421,33 @@ impl TimePanel {
             return;
         }
 
-        // Prototype row:
-        // [⏮ ▶ ⏵ ⏭]  [1.0x ▾]  [● Live]  [thin axis + ticks]  [10ms▾] [00:00:00.000]
-        // Clock is relative to bag start so it matches the ruler (0 … duration).
-        let clock = {
-            match (
-                time_ctrl.time_int(),
-                entity_db.time_range_for(time_ctrl.timeline_name()),
-            ) {
-                (Some(t), Some(range)) => {
-                    let rel_ns = (t.as_i64() - range.min().as_i64()).max(0) as u64;
-                    let typ = time_ctrl
-                        .timeline()
-                        .map(|tl| tl.typ())
-                        .unwrap_or(re_log_types::TimeType::DurationNs);
-                    match typ {
-                        re_log_types::TimeType::Sequence => format!("{rel_ns}"),
-                        re_log_types::TimeType::DurationNs
-                        | re_log_types::TimeType::TimestampNs => {
-                            crate::time_control_ui::format_clock_hmsm(Some(
-                                re_log_types::TimeInt::new_temporal(rel_ns as i64),
-                            ))
-                        }
-                    }
-                }
-                _ => crate::time_control_ui::format_clock_hmsm(time_ctrl.time_int()),
-            }
-        };
+        // Cyber header is the single source of truth for an Apollo bag's range.
+        // EntityDb grows while the stream is arriving and must not move the UI range.
+        let header_range = ui
+            .ctx()
+            .data(|d| d.get_temp::<(i64, i64)>(egui::Id::new("web_monitor_header_time_range_ns")));
+        let active_range = header_range
+            .filter(|(b, e)| *e > *b)
+            .map(|(b, e)| {
+                AbsoluteTimeRange::new(TimeInt::new_temporal(b), TimeInt::new_temporal(e))
+            })
+            .or_else(|| entity_db.time_range_for(time_ctrl.timeline_name()));
         let mut timeline_rect = None;
 
-        let time_origin_ns = entity_db
-            .time_range_for(time_ctrl.timeline_name())
-            .map(|r| r.min().as_i64())
-            .unwrap_or(0);
+        let time_origin_ns = active_range.map(|r| r.min().as_i64()).unwrap_or(0);
         self.time_control_ui.media_bar_ui(
             time_ctrl,
             entity_db,
             ui,
             time_commands,
             &mut timeline_rect,
-            &clock,
             time_origin_ns,
+            active_range.map(|range| range.max()),
         );
 
         if let Some(rect) = timeline_rect {
             let (playhead_t, duration_secs, is_sequence) = {
-                if let Some(range) = entity_db.time_range_for(time_ctrl.timeline_name()) {
+                if let Some(range) = active_range {
                     let a = range.min().as_f64();
                     let b = range.max().as_f64();
                     let span = (b - a).max(0.0);
@@ -494,29 +476,47 @@ impl TimePanel {
                 }
             };
 
-            let painter = ui.painter().with_clip_rect(rect.expand2(egui::vec2(2.0, 2.0)));
-            crate::time_control_ui::paint_prototype_ruler(
-                &painter,
-                rect,
-                playhead_t,
-                duration_secs,
-                is_sequence,
-            );
+            let painter = ui
+                .painter()
+                .with_clip_rect(rect.expand2(egui::vec2(2.0, 2.0)));
+            crate::time_control_ui::paint_media_slider(&painter, rect, playhead_t);
 
-            let id = ui.id().with("proto_ruler_drag");
+            let id = ui.id().with("media_slider_drag");
             let response = ui.interact(rect, id, egui::Sense::click_and_drag());
+            if response.hovered()
+                && let Some(pos) = response.hover_pos()
+            {
+                let (left, right) = crate::time_control_ui::media_slider_x_range(rect);
+                let value =
+                    ((pos.x - left) / (right - left)).clamp(0.0, 1.0) as f64 * duration_secs;
+                response.clone().on_hover_text(if is_sequence {
+                    format!("{value:.0}")
+                } else {
+                    format!("{value:.2} s")
+                });
+            }
             if let Some(pos) = response.interact_pointer_pos()
                 && (response.clicked() || response.dragged())
-                && let Some(range) = entity_db.time_range_for(time_ctrl.timeline_name())
+                && let Some(range) = active_range
                 && range.min() != range.max()
             {
-                let (left, right) = crate::time_control_ui::prototype_ruler_x_range(rect);
+                let (left, right) = crate::time_control_ui::media_slider_x_range(rect);
                 let u = ((pos.x - left) / (right - left)).clamp(0.0, 1.0) as f64;
                 let t = range.min().as_f64() + u * (range.max().as_f64() - range.min().as_f64());
+                ui.ctx().data_mut(|d| {
+                    d.insert_temp(egui::Id::new("web_monitor_cancel_buffer_resume"), true)
+                });
                 time_commands.push(TimeControlCommand::Pause);
-                time_commands.push(TimeControlCommand::SetTimeClamped(
-                    re_log_types::TimeInt::new_temporal(t as i64).into(),
-                ));
+                // Header range may extend past currently streamed chunks — do not clamp.
+                if header_range.is_some() {
+                    time_commands.push(TimeControlCommand::SetTime(
+                        re_log_types::TimeInt::new_temporal(t as i64).into(),
+                    ));
+                } else {
+                    time_commands.push(TimeControlCommand::SetTimeClamped(
+                        re_log_types::TimeInt::new_temporal(t as i64).into(),
+                    ));
+                }
             }
         }
 

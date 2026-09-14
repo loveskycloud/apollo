@@ -9,6 +9,7 @@
 
 #include "simulation/logsim/record_file_source.h"
 #include "simulation/simulator/i_message_source.h"
+#include "simulation/worldsim/world_message_source.h"
 
 namespace apollo {
 namespace simulation {
@@ -19,6 +20,8 @@ class MessageSourceFactory {
     switch (cfg.type) {
       case SourceType::RECORD_FILE:
         return std::make_unique<RecordFileSource>();
+      case SourceType::WORLD_SCENARIO:
+        return std::make_unique<WorldMessageSource>();
       default:
         return nullptr;
     }

@@ -1,0 +1,12 @@
+# The installed Apollo 10 runtime has the standard controllers, not Plus plugins.
+# controller { name: "LAT_PLUS_CONTROLLER" type: "LatPlusController" }
+# controller { name: "LON_PLUS_CONTROLLER" type: "LonPlusController" }
+# controller { name: "DEBUG_INFO_TASK" type: "DebugInfoControlTask" }
+controller {
+  name: "LAT_CONTROLLER"
+  type: "LatController"
+}
+controller {
+  name: "LON_CONTROLLER"
+  type: "LonController"
+}

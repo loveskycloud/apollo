@@ -1,0 +1,62 @@
+extrinsic_file {
+    frame_id: "localization"
+    child_frame_id: "novatel"
+    file_path: "modules/localization/msf/params/novatel_localization_extrinsics.yaml"
+    enable: true
+}
+
+extrinsic_file {
+    frame_id: "localization"
+    child_frame_id: "imu"
+    file_path: "modules/localization/msf/params/imu_localization_extrinsics.yaml"
+    enable: true
+}
+
+extrinsic_file {
+    frame_id: "imu"
+    child_frame_id: "rslidar_up"
+    file_path: "modules/perception/data/params/rslidar_up_imu_extrinsics.yaml"
+    enable: true
+}
+
+extrinsic_file {
+    frame_id: "rslidar_up"
+    child_frame_id: "cam0_front"
+    file_path: "modules/perception/data/params/camera_cam0_front_extrinsics.yaml"
+    enable: true
+}
+
+extrinsic_file {
+    frame_id: "rslidar_up"
+    child_frame_id: "cam1_left_back"
+    file_path: "modules/perception/data/params/camera_cam1_left_back_extrinsics.yaml"
+    enable: true
+}
+
+extrinsic_file {
+    frame_id: "rslidar_up"
+    child_frame_id: "cam2_left_front"
+    file_path: "modules/perception/data/params/camera_cam2_left_front_extrinsics.yaml"
+    enable: true
+}
+
+extrinsic_file {
+    frame_id: "rslidar_up"
+    child_frame_id: "cam3_right_back"
+    file_path: "modules/perception/data/params/camera_cam3_right_back_extrinsics.yaml"
+    enable: true
+}
+
+extrinsic_file {
+    frame_id: "rslidar_up"
+    child_frame_id: "cam4_right_front"
+    file_path: "modules/perception/data/params/camera_cam4_right_front_extrinsics.yaml"
+    enable: true
+}
+
+extrinsic_file {
+    frame_id: "localization"
+    child_frame_id: "virtual_lidar"
+    file_path: "modules/perception/data/params/virtual_lidar_localization_extrinsics.yaml"
+    enable: true
+}

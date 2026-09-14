@@ -1,7 +1,7 @@
 <package format="2">
   <name>web-monitor</name>
   <version>local</version>
-  <description>Apollo simulation web monitor based on Rerun 0.19.1 viewer</description>
+  <description>Apollo simulation web monitor based on Rerun 0.37.1 viewer (AD UI fork)</description>
   <maintainer email="apollo-support@baidu.com">Apollo</maintainer>
   <license>Apache License 2.0</license>
   <type>module</type>

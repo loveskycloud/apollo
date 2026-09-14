@@ -114,8 +114,11 @@ bool DagController::LoadModule(simulator::ModuleType type) {
   if (!LoadLibraryForDag(dag_config, spec, &resolved_lib)) {
     return false;
   }
-  return class_controller_.CreateInitAndAppend(
-      dag_config, type, spec.name(), resolved_dag, resolved_lib);
+  if (!class_controller_.CreateInitAndAppend(
+          dag_config, type, spec.name(), resolved_dag, resolved_lib)) {
+    return false;
+  }
+  return ego_ == nullptr || !ego_->ready() || ego_->VerifyEnvironment();
 }
 
 bool DagController::InjectEgoFlagOverrides(

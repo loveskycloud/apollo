@@ -27,6 +27,14 @@ struct SimEvent {
   std::string channel;
   std::string payload;
   std::string module_name;
+  // Stable source order for equal timestamp/channel messages. Never use pointer
+  // addresses or arrival order from OS threads as a scheduling key.
+  uint64_t sequence = 0;
+  // Timer/world steps execute synchronously under the same frozen clock as bags.
+  std::function<bool()> process;
+  // Recurring timers keep only their next occurrence in the heap.
+  uint64_t interval_ns = 0;
+  uint64_t repeat_end_ns = 0;
 
   bool operator<(const SimEvent& other) const {
     if (sim_time_ns != other.sim_time_ns) {
@@ -35,7 +43,10 @@ struct SimEvent {
     if (tie_breaker != other.tie_breaker) {
       return tie_breaker < other.tie_breaker;
     }
-    return channel < other.channel;
+    if (channel != other.channel) {
+      return channel < other.channel;
+    }
+    return sequence < other.sequence;
   }
 
   bool operator>(const SimEvent& other) const { return other < *this; }

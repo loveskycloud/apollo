@@ -1,0 +1,7 @@
+output_channel_name: "/apollo/perception/edge"
+planning_history_channel_name: "/apollo/planning_command_history"
+plugin_param {
+  name: "SemanticDetector"
+  config_path: "perception/pointcloud_curb_detection/data"
+  config_file: "semantic_detector.pb.txt"
+}

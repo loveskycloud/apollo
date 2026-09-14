@@ -186,6 +186,42 @@ impl SpatialView3D {
         let enable_gamepad_navigation =
             ctx.app_options().experimental.gamepad_navigation && is_selected_view;
 
+        let transforms = system_output
+            .context_systems
+            .get_and_report_missing::<crate::TransformTreeContext>(missing_chunk_reporter)?;
+        let vehicle: re_log_types::EntityPath = "/vehicle".into();
+        let translation =
+            re_sdk_types::archetypes::InstancePoses3D::descriptor_translations().component;
+        let rotation =
+            re_sdk_types::archetypes::InstancePoses3D::descriptor_quaternions().component;
+        let pose =
+            ctx.recording()
+                .latest_at(&query.latest_at_query(), &vehicle, [translation, rotation]);
+        let has_pose = pose
+            .component_mono::<re_sdk_types::components::Translation3D>(translation)
+            .is_some()
+            && pose
+                .component_mono::<re_sdk_types::components::RotationQuat>(rotation)
+                .is_some();
+        let ego = if has_pose {
+            transforms
+                .target_from_entity_path(vehicle.hash())
+                .and_then(|t| t.as_ref().ok())
+                .and_then(|t| {
+                    let transform = t.target_from_instances().first();
+                    let position = transform.translation.as_vec3();
+                    let forward = transform.transform_vector3(glam::DVec3::Y).as_vec3();
+                    let heading = Vec3::new(forward.x, forward.y, 0.0).try_normalize()?;
+                    position.is_finite().then_some(crate::eye::EgoPose {
+                        position,
+                        heading,
+                        sample_ns: pose.max_index().0.as_i64(),
+                    })
+                })
+        } else {
+            None
+        };
+
         let eye = {
             let mut state_3d = state.state_3d.clone();
             let view_context = self.view_context(ctx, query.view_id, state, query.space_origin);
@@ -195,6 +231,7 @@ impl SpatialView3D {
                 space_cameras,
                 &state.bounding_boxes,
                 enable_gamepad_navigation,
+                ego,
             )?;
             state.state_3d = state_3d;
             state.show_bounding_box = show_bounding_box;
@@ -294,7 +331,9 @@ impl SpatialView3D {
             ViewProperty::from_archetype_for_view::<EyeControls3D>(ctx, query.view_id);
 
         // Track focused entity if any.
-        if let Some(focused_item) = ctx.focused_item() {
+        if !state.state_3d.eye_state.ad_navigation.managed()
+            && let Some(focused_item) = ctx.focused_item()
+        {
             let focused_entity = match &focused_item.item {
                 Item::AppId(_)
                 | Item::DataSource(_)
@@ -438,7 +477,123 @@ impl SpatialView3D {
         let painter = ui.painter().with_clip_rect(ui.max_rect());
         painter.extend(label_shapes);
 
+        self.ad_camera_controls(ctx, ui, ui_rect, state, query, ego)?;
+        crate::ad_dashboard::show(ui, ui_rect, query.view_id);
+
         Ok(view_ui_output)
+    }
+
+    fn ad_camera_controls(
+        &self,
+        ctx: &ViewerContext<'_>,
+        ui: &mut egui::Ui,
+        rect: egui::Rect,
+        state: &mut SpatialViewState,
+        query: &ViewQuery<'_>,
+        ego: Option<crate::eye::EgoPose>,
+    ) -> Result<(), ViewSystemExecutionError> {
+        let id = egui::Id::new(("ad_camera", query.view_id));
+        let toolbar = egui::Rect::from_min_size(
+            egui::pos2(rect.right() - 56.0, rect.top() + 25.0),
+            egui::vec2(32.0, 76.0),
+        );
+        let mut controls = ui.new_child(egui::UiBuilder::new().id_salt(id).max_rect(toolbar));
+        controls.set_clip_rect(rect.intersect(ui.clip_rect()));
+        let nav = &state.state_3d.eye_state.ad_navigation;
+        let top = camera_icon_button(
+            &mut controls,
+            toolbar.min,
+            id.with("top"),
+            false,
+            true,
+            nav.overhead,
+        );
+        let locate = camera_icon_button(
+            &mut controls,
+            toolbar.min + egui::vec2(0.0, 44.0),
+            id.with("locate"),
+            true,
+            ego.is_some() || nav.following,
+            nav.following,
+        );
+        let eye = &state.state_3d.eye_state;
+        let mut target = eye.last_look_target;
+        let mut pos = eye.last_eye.map(|e| e.pos_in_world());
+        let mut up = eye.last_eye_up;
+        if let (Some(mut p), Some(mut t), Some(mut u)) = (pos, target, up) {
+            let nav = &mut state.state_3d.eye_state.ad_navigation;
+            if top.clicked() {
+                if nav.overhead {
+                    nav.overhead = false;
+                    if !nav.following {
+                        p = t + nav.saved_offset;
+                        u = nav.saved_up;
+                    }
+                } else {
+                    nav.saved_offset = p - t;
+                    nav.saved_up = u;
+                    nav.overhead = true;
+                    nav.center = t;
+                    if !nav.following {
+                        nav.planar_up = Vec3::Y;
+                    }
+                }
+            }
+            if locate.clicked() {
+                if nav.following {
+                    nav.following = false;
+                    nav.center = t;
+                    if nav.overhead {
+                        nav.saved_offset = -nav.planar_up * (0.8 * nav.chase_distance)
+                            + Vec3::Z * (0.6 * nav.chase_distance);
+                        nav.saved_up = Vec3::Z;
+                    }
+                } else if let Some(ego) = ego {
+                    nav.following = true;
+                    nav.center = ego.position;
+                    nav.planar_up = ego.heading;
+                    nav.chase_distance = 50.0;
+                    nav.top_height = 70.0;
+                }
+            }
+            if top.clicked() || locate.clicked() {
+                let property =
+                    ViewProperty::from_archetype_for_view::<EyeControls3D>(ctx, query.view_id);
+                property.save_blueprint_component(
+                    ctx,
+                    &EyeControls3D::descriptor_position(),
+                    &re_sdk_types::components::Position3D::from(p),
+                );
+                property.save_blueprint_component(
+                    ctx,
+                    &EyeControls3D::descriptor_look_target(),
+                    &re_sdk_types::components::Position3D::from(t),
+                );
+                property.save_blueprint_component(
+                    ctx,
+                    &EyeControls3D::descriptor_eye_up(),
+                    &re_sdk_types::components::Vector3D::from(u),
+                );
+                property
+                    .clear_blueprint_component(ctx, EyeControls3D::descriptor_tracking_entity());
+                ui.request_repaint();
+                pos = Some(p);
+                target = Some(t);
+                up = Some(u);
+            }
+        }
+        let nav = &state.state_3d.eye_state.ad_navigation;
+        if nav.following && ego.is_none() {
+            ui.painter().text(
+                egui::pos2(rect.right() - 24.0, toolbar.bottom() + 10.0),
+                egui::Align2::RIGHT_TOP,
+                "Follow paused: pose / TF unavailable",
+                egui::FontId::proportional(11.0),
+                egui::Color32::YELLOW,
+            );
+        }
+        ui.ctx().data_mut(|d|d.insert_temp(id.with("diagnostic"),serde_json::json!({"top":[top.rect.center().x,top.rect.center().y],"locate":[locate.rect.center().x,locate.rect.center().y],"ego":ego.map(|p|p.position.to_array()),"heading":ego.map(|p|p.heading.to_array()),"pose_ns":ego.map(|p|p.sample_ns.to_string()),"following":nav.following,"overhead":nav.overhead,"chase_distance":nav.chase_distance,"top_height":nav.top_height,"position":pos.map(|p|p.to_array()),"target":target.map(|p|p.to_array()),"up":up.map(|p|p.to_array())})));
+        Ok(())
     }
 
     fn setup_grid_3d(
@@ -508,6 +663,110 @@ pub fn validate_view_coordinates(coordinates: &mut ViewCoordinates) -> Option<Vi
                 )),
             })
         }
+    }
+}
+
+/// Dreamview Plus ViewBtn: 32 px / 6 px corners, 16 px icons, no outline.
+/// The locate glyph follows IconPark's ic_location (centre dot, ring and four ticks).
+fn camera_icon_button(
+    ui: &mut egui::Ui,
+    min: egui::Pos2,
+    id: egui::Id,
+    locate: bool,
+    enabled: bool,
+    selected: bool,
+) -> egui::Response {
+    let rect = egui::Rect::from_min_size(min, egui::vec2(32.0, 32.0));
+    let response = ui.interact(rect, id, egui::Sense::click());
+    response.widget_info(|| {
+        egui::WidgetInfo::labeled(
+            egui::WidgetType::Button,
+            enabled,
+            if locate {
+                "Toggle ego follow"
+            } else {
+                "Bird's-eye view"
+            },
+        )
+    });
+    let hovered = enabled && (response.hovered() || response.has_focus());
+    let bg = if hovered {
+        egui::Color32::from_rgb(64, 77, 101)
+    } else {
+        egui::Color32::from_rgb(52, 60, 77)
+    };
+    let fg = if !enabled {
+        egui::Color32::from_rgb(93, 104, 122)
+    } else if selected || response.is_pointer_button_down_on() {
+        egui::Color32::from_rgb(51, 136, 250)
+    } else if hovered {
+        egui::Color32::from_rgb(224, 233, 248)
+    } else {
+        egui::Color32::from_rgb(150, 165, 193)
+    };
+    let painter = ui.painter();
+    painter.rect_filled(rect, 6.0, bg);
+    let center = rect.center();
+    let stroke = egui::Stroke::new(1.2, fg);
+    if locate {
+        painter.circle_stroke(center, 5.5, stroke);
+        painter.circle_filled(center, 2.5, fg);
+        for direction in [egui::Vec2::X, -egui::Vec2::X, egui::Vec2::Y, -egui::Vec2::Y] {
+            painter.line_segment([center + direction * 5.0, center + direction * 8.0], stroke);
+        }
+    } else {
+        // Isometric view cube; the upper face denotes the overhead view.
+        let p = |x, y| center + egui::vec2(x, y);
+        painter.add(egui::Shape::convex_polygon(
+            vec![p(0.0, -7.0), p(7.0, -3.0), p(0.0, 1.0), p(-7.0, -3.0)],
+            fg.gamma_multiply(if selected { 0.32 } else { 0.12 }),
+            stroke,
+        ));
+        painter.add(egui::Shape::line(
+            vec![
+                p(-7.0, -3.0),
+                p(-7.0, 4.0),
+                p(0.0, 8.0),
+                p(7.0, 4.0),
+                p(7.0, -3.0),
+            ],
+            stroke,
+        ));
+        painter.line_segment([p(0.0, 1.0), p(0.0, 8.0)], stroke);
+    }
+    let mut tooltip = egui::Tooltip::for_enabled(&response);
+    tooltip.popup = tooltip
+        .popup
+        .align(egui::RectAlign::LEFT)
+        .gap(8.0)
+        .width(220.0);
+    tooltip.show(|ui| {
+        ui.set_max_width(220.0);
+        ui.label(if locate && selected {
+            "Stop following ego"
+        } else if locate {
+            "Follow ego"
+        } else if selected {
+            "Restore 3D view"
+        } else {
+            "Bird's-eye view"
+        });
+        ui.weak(if !enabled {
+            "Pose or TF unavailable. Enable localization/pose and check transforms."
+        } else if locate && selected {
+            "Release the camera for free navigation; overhead mode stays planar."
+        } else if locate {
+            "Follow position and heading. Rear chase in 3D, heading-up from above in planar mode."
+        } else if selected {
+            "Return to the previous camera orientation."
+        } else {
+            "Lock to the horizontal plane. Drag to pan, scroll to zoom; click again for 3D."
+        });
+    });
+    if enabled {
+        response.on_hover_cursor(egui::CursorIcon::PointingHand)
+    } else {
+        response
     }
 }
 

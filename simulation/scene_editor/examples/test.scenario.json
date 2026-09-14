@@ -1,0 +1,78 @@
+{
+  "kind": "mine-project",
+  "version": 1,
+  "name": "默认项目",
+  "mapSource": "builtin:1haolou_202608241047qh",
+  "map": {
+    "name": "1haolou_202608241047qh",
+    "data": null
+  },
+  "scenario": {
+    "id": "0a13237f-077e-4bab-a073-81658e2b3591",
+    "name": "默认场景",
+    "description": "1haolou test route: Lane_1 → Lane_9 + PnC modules",
+    "duration": 60,
+    "agents": [
+      {
+        "id": "ego",
+        "name": "Ego Mine Truck",
+        "type": "ego",
+        "position": {
+          "x": 9998.5477,
+          "y": 9000003.4294,
+          "z": 0.4
+        },
+        "heading": 3.141592653589793,
+        "speed": 0,
+        "size": {
+          "x": 1,
+          "y": 0.5,
+          "z": 0.8
+        },
+        "color": "#e74c3c",
+        "activeRouteId": "ego_route_1",
+        "routes": [
+          {
+            "id": "ego_route_1",
+            "name": "test route (Lane_1 → Lane_9)",
+            "waypoints": [
+              {
+                "id": "5fb9dab5-8617-42c4-9dac-44c88bb61de4",
+                "position": {
+                  "x": 9998.5477,
+                  "y": 9000003.4294,
+                  "z": 0
+                }
+              },
+              {
+                "id": "f4eadfe4-7cde-4aa1-94f8-54426e33545c",
+                "position": {
+                  "x": 9991.2606,
+                  "y": 9000003.888,
+                  "z": 0
+                }
+              },
+              {
+                "id": "d75a03c7-e731-4f3a-9a16-94fb6966e53e",
+                "position": {
+                  "x": 9965.9863,
+                  "y": 9000006.4473,
+                  "z": 0
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "triggers": [],
+    "mapId": "1haolou_202608241047qh",
+    "simConfig": {
+      "planning": true,
+      "control": true,
+      "prediction": true,
+      "routing": true
+    }
+  },
+  "savedAt": "2026-09-13T03:31:01.771Z"
+}

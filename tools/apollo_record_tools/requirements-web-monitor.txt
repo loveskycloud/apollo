@@ -1,0 +1,10 @@
+# Validated with Apollo 10 / Python 3.10. Install only in this directory's .venv.
+# protobuf 4 supplies GetMessageClass; Apollo's generated schemas use pure Python.
+foxglove-schemas-protobuf==0.3.0
+lz4==4.4.5
+mcap==1.4.0
+mcap-protobuf-support==0.5.4
+mapbox-earcut==1.0.3
+numpy==1.26.4
+protobuf==4.25.9
+zstandard==0.25.0

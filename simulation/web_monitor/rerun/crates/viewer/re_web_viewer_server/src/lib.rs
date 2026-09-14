@@ -362,6 +362,19 @@ pub type ConvertStatusHandler =
 pub type McapTopicsHandler =
     std::sync::Arc<dyn Fn(Option<&str>) -> Result<String, String> + Send + Sync>;
 
+/// `POST /api/topic_debug` — body = `mcap_path\ntopic[\nat_ns]` (2–3 lines).
+/// Returns JSON DebugString or `{"status":"error","message":...}` (fail loud).
+pub type TopicDebugHandler =
+    std::sync::Arc<dyn Fn(&str, &str, Option<i64>) -> Result<String, String> + Send + Sync>;
+
+pub type DebugQueryHandler = std::sync::Arc<dyn Fn(&str) -> Result<String, String> + Send + Sync>;
+
+/// `POST /api/playback_window` — body lines:
+/// `mcap_path`, `begin_ns`, `end_ns`, `reset` (`0`|`1`), then one topic per line.
+/// Streams a filtered MCAP time window into the gRPC proxy (fail loud if empty topics / bad range).
+pub type PlaybackWindowHandler =
+    std::sync::Arc<dyn Fn(&str, u64, u64, bool, &[String]) -> Result<String, String> + Send + Sync>;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 /// Typed port for use with [`WebViewerServer`]
 pub struct WebViewerServerPort(pub u16);
@@ -428,6 +441,11 @@ struct WebViewerServerInner {
     convert_status: parking_lot::Mutex<Option<ConvertStatusHandler>>,
     /// Optional MCAP summary topic list (header/channels, no message decode).
     mcap_topics: parking_lot::Mutex<Option<McapTopicsHandler>>,
+    topic_debug: parking_lot::Mutex<Option<TopicDebugHandler>>,
+    debug_query: parking_lot::Mutex<Option<DebugQueryHandler>>,
+    simulation: parking_lot::Mutex<Option<DebugQueryHandler>>,
+    /// Optional windowed MCAP playback (time range + topic subset).
+    playback_window: parking_lot::Mutex<Option<PlaybackWindowHandler>>,
 }
 
 impl WebViewerServer {
@@ -502,6 +520,10 @@ impl WebViewerServer {
             convert_record: parking_lot::Mutex::new(None),
             convert_status: parking_lot::Mutex::new(None),
             mcap_topics: parking_lot::Mutex::new(None),
+            topic_debug: parking_lot::Mutex::new(None),
+            debug_query: parking_lot::Mutex::new(None),
+            simulation: parking_lot::Mutex::new(None),
+            playback_window: parking_lot::Mutex::new(None),
         });
 
         let inner_copy = inner.clone();
@@ -534,7 +556,6 @@ impl WebViewerServer {
         format!("http://{}", self.inner.server.server_addr())
     }
 
-
     /// Install a handler for `POST /api/open_local` (body = absolute host path).
     ///
     /// Used by Apollo web_monitor so the browser can ask the host process to open large
@@ -556,6 +577,24 @@ impl WebViewerServer {
     /// Install handler for `GET|POST /api/mcap_topics` (MCAP summary channel list).
     pub fn set_mcap_topics_handler(&self, handler: McapTopicsHandler) {
         *self.inner.mcap_topics.lock() = Some(handler);
+    }
+
+    /// Install handler for `POST /api/topic_debug` (Dreamview-style on-demand DebugString).
+    pub fn set_topic_debug_handler(&self, handler: TopicDebugHandler) {
+        *self.inner.topic_debug.lock() = Some(handler);
+    }
+
+    pub fn set_debug_query_handler(&self, handler: DebugQueryHandler) {
+        *self.inner.debug_query.lock() = Some(handler);
+    }
+
+    pub fn set_simulation_handler(&self, handler: DebugQueryHandler) {
+        *self.inner.simulation.lock() = Some(handler);
+    }
+
+    /// Install handler for `POST /api/playback_window` (time-range + topic-subset MCAP stream).
+    pub fn set_playback_window_handler(&self, handler: PlaybackWindowHandler) {
+        *self.inner.playback_window.lock() = Some(handler);
     }
 
     /// Blocks execution as long as the server is running.
@@ -685,25 +724,23 @@ impl WebViewerServerInner {
         );
     }
 
-
     #[cfg(not(disable_web_viewer_server))]
     fn handle_open_local(&self, mut request: tiny_http::Request) -> Result<(), std::io::Error> {
         use std::io::Read as _;
 
-        let cors = tiny_http::Header::from_str("Access-Control-Allow-Origin: *")
-            .expect("valid header");
+        let cors =
+            tiny_http::Header::from_str("Access-Control-Allow-Origin: *").expect("valid header");
 
         if request.method() == &tiny_http::Method::Options {
             let mut response = tiny_http::Response::empty(204);
             response.add_header(cors);
-            if let Ok(h) = tiny_http::Header::from_str(
-                "Access-Control-Allow-Methods: POST, OPTIONS",
-            ) {
+            if let Ok(h) =
+                tiny_http::Header::from_str("Access-Control-Allow-Methods: POST, OPTIONS")
+            {
                 response.add_header(h);
             }
-            if let Ok(h) = tiny_http::Header::from_str(
-                "Access-Control-Allow-Headers: Content-Type",
-            ) {
+            if let Ok(h) = tiny_http::Header::from_str("Access-Control-Allow-Headers: Content-Type")
+            {
                 response.add_header(h);
             }
             return request.respond(response);
@@ -733,10 +770,12 @@ impl WebViewerServerInner {
 
         match handler(path) {
             Ok(()) => {
-                let mut response = tiny_http::Response::from_string(format!("ok: streaming {path}"))
-                    .with_status_code(200);
+                let mut response =
+                    tiny_http::Response::from_string(format!("ok: streaming {path}"))
+                        .with_status_code(200);
                 response.add_header(cors);
-                if let Ok(h) = tiny_http::Header::from_str("Content-Type: text/plain; charset=utf-8")
+                if let Ok(h) =
+                    tiny_http::Header::from_str("Content-Type: text/plain; charset=utf-8")
                 {
                     response.add_header(h);
                 }
@@ -746,7 +785,8 @@ impl WebViewerServerInner {
                 re_log::error!("open_local failed: {err}");
                 let mut response = tiny_http::Response::from_string(err).with_status_code(400);
                 response.add_header(cors);
-                if let Ok(h) = tiny_http::Header::from_str("Content-Type: text/plain; charset=utf-8")
+                if let Ok(h) =
+                    tiny_http::Header::from_str("Content-Type: text/plain; charset=utf-8")
                 {
                     response.add_header(h);
                 }
@@ -764,14 +804,13 @@ impl WebViewerServerInner {
             if let Ok(h) = tiny_http::Header::from_str("Access-Control-Allow-Origin: *") {
                 response.add_header(h);
             }
-            if let Ok(h) = tiny_http::Header::from_str(
-                "Access-Control-Allow-Methods: POST, GET, OPTIONS",
-            ) {
+            if let Ok(h) =
+                tiny_http::Header::from_str("Access-Control-Allow-Methods: POST, GET, OPTIONS")
+            {
                 response.add_header(h);
             }
-            if let Ok(h) = tiny_http::Header::from_str(
-                "Access-Control-Allow-Headers: Content-Type",
-            ) {
+            if let Ok(h) = tiny_http::Header::from_str("Access-Control-Allow-Headers: Content-Type")
+            {
                 response.add_header(h);
             }
             return request.respond(response);
@@ -842,7 +881,7 @@ impl WebViewerServerInner {
         }
     }
 
-        #[cfg(not(disable_web_viewer_server))]
+    #[cfg(not(disable_web_viewer_server))]
     fn handle_mcap_topics(&self, mut request: tiny_http::Request) -> Result<(), std::io::Error> {
         use std::io::Read as _;
 
@@ -851,14 +890,13 @@ impl WebViewerServerInner {
             if let Ok(h) = tiny_http::Header::from_str("Access-Control-Allow-Origin: *") {
                 response.add_header(h);
             }
-            if let Ok(h) = tiny_http::Header::from_str(
-                "Access-Control-Allow-Methods: GET, POST, OPTIONS",
-            ) {
+            if let Ok(h) =
+                tiny_http::Header::from_str("Access-Control-Allow-Methods: GET, POST, OPTIONS")
+            {
                 response.add_header(h);
             }
-            if let Ok(h) = tiny_http::Header::from_str(
-                "Access-Control-Allow-Headers: Content-Type",
-            ) {
+            if let Ok(h) = tiny_http::Header::from_str("Access-Control-Allow-Headers: Content-Type")
+            {
                 response.add_header(h);
             }
             return request.respond(response);
@@ -922,6 +960,248 @@ impl WebViewerServerInner {
         }
     }
 
+    #[cfg(not(disable_web_viewer_server))]
+    fn handle_debug_query(&self, mut request: tiny_http::Request) -> Result<(), std::io::Error> {
+        use std::io::Read as _;
+        let simulation = request.url().split('?').next() == Some("/api/sim");
+        let handler = if simulation {
+            &self.simulation
+        } else {
+            &self.debug_query
+        };
+        // Mutation API: browser cross-site requests must not enqueue/cancel jobs.
+        let cross_site = simulation
+            && request
+                .headers()
+                .iter()
+                .any(|h| h.field.equiv("Sec-Fetch-Site") && h.value.as_str() == "cross-site");
+        let host = request
+            .headers()
+            .iter()
+            .find(|h| h.field.equiv("Host"))
+            .map(|h| h.value.as_str());
+        let invalid_origin = simulation
+            && request.headers().iter().any(|h| {
+                h.field.equiv("Origin")
+                    && !host.is_some_and(|host| {
+                        h.value.as_str() == format!("http://{host}")
+                            || h.value.as_str() == format!("https://{host}")
+                    })
+            });
+        let json_content = request.headers().iter().any(|h| {
+            h.field.equiv("Content-Type")
+                && h.value
+                    .as_str()
+                    .split(';')
+                    .next()
+                    .is_some_and(|v| v.trim() == "application/json")
+        });
+        let mut body = String::new();
+        request.as_reader().take(65537).read_to_string(&mut body)?;
+        let result = if cross_site || invalid_origin {
+            Err("Cross-site simulation requests are forbidden".to_owned())
+        } else if request.method() != &tiny_http::Method::Post || (simulation && !json_content) {
+            Err("Use POST with JSON body".to_owned())
+        } else if body.len() > 65536 {
+            Err("Debug query exceeds 64 KiB request budget".to_owned())
+        } else if let Some(handler) = handler.lock().clone() {
+            handler(&body)
+        } else {
+            Err("Debug query handler not configured".to_owned())
+        };
+        let (code, body) = match result {
+            Ok(body) => (200, body),
+            Err(error) => (
+                400,
+                format!(r#"{{"status":"error","message":{}}}"#, json_escape(&error)),
+            ),
+        };
+        let mut response = tiny_http::Response::from_string(body).with_status_code(code);
+        if let Ok(h) = tiny_http::Header::from_str("Content-Type: application/json; charset=utf-8")
+        {
+            response.add_header(h);
+        }
+        request.respond(response)
+    }
+
+    #[cfg(not(disable_web_viewer_server))]
+    fn handle_topic_debug(&self, mut request: tiny_http::Request) -> Result<(), std::io::Error> {
+        use std::io::Read as _;
+
+        if request.method() == &tiny_http::Method::Options {
+            let mut response = tiny_http::Response::empty(204);
+            if let Ok(h) = tiny_http::Header::from_str("Access-Control-Allow-Origin: *") {
+                response.add_header(h);
+            }
+            if let Ok(h) =
+                tiny_http::Header::from_str("Access-Control-Allow-Methods: POST, OPTIONS")
+            {
+                response.add_header(h);
+            }
+            if let Ok(h) = tiny_http::Header::from_str("Access-Control-Allow-Headers: Content-Type")
+            {
+                response.add_header(h);
+            }
+            return request.respond(response);
+        }
+
+        let make_response = |status: u16, body: String| {
+            let mut response = tiny_http::Response::from_string(body).with_status_code(status);
+            if let Ok(h) = tiny_http::Header::from_str("Access-Control-Allow-Origin: *") {
+                response.add_header(h);
+            }
+            if let Ok(h) =
+                tiny_http::Header::from_str("Content-Type: application/json; charset=utf-8")
+            {
+                response.add_header(h);
+            }
+            response
+        };
+
+        if request.method() != &tiny_http::Method::Post {
+            return request.respond(make_response(
+                405,
+                r#"{"status":"error","message":"use POST body = mcap_path\\ntopic[\\nat_ns]"}"#
+                    .into(),
+            ));
+        }
+
+        let mut body = String::new();
+        request.as_reader().read_to_string(&mut body)?;
+        let mut lines = body.lines();
+        let mcap = lines.next().unwrap_or("").trim();
+        let topic = lines.next().unwrap_or("").trim();
+        let at_ns = lines
+            .next()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .and_then(|s| s.parse::<i64>().ok());
+        if mcap.is_empty() || topic.is_empty() {
+            return request.respond(make_response(
+                400,
+                r#"{"status":"error","message":"body must be mcap_path\\ntopic[\\nat_ns]"}"#.into(),
+            ));
+        }
+
+        let Some(handler) = self.topic_debug.lock().clone() else {
+            return request.respond(make_response(
+                501,
+                r#"{"status":"error","message":"topic_debug handler not configured"}"#.into(),
+            ));
+        };
+        match handler(mcap, topic, at_ns) {
+            Ok(body) => request.respond(make_response(200, body)),
+            Err(err) => request.respond(make_response(
+                400,
+                format!(r#"{{"status":"error","message":{}}}"#, json_escape(&err)),
+            )),
+        }
+    }
+
+    #[cfg(not(disable_web_viewer_server))]
+    fn handle_playback_window(
+        &self,
+        mut request: tiny_http::Request,
+    ) -> Result<(), std::io::Error> {
+        use std::io::Read as _;
+
+        if request.method() == &tiny_http::Method::Options {
+            let mut response = tiny_http::Response::empty(204);
+            if let Ok(h) = tiny_http::Header::from_str("Access-Control-Allow-Origin: *") {
+                response.add_header(h);
+            }
+            if let Ok(h) =
+                tiny_http::Header::from_str("Access-Control-Allow-Methods: POST, OPTIONS")
+            {
+                response.add_header(h);
+            }
+            if let Ok(h) = tiny_http::Header::from_str("Access-Control-Allow-Headers: Content-Type")
+            {
+                response.add_header(h);
+            }
+            return request.respond(response);
+        }
+
+        let make_response = |status: u16, body: String| {
+            let mut response = tiny_http::Response::from_string(body).with_status_code(status);
+            if let Ok(h) = tiny_http::Header::from_str("Access-Control-Allow-Origin: *") {
+                response.add_header(h);
+            }
+            if let Ok(h) =
+                tiny_http::Header::from_str("Content-Type: application/json; charset=utf-8")
+            {
+                response.add_header(h);
+            }
+            response
+        };
+
+        if request.method() != &tiny_http::Method::Post {
+            return request.respond(make_response(
+                405,
+                r#"{"status":"error","message":"use POST body = mcap\\nbegin_ns\\nend_ns\\nreset\\ntopic…"}"#
+                    .into(),
+            ));
+        }
+
+        let mut body = String::new();
+        request.as_reader().read_to_string(&mut body)?;
+        let mut lines = body.lines();
+        let mcap = lines.next().unwrap_or("").trim();
+        let begin_ns = lines
+            .next()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .and_then(|s| s.parse::<u64>().ok());
+        let end_ns = lines
+            .next()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .and_then(|s| s.parse::<u64>().ok());
+        let reset = match lines.next().map(str::trim).unwrap_or("0") {
+            "1" | "true" | "True" | "yes" => true,
+            "0" | "false" | "False" | "no" | "" => false,
+            other => {
+                return request.respond(make_response(
+                    400,
+                    format!(
+                        r#"{{"status":"error","message":"reset must be 0 or 1, got {other}"}}"#
+                    ),
+                ));
+            }
+        };
+        let topics: Vec<String> = lines
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(str::to_owned)
+            .collect();
+
+        if mcap.is_empty() || begin_ns.is_none() || end_ns.is_none() {
+            return request.respond(make_response(
+                400,
+                r#"{"status":"error","message":"body must be mcap\\nbegin_ns\\nend_ns\\nreset\\ntopic…"}"#
+                    .into(),
+            ));
+        }
+
+        let Some(handler) = self.playback_window.lock().clone() else {
+            return request.respond(make_response(
+                501,
+                r#"{"status":"error","message":"playback_window handler not configured"}"#.into(),
+            ));
+        };
+
+        match handler(mcap, begin_ns.unwrap(), end_ns.unwrap(), reset, &topics) {
+            Ok(body) => request.respond(make_response(200, body)),
+            Err(err) => {
+                re_log::error!("playback_window failed: {err}");
+                request.respond(make_response(
+                    400,
+                    format!(r#"{{"status":"error","message":{}}}"#, json_escape(&err)),
+                ))
+            }
+        }
+    }
+
     fn send_response(&self, request: tiny_http::Request) -> Result<(), std::io::Error> {
         // Strip arguments from url so we get the actual path.
         let url = request.url();
@@ -936,6 +1216,18 @@ impl WebViewerServerInner {
         }
         if path == "/api/mcap_topics" {
             return self.handle_mcap_topics(request);
+        }
+        if path == "/api/topic_debug" {
+            return self.handle_topic_debug(request);
+        }
+        if path == "/api/debug_query" {
+            return self.handle_debug_query(request);
+        }
+        if path == "/api/sim" {
+            return self.handle_debug_query(request);
+        }
+        if path == "/api/playback_window" {
+            return self.handle_playback_window(request);
         }
 
         let data = &self.data;

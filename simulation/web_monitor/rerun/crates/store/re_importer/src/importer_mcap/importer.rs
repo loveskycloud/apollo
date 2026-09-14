@@ -158,6 +158,18 @@ impl McapImporter {
         // Apply time offset (if set) and make sure chunks are sorted by RowId before passing to the callback.
         let emit_final_chunk = |chunk: re_chunk::Chunk| {
             let mut chunk = apply_timestamp_offset(chunk, timestamp_offset_ns);
+            // MCAP envelope clocks are the product contract. Content timestamps
+            // remain message fields, not additional selectable playback clocks.
+            if chunk
+                .timelines()
+                .keys()
+                .any(|name| !matches!(name.as_str(), "publish_time" | "message_time"))
+            {
+                let clocks = ["publish_time".into(), "message_time".into()]
+                    .into_iter()
+                    .collect();
+                chunk = chunk.timelines_sliced(&clocks);
+            }
             chunk.sort_by_row_ids_if_needed();
 
             // If we hit this warning, we may be producing unnecessarily slow .rrd:s

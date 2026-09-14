@@ -121,9 +121,7 @@ impl LogReceiverSet {
         re_tracing::profile_function!();
 
         loop {
-            if let Some((_source, msg)) =
-                self.recv_timeout(std::time::Duration::from_millis(50))
-            {
+            if let Some((_source, msg)) = self.recv_timeout(std::time::Duration::from_millis(50)) {
                 return Ok(msg);
             }
             if self.is_empty() {

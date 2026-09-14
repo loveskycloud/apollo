@@ -1,3 +1,4 @@
+mod ad_scene;
 mod attachments;
 mod metadata;
 mod protobuf;
@@ -1016,12 +1017,12 @@ mod tests {
         (summary, buffer)
     }
 
-    /// Collects the `message_log_time` values from `chunks`, in emission order.
+    /// Collects the `message_time` values from `chunks`, in emission order.
     fn emitted_log_times(chunks: &[Chunk]) -> Vec<i64> {
         let mut times = Vec::new();
         for chunk in chunks {
             for (name, time_column) in chunk.timelines() {
-                if name.as_str() == "message_log_time" {
+                if name.as_str() == "message_time" {
                     times.extend_from_slice(time_column.times_raw());
                 }
             }
@@ -1312,11 +1313,11 @@ mod tests {
                 && chunk
                     .timelines()
                     .values()
-                    .any(|timeline| timeline.name() == "message_log_time")
+                    .any(|timeline| timeline.name() == "message_time")
                 && chunk
                     .timelines()
                     .values()
-                    .any(|timeline| timeline.name() == "message_publish_time")
+                    .any(|timeline| timeline.name() == "publish_time")
         }));
     }
 

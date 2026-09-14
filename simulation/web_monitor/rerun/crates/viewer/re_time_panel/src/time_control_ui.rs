@@ -14,12 +14,20 @@ fn default_step_ms() -> u32 {
 
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct TimeControlUi {
-    /// Default step when pressing step-forward: 1 / 10 / 100 ms.
+    /// Paused transport step: 1 / 10 / 100 / 1000 ms.
     #[serde(default = "default_step_ms")]
     step_ms: u32,
-    /// While the clock field is focused, hold the raw edit string.
+    /// Do not replace an in-progress timestamp edit with advancing playback time.
     #[serde(skip)]
     clock_edit: Option<String>,
+    #[serde(skip)]
+    clock_edit_dirty: bool,
+    #[serde(skip)]
+    clock_edit_error: Option<String>,
+    #[serde(skip)]
+    clock_was_focused: bool,
+    #[serde(skip)]
+    clock_edit_source: Option<(String, String)>,
 }
 
 impl Default for TimeControlUi {
@@ -27,6 +35,10 @@ impl Default for TimeControlUi {
         Self {
             step_ms: default_step_ms(),
             clock_edit: None,
+            clock_edit_dirty: false,
+            clock_edit_error: None,
+            clock_was_focused: false,
+            clock_edit_source: None,
         }
     }
 }
@@ -333,28 +345,43 @@ You can also define your own timelines, e.g. for sensor time or camera frame num
 }
 
 // ---------------------------------------------------------------------------
-// AD collapsed media bar (ported from 0.19.1 custom patch; command-based API)
+// Scene-editor-style media bar; existing command-based playback and receipt cache.
 // ---------------------------------------------------------------------------
 
 mod ad_theme {
     use egui::Color32;
-    /// Muted lavender for secondary icons / tick labels / clock.
-    pub const MUTED: Color32 = Color32::from_rgb(0xA8, 0x9B, 0xC8);
-    /// Brighter accent for Play + playhead.
-    pub const ACCENT: Color32 = Color32::from_rgb(0xB8, 0x94, 0xF6);
-    pub const ACCENT_STRONG: Color32 = Color32::from_rgb(0xC4, 0xA1, 0xFF);
-    pub const PILL_BG: Color32 = Color32::from_rgb(0x2A, 0x23, 0x3A);
-    pub const BAR_BG: Color32 = Color32::from_rgb(0x1A, 0x16, 0x24);
-    pub const AXIS: Color32 = Color32::from_rgb(0xB8, 0x94, 0xF6);
+    // Carolanne product palette, matching the AD shell.
+    pub const MUTED: Color32 = Color32::from_rgb(0xC4, 0xB5, 0xFD);
+    pub const TEXT: Color32 = Color32::from_rgb(0xF3, 0xEE, 0xFF);
+    pub const ACCENT: Color32 = Color32::from_rgb(0x9F, 0x7A, 0xEA);
+    pub const INPUT: Color32 = Color32::from_rgb(0x3A, 0x31, 0x50);
+    pub const BAR_BG: Color32 = Color32::from_rgb(0x1E, 0x1A, 0x28);
+    pub const BORDER: Color32 = Color32::from_rgb(0x3A, 0x31, 0x50);
+    pub const HOVER: Color32 = Color32::from_rgb(0x4A, 0x3F, 0x66);
+    pub const CACHED: Color32 = Color32::from_rgb(0x59, 0x48, 0x78);
 }
 
-/// Same typeface as the ruler tick labels.
 fn tick_font() -> egui::FontId {
-    egui::FontId::proportional(10.0)
+    egui::FontId::proportional(12.0)
+}
+
+/// Read-only widget rectangles, also consumed by browser acceptance tests.
+fn record_rect(ui: &egui::Ui, name: &str, rect: egui::Rect) {
+    ui.ctx().data_mut(|d| {
+        let key = egui::Id::new("ad_media_bar_rects");
+        let mut rects = d
+            .get_temp::<std::collections::BTreeMap<String, [f32; 4]>>(key)
+            .unwrap_or_default();
+        rects.insert(
+            name.into(),
+            [rect.left(), rect.top(), rect.right(), rect.bottom()],
+        );
+        d.insert_temp(key, rects);
+    });
 }
 
 impl TimeControlUi {
-    /// transport · speed · Publish/Message time · thin timeline · step · editable clock
+    /// Flat scene-editor-style controls, with no settings or reset actions.
     pub fn media_bar_ui(
         &mut self,
         time_ctrl: &TimeControl,
@@ -362,34 +389,267 @@ impl TimeControlUi {
         ui: &mut egui::Ui,
         time_commands: &mut Vec<TimeControlCommand>,
         timeline_rect_out: &mut Option<egui::Rect>,
-        clock_text: &str,
         time_origin_ns: i64,
+        playback_end: Option<re_log_types::TimeInt>,
     ) {
-        use egui::{Sense, Vec2};
+        ui.ctx().data_mut(|d| {
+            d.insert_temp(
+                egui::Id::new("ad_media_bar_rects"),
+                std::collections::BTreeMap::<String, [f32; 4]>::new(),
+            )
+        });
+        record_rect(ui, "bar", ui.max_rect());
+        let source = (
+            entity_db.store_id().to_string(),
+            time_ctrl.timeline_name().to_string(),
+        );
+        if self.clock_edit_source.as_ref() != Some(&source) {
+            self.clock_edit_source = Some(source);
+            self.cancel_timestamp_edit();
+        }
+        ui.scope(|ui| {
+            ui.spacing_mut().item_spacing = egui::vec2(6.0, 8.0);
+            ui.spacing_mut().interact_size.y = 24.0;
+            ui.spacing_mut().button_padding = egui::vec2(7.0, 3.0);
+            ui.visuals_mut().override_text_color = Some(ad_theme::TEXT);
+            ui.visuals_mut().selection.bg_fill = ad_theme::ACCENT;
+            ui.visuals_mut().window_fill = ad_theme::BAR_BG;
+            ui.visuals_mut().window_stroke = egui::Stroke::new(1.0, ad_theme::BORDER);
+            ui.visuals_mut().extreme_bg_color = ad_theme::INPUT;
+            let visuals = &mut ui.visuals_mut().widgets;
+            for widget in [
+                &mut visuals.inactive,
+                &mut visuals.hovered,
+                &mut visuals.active,
+                &mut visuals.open,
+            ] {
+                widget.corner_radius = egui::CornerRadius::same(4);
+                widget.bg_stroke = egui::Stroke::new(1.0, ad_theme::BORDER);
+                widget.bg_fill = ad_theme::BAR_BG;
+                widget.weak_bg_fill = ad_theme::BAR_BG;
+                widget.fg_stroke.color = ad_theme::TEXT;
+            }
+            visuals.hovered.bg_fill = ad_theme::HOVER;
+            visuals.hovered.weak_bg_fill = ad_theme::HOVER;
+            if media_bar_is_compact(ui.available_width()) {
+                ui.vertical(|ui| {
+                    ui.horizontal(|ui| {
+                        self.inline_controls(
+                            ui,
+                            time_ctrl,
+                            entity_db,
+                            time_origin_ns,
+                            playback_end,
+                            time_commands,
+                        )
+                    });
+                    ui.horizontal(|ui| {
+                        self.slider_and_timestamp(
+                            ui,
+                            time_ctrl,
+                            time_origin_ns,
+                            playback_end,
+                            time_commands,
+                            timeline_rect_out,
+                        )
+                    });
+                });
+            } else {
+                self.inline_controls(
+                    ui,
+                    time_ctrl,
+                    entity_db,
+                    time_origin_ns,
+                    playback_end,
+                    time_commands,
+                );
+                ui.add_space(6.0);
+                self.slider_and_timestamp(
+                    ui,
+                    time_ctrl,
+                    time_origin_ns,
+                    playback_end,
+                    time_commands,
+                    timeline_rect_out,
+                );
+            }
+        });
+    }
 
-        ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-            ui.spacing_mut().item_spacing.x = 12.0;
-            ui.set_min_height(ui.available_height());
+    fn inline_controls(
+        &mut self,
+        ui: &mut egui::Ui,
+        time_ctrl: &TimeControl,
+        entity_db: &EntityDb,
+        begin: i64,
+        end: Option<re_log_types::TimeInt>,
+        commands: &mut Vec<TimeControlCommand>,
+    ) {
+        self.transport_controls(ui, time_ctrl, begin, end, commands);
+        self.speed_dropdown(ui, time_ctrl, commands);
+        self.timeline_mode_pill(ui, time_ctrl, entity_db, commands);
+        let step = egui::ComboBox::from_id_salt("ad_media_step")
+            .selected_text(egui::RichText::new(format!("{} ms", self.step_ms)).font(tick_font()))
+            .width(76.0)
+            .show_ui(ui, |ui| {
+                for ms in [1_u32, 10, 100, 1000] {
+                    let row = ui.selectable_value(&mut self.step_ms, ms, format!("{ms} ms"));
+                    record_rect(ui, &format!("step_{ms}"), row.rect);
+                }
+            })
+            .response
+            .on_hover_text("Step backward / forward");
+        record_rect(ui, "step", step.rect);
+    }
 
-            self.transport_controls(ui, time_ctrl, entity_db, time_commands);
-            self.speed_dropdown(ui, time_ctrl, time_commands);
-            self.timeline_mode_pill(ui, time_ctrl, entity_db, time_commands);
+    fn slider_and_timestamp(
+        &mut self,
+        ui: &mut egui::Ui,
+        time_ctrl: &TimeControl,
+        begin: i64,
+        end: Option<re_log_types::TimeInt>,
+        commands: &mut Vec<TimeControlCommand>,
+        timeline_rect_out: &mut Option<egui::Rect>,
+    ) {
+        let text = match (time_ctrl.time_int(), end) {
+            (Some(t), Some(end)) => format!(
+                "{:.2} / {:.0} s",
+                t.as_i64().saturating_sub(begin).max(0) as f64 / 1e9,
+                end.as_i64().saturating_sub(begin).max(0) as f64 / 1e9
+            ),
+            _ => "— / — s".into(),
+        };
+        let width = ui
+            .painter()
+            .layout_no_wrap(text.clone(), tick_font(), ad_theme::MUTED)
+            .size()
+            .x
+            .max(100.0);
+        // Size from the recording bounds, not the changing playhead or edit draft,
+        // so playback cannot make the field (and slider) jump horizontally.
+        let input_width = [begin, end.map_or(begin, |end| end.as_i64())]
+            .into_iter()
+            .map(|ns| {
+                let sample: String = format_timestamp_seconds(ns)
+                    .chars()
+                    .map(|c| if c.is_ascii_digit() { '8' } else { c })
+                    .collect();
+                ui.painter()
+                    .layout_no_wrap(sample, tick_font(), ad_theme::TEXT)
+                    .size()
+                    .x
+                    + 16.0
+            })
+            .fold(112.0_f32, f32::max);
+        let slider_width =
+            (ui.available_width() - width - input_width - 2.0 * ui.spacing().item_spacing.x)
+                .max(24.0);
+        let (slider, _) =
+            ui.allocate_exact_size(egui::vec2(slider_width, 24.0), egui::Sense::hover());
+        *timeline_rect_out = Some(slider);
+        record_rect(ui, "slider", slider);
+        let label = ui.add_sized(
+            [width, 24.0],
+            egui::Label::new(
+                egui::RichText::new(text)
+                    .font(tick_font())
+                    .color(ad_theme::MUTED),
+            )
+            .halign(egui::Align::RIGHT),
+        );
+        record_rect(ui, "time", label.rect);
+        self.timestamp_input(ui, time_ctrl, begin, end, input_width, commands);
+    }
 
-            let clock_w = 92.0;
-            let step_w = 40.0;
-            let after_scrub = 8.0;
-            let scrub_w = (ui.available_width() - clock_w - step_w - after_scrub - 4.0).max(40.0);
-            let row_h = ui.available_height().max(28.0);
+    fn cancel_timestamp_edit(&mut self) {
+        self.clock_edit = None;
+        self.clock_edit_dirty = false;
+        self.clock_edit_error = None;
+        self.clock_was_focused = false;
+    }
 
-            let (scrub, _) = ui.allocate_exact_size(Vec2::new(scrub_w, row_h), Sense::hover());
-            *timeline_rect_out = Some(scrub);
-
-            ui.add_space(after_scrub);
-            let prev_spacing = ui.spacing().item_spacing.x;
-            ui.spacing_mut().item_spacing.x = 2.0;
-            self.step_dropdown(ui);
-            self.editable_clock(ui, time_ctrl, clock_text, clock_w, time_origin_ns, time_commands);
-            ui.spacing_mut().item_spacing.x = prev_spacing;
+    fn timestamp_input(
+        &mut self,
+        ui: &mut egui::Ui,
+        time_ctrl: &TimeControl,
+        begin: i64,
+        end: Option<re_log_types::TimeInt>,
+        width: f32,
+        commands: &mut Vec<TimeControlCommand>,
+    ) {
+        let live = time_ctrl
+            .time_int()
+            .map(|t| format_timestamp_seconds(t.as_i64()))
+            .unwrap_or_default();
+        if !self.clock_was_focused && !self.clock_edit_dirty {
+            self.clock_edit = Some(live.clone());
+        }
+        let draft = self.clock_edit.get_or_insert(live);
+        // TextEdit may consume Escape and surrender focus while handling it.
+        let (escape_pressed, enter) = ui.input(|i| {
+            (
+                i.key_pressed(egui::Key::Escape),
+                i.key_pressed(egui::Key::Enter),
+            )
+        });
+        let input = ui.add_sized(
+            [width, 24.0],
+            egui::TextEdit::singleline(draft)
+                .font(tick_font())
+                .desired_width(width)
+                .hint_text("Timestamp (seconds)")
+                .id_salt("ad_timestamp_input"),
+        );
+        record_rect(ui, "seek_input", input.rect);
+        if input.changed() {
+            self.clock_edit_dirty = true;
+            self.clock_edit_error = None;
+        }
+        let escape =
+            (self.clock_was_focused || input.has_focus() || input.lost_focus()) && escape_pressed;
+        if escape {
+            self.cancel_timestamp_edit();
+            input.surrender_focus();
+        } else if self.clock_edit_dirty && (input.lost_focus() || (input.has_focus() && enter)) {
+            match parse_timestamp_seconds(draft) {
+                Some(target)
+                    if target >= begin && end.is_some_and(|end| target <= end.as_i64()) =>
+                {
+                    paused_seek(ui, target, commands);
+                    self.cancel_timestamp_edit();
+                    input.surrender_focus();
+                }
+                Some(_) => {
+                    self.clock_edit_error =
+                        Some("Timestamp is outside this bag's time range.".into())
+                }
+                None => {
+                    self.clock_edit_error =
+                        Some("Invalid timestamp. Enter seconds with up to 9 decimal places.".into())
+                }
+            }
+        }
+        self.clock_was_focused = input.has_focus() && !escape && !enter;
+        let hint = self.clock_edit_error.as_deref().unwrap_or(
+            "Current clock timestamp in seconds (nanosecond precision). Enter or leave the field to seek; Esc cancels. Not elapsed time from bag start.");
+        input.clone().on_hover_text(hint);
+        if self.clock_edit_error.is_some() {
+            ui.painter().rect_stroke(
+                input.rect,
+                4.0,
+                egui::Stroke::new(1.0, egui::Color32::LIGHT_RED),
+                egui::StrokeKind::Inside,
+            );
+        }
+        ui.ctx().data_mut(|d| {
+            d.insert_temp(
+                egui::Id::new("ad_media_timestamp"),
+                (
+                    self.clock_edit.clone().unwrap_or_default(),
+                    self.clock_edit_error.clone().unwrap_or_default(),
+                    self.clock_was_focused,
+                ),
+            )
         });
     }
 
@@ -397,530 +657,362 @@ impl TimeControlUi {
         &mut self,
         ui: &mut egui::Ui,
         time_ctrl: &TimeControl,
-        entity_db: &EntityDb,
-        time_commands: &mut Vec<TimeControlCommand>,
+        begin: i64,
+        end: Option<re_log_types::TimeInt>,
+        commands: &mut Vec<TimeControlCommand>,
     ) {
-        ui.spacing_mut().item_spacing.x = 8.0;
-
-        if icon_btn(ui, IconKind::SkipStart, ad_theme::MUTED, "Skip to start").clicked() {
-            time_commands.push(TimeControlCommand::MoveBeginning);
+        let current = time_ctrl.time_int().map_or(begin, |t| t.as_i64());
+        let end = end.map_or(current.max(begin), |t| t.as_i64());
+        if media_button(
+            ui,
+            IconKind::Backward,
+            "backward",
+            &format!("Step backward ({} ms)", self.step_ms),
+        )
+        .clicked()
+        {
+            paused_seek(
+                ui,
+                stepped_time(current, -i64::from(self.step_ms), begin, end),
+                commands,
+            );
         }
-
         let playing = matches!(
             time_ctrl.play_state(),
             PlayState::Playing | PlayState::Following
         );
-        if playing {
-            if icon_btn(ui, IconKind::Pause, ad_theme::MUTED, "Pause").clicked() {
-                time_commands.push(TimeControlCommand::Pause);
+        if media_button(
+            ui,
+            if playing {
+                IconKind::Pause
+            } else {
+                IconKind::Play
+            },
+            "play",
+            if playing { "Pause" } else { "Play" },
+        )
+        .clicked()
+        {
+            if playing {
+                cancel_buffer_resume(ui);
+                commands.push(TimeControlCommand::Pause);
+            } else {
+                commands.push(TimeControlCommand::SetPlayState(PlayState::Playing));
             }
-        } else if icon_btn(ui, IconKind::Play, ad_theme::ACCENT, "Play").clicked() {
-            time_commands.push(TimeControlCommand::SetPlayState(PlayState::Playing));
         }
-
-        if icon_btn(ui, IconKind::StepFwd, ad_theme::MUTED, "Step forward").clicked() {
-            self.step_forward(time_ctrl, time_commands);
+        if media_button(
+            ui,
+            IconKind::Forward,
+            "forward",
+            &format!("Step forward ({} ms)", self.step_ms),
+        )
+        .clicked()
+        {
+            paused_seek(
+                ui,
+                stepped_time(current, i64::from(self.step_ms), begin, end),
+                commands,
+            );
         }
-
-        if icon_btn(ui, IconKind::SkipEnd, ad_theme::MUTED, "Skip to end").clicked() {
-            if let Some(range) = entity_db.time_range_for(time_ctrl.timeline_name()) {
-                time_commands.push(TimeControlCommand::Pause);
-                time_commands.push(TimeControlCommand::SetTimeClamped(range.max().into()));
-            }
-        }
-    }
-
-    fn step_forward(&self, time_ctrl: &TimeControl, time_commands: &mut Vec<TimeControlCommand>) {
-        time_commands.push(TimeControlCommand::Pause);
-        let delta_ns = i64::from(self.step_ms) * 1_000_000;
-        let cur = time_ctrl.time_int().unwrap_or(re_log_types::TimeInt::ZERO);
-        let next = re_log_types::TimeInt::new_temporal(cur.as_i64().saturating_add(delta_ns));
-        time_commands.push(TimeControlCommand::SetTimeClamped(next.into()));
-    }
-
-    fn apply_combo_visuals(ui: &mut egui::Ui) {
-        let v = &mut ui.visuals_mut().widgets;
-        v.inactive.weak_bg_fill = ad_theme::PILL_BG;
-        v.inactive.bg_fill = ad_theme::PILL_BG;
-        v.hovered.weak_bg_fill = ad_theme::PILL_BG;
-        v.hovered.bg_fill = ad_theme::PILL_BG;
-        v.active.weak_bg_fill = ad_theme::PILL_BG;
-        v.active.bg_fill = ad_theme::PILL_BG;
-        v.open.weak_bg_fill = ad_theme::PILL_BG;
-        v.open.bg_fill = ad_theme::PILL_BG;
     }
 
     fn speed_dropdown(
         &mut self,
         ui: &mut egui::Ui,
         time_ctrl: &TimeControl,
-        time_commands: &mut Vec<TimeControlCommand>,
+        commands: &mut Vec<TimeControlCommand>,
     ) {
         let mut speed = time_ctrl.speed();
-        let speeds = [0.1_f32, 0.25, 0.5, 1.0, 2.0, 5.0, 10.0];
-        Self::apply_combo_visuals(ui);
-        egui::ComboBox::from_id_salt("ad_media_speed")
-            .selected_text(
-                egui::RichText::new(format!("{speed:.1}x"))
-                    .font(tick_font())
-                    .color(ad_theme::MUTED),
-            )
-            .width(52.0)
+        let combo = egui::ComboBox::from_id_salt("ad_media_speed")
+            .selected_text(egui::RichText::new(format!("{speed}x")).font(tick_font()))
+            .width(72.0)
             .show_ui(ui, |ui| {
-                for &s in &speeds {
-                    let label = format!("{s:.1}x");
-                    if ui
-                        .selectable_label(
-                            (speed - s).abs() < 0.001,
-                            egui::RichText::new(label).font(tick_font()),
-                        )
-                        .clicked()
-                    {
-                        speed = s;
-                    }
+                for s in [0.1_f32, 0.25, 0.5, 1.0, 2.0, 4.0, 5.0, 10.0] {
+                    let row = ui.selectable_value(&mut speed, s, format!("{s}x"));
+                    record_rect(ui, &format!("speed_{s}"), row.rect);
                 }
             });
-        if (speed - time_ctrl.speed()).abs() > f32::EPSILON {
-            time_commands.push(TimeControlCommand::SetSpeed(speed));
+        record_rect(ui, "speed", combo.response.rect);
+        if speed != time_ctrl.speed() {
+            commands.push(TimeControlCommand::SetSpeed(speed));
         }
     }
 
-    fn step_dropdown(&mut self, ui: &mut egui::Ui) {
-        let steps = [1_u32, 10, 100];
-        Self::apply_combo_visuals(ui);
-        egui::ComboBox::from_id_salt("ad_media_step_ms")
-            .selected_text(
-                egui::RichText::new(format!("{}ms", self.step_ms))
-                    .font(tick_font())
-                    .color(ad_theme::MUTED),
-            )
-            .width(40.0)
-            .show_ui(ui, |ui| {
-                for &s in &steps {
-                    if ui
-                        .selectable_label(
-                            self.step_ms == s,
-                            egui::RichText::new(format!("{s}ms")).font(tick_font()),
-                        )
-                        .clicked()
-                    {
-                        self.step_ms = s;
-                    }
-                }
-            });
-    }
-
-    /// Apollo bags expose two sync axes via MCAP:
-    /// - `message_publish_time` ← Cyber publish time (default)
-    /// - `message_log_time` ← measurement / message time
-    ///
-    /// Replaces the old Live (follow-latest) pill so operators pick which clock
-    /// drives LatestAt for lidar + camera together.
     fn timeline_mode_pill(
         &mut self,
         ui: &mut egui::Ui,
         time_ctrl: &TimeControl,
         entity_db: &EntityDb,
-        time_commands: &mut Vec<TimeControlCommand>,
+        commands: &mut Vec<TimeControlCommand>,
     ) {
-        use egui::RichText;
-
-        const PUBLISH: &str = "message_publish_time";
-        const MESSAGE: &str = "message_log_time";
-
-        let has_publish = entity_db.timelines().contains_key(&re_log_types::TimelineName::from(PUBLISH));
-        let has_message = entity_db.timelines().contains_key(&re_log_types::TimelineName::from(MESSAGE));
-        if !has_publish && !has_message {
-            // Non-MCAP recordings: keep a compact timeline name readout.
-            ui.label(
-                RichText::new(time_ctrl.timeline_name().as_str())
-                    .font(tick_font())
-                    .color(ad_theme::MUTED),
-            );
+        const CLOCKS: [&str; 2] = ["publish_time", "message_time"];
+        let timelines = entity_db.timelines();
+        let available: Vec<_> = CLOCKS
+            .into_iter()
+            .filter(|name| timelines.contains_key(&re_log_types::TimelineName::from(*name)))
+            .collect();
+        if available.is_empty() {
+            ui.weak("Waiting for data");
             return;
         }
-
         let current = time_ctrl.timeline_name().as_str();
-        let label = if current == PUBLISH {
-            "Publish time"
-        } else if current == MESSAGE {
-            "Message time"
-        } else if has_publish {
-            "Publish time" // pending / other — show intended default
-        } else {
-            "Message time"
-        };
-
-        Self::apply_combo_visuals(ui);
-        egui::ComboBox::from_id_salt("ad_timeline_mode")
-            .selected_text(
-                RichText::new(label)
-                    .font(tick_font())
-                    .color(ad_theme::ACCENT),
-            )
-            .width(110.0)
+        let combo = egui::ComboBox::from_id_salt("ad_media_clock")
+            .selected_text(egui::RichText::new(current).font(tick_font()))
+            .width(130.0)
             .show_ui(ui, |ui| {
-                if has_publish {
-                    let selected = current == PUBLISH;
-                    if ui
-                        .selectable_label(
-                            selected,
-                            RichText::new("Publish time").font(tick_font()),
-                        )
-                        .on_hover_text(
-                            "Align all topics by Cyber publish time (MCAP publish_time).",
-                        )
-                        .clicked()
-                    {
-                        time_commands.push(TimeControlCommand::Pause);
-                        time_commands.push(TimeControlCommand::SetActiveTimeline(
-                            re_log_types::TimelineName::from(PUBLISH),
-                        ));
+                for name in available {
+                    let row = ui.selectable_label(current == name, name);
+                    record_rect(ui, name, row.rect);
+                    if row.clicked() && current != name {
+                        let timeline = re_log_types::TimelineName::from(name);
+                        cancel_buffer_resume(ui);
+                        commands.push(TimeControlCommand::Pause);
+                        commands.push(TimeControlCommand::SetActiveTimeline(timeline));
+                        // Compare both clocks at the same instant. Do not reset to
+                        // the new clock's first loaded sample or clamp to its cache.
+                        if let Some(time) = time_ctrl.time_int() {
+                            commands.push(TimeControlCommand::SetTime(time.into()));
+                        }
                     }
                 }
-                if has_message {
-                    let selected = current == MESSAGE;
-                    if ui
-                        .selectable_label(
-                            selected,
-                            RichText::new("Message time").font(tick_font()),
-                        )
-                        .on_hover_text(
-                            "Align all topics by measurement/message time (MCAP log_time).",
-                        )
-                        .clicked()
-                    {
-                        time_commands.push(TimeControlCommand::Pause);
-                        time_commands.push(TimeControlCommand::SetActiveTimeline(
-                            re_log_types::TimelineName::from(MESSAGE),
-                        ));
-                    }
-                }
-            })
-            .response
-            .on_hover_text(
-                "Playback clock: Publish time (default) or Message time. Both lidar and camera LatestAt use this timeline.",
-            );
+            });
+        record_rect(ui, "clock", combo.response.rect);
     }
+}
 
-    fn editable_clock(
-        &mut self,
-        ui: &mut egui::Ui,
-        _time_ctrl: &TimeControl,
-        clock_text: &str,
-        width: f32,
-        // Timeline origin so relative HH:MM:SS.mmm maps back to absolute TimeInt.
-        time_origin_ns: i64,
-        time_commands: &mut Vec<TimeControlCommand>,
-    ) {
-        use egui::{FontId, Key, Vec2};
+fn cancel_buffer_resume(ui: &egui::Ui) {
+    ui.ctx()
+        .data_mut(|d| d.insert_temp(egui::Id::new("web_monitor_cancel_buffer_resume"), true));
+}
 
-        let edit = self.clock_edit.get_or_insert_with(|| clock_text.to_owned());
-        if !ui.memory(|m| m.has_focus(ui.id().with("ad_clock_edit"))) {
-            *edit = clock_text.to_owned();
-        }
+fn paused_seek(ui: &egui::Ui, time: i64, commands: &mut Vec<TimeControlCommand>) {
+    cancel_buffer_resume(ui);
+    commands.push(TimeControlCommand::Pause);
+    // Header bounds, not the currently loaded chunk range, constrain user seeks.
+    commands.push(TimeControlCommand::SetTime(
+        re_log_types::TimeInt::new_temporal(time).into(),
+    ));
+}
 
-        let te = egui::TextEdit::singleline(edit)
-            .font(FontId::proportional(10.0))
-            .text_color(ad_theme::MUTED)
-            .desired_width(width)
-            .margin(egui::Margin::symmetric(4, 2))
-            .frame(egui::Frame::NONE)
-            .id_salt("ad_clock_edit");
-
-        let resp = ui.add_sized(Vec2::new(width, 22.0), te);
-        if resp.lost_focus() || (resp.has_focus() && ui.input(|i| i.key_pressed(Key::Enter))) {
-            if let Some(ns) = parse_clock_hmsm(edit) {
-                let abs = ns.saturating_add(time_origin_ns);
-                time_commands.push(TimeControlCommand::Pause);
-                time_commands.push(TimeControlCommand::SetTimeClamped(
-                    re_log_types::TimeInt::new_temporal(abs).into(),
-                ));
-            }
-            self.clock_edit = None;
-        }
-    }
+fn stepped_time(current: i64, step_ms: i64, begin: i64, end: i64) -> i64 {
+    current
+        .saturating_add(step_ms.saturating_mul(1_000_000))
+        .clamp(begin, end)
 }
 
 #[derive(Clone, Copy)]
 enum IconKind {
-    SkipStart,
+    Backward,
     Play,
     Pause,
-    StepFwd,
-    SkipEnd,
+    Forward,
 }
 
-fn icon_btn(ui: &mut egui::Ui, kind: IconKind, color: egui::Color32, tip: &str) -> egui::Response {
-    use egui::{Sense, Vec2};
+fn media_button(ui: &mut egui::Ui, kind: IconKind, name: &str, tip: &str) -> egui::Response {
+    use egui::{Color32, Sense, Shape, Stroke, StrokeKind, Vec2};
     let (rect, response) = ui.allocate_exact_size(Vec2::splat(24.0), Sense::click());
-    let color = if response.hovered() {
-        egui::Color32::WHITE
+    record_rect(ui, name, rect);
+    let primary = matches!(kind, IconKind::Play | IconKind::Pause);
+    let bg = if primary {
+        ad_theme::ACCENT
+    } else if response.hovered() {
+        ad_theme::HOVER
     } else {
-        color
+        ad_theme::BAR_BG
     };
-    paint_icon(ui.painter(), kind, rect.center(), color);
+    let color = if primary {
+        Color32::WHITE
+    } else {
+        ad_theme::TEXT
+    };
+    let p = ui.painter();
+    p.rect(
+        rect,
+        4.0,
+        bg,
+        Stroke::new(
+            1.0,
+            if primary {
+                ad_theme::ACCENT
+            } else {
+                ad_theme::BORDER
+            },
+        ),
+        StrokeKind::Inside,
+    );
+    let c = rect.center();
+    let stroke = Stroke::new(1.2, color);
+    match kind {
+        IconKind::Play | IconKind::Pause => {
+            p.circle_stroke(c, 6.5, stroke);
+            if matches!(kind, IconKind::Play) {
+                p.add(Shape::convex_polygon(
+                    vec![
+                        c + Vec2::new(-1.5, -3.2),
+                        c + Vec2::new(3.2, 0.0),
+                        c + Vec2::new(-1.5, 3.2),
+                    ],
+                    color,
+                    Stroke::NONE,
+                ));
+            } else {
+                for x in [-2.0, 2.0] {
+                    p.line_segment([c + Vec2::new(x, -3.0), c + Vec2::new(x, 3.0)], stroke);
+                }
+            }
+        }
+        IconKind::Backward | IconKind::Forward => {
+            let direction: f32 = if matches!(kind, IconKind::Backward) {
+                -1.0
+            } else {
+                1.0
+            };
+            let point = |x: f32, y: f32| c + Vec2::new(x * direction, y);
+            p.add(Shape::convex_polygon(
+                vec![point(-4.0, -5.0), point(2.0, 0.0), point(-4.0, 5.0)],
+                color,
+                Stroke::NONE,
+            ));
+            p.line_segment([point(4.0, -5.0), point(4.0, 5.0)], stroke);
+        }
+    }
     response.on_hover_text(tip)
 }
 
-fn paint_icon(painter: &egui::Painter, kind: IconKind, c: egui::Pos2, color: egui::Color32) {
-    use egui::{Pos2, Shape, Stroke, Vec2};
-    match kind {
-        IconKind::SkipStart => {
-            let h = 7.0;
-            painter.line_segment(
-                [c + Vec2::new(-5.0, -h), c + Vec2::new(-5.0, h)],
-                Stroke::new(1.6, color),
-            );
-            painter.add(Shape::convex_polygon(
-                vec![
-                    c + Vec2::new(6.0, -h),
-                    c + Vec2::new(-3.0, 0.0),
-                    c + Vec2::new(6.0, h),
-                ],
-                color,
-                Stroke::NONE,
-            ));
-        }
-        IconKind::Play => {
-            let h = 7.0;
-            painter.add(Shape::convex_polygon(
-                vec![
-                    c + Vec2::new(-4.0, -h),
-                    c + Vec2::new(6.0, 0.0),
-                    c + Vec2::new(-4.0, h),
-                ],
-                color,
-                Stroke::NONE,
-            ));
-        }
-        IconKind::Pause => {
-            let h = 7.0;
-            let w = 2.2;
-            painter.rect_filled(
-                egui::Rect::from_center_size(c + Vec2::new(-3.2, 0.0), Vec2::new(w, h * 2.0)),
-                0.0,
-                color,
-            );
-            painter.rect_filled(
-                egui::Rect::from_center_size(c + Vec2::new(3.2, 0.0), Vec2::new(w, h * 2.0)),
-                0.0,
-                color,
-            );
-        }
-        IconKind::StepFwd => {
-            let h = 6.5;
-            painter.add(Shape::convex_polygon(
-                vec![
-                    c + Vec2::new(-6.0, -h),
-                    c + Vec2::new(1.0, 0.0),
-                    c + Vec2::new(-6.0, h),
-                ],
-                color,
-                Stroke::NONE,
-            ));
-            painter.line_segment(
-                [c + Vec2::new(4.5, -h), c + Vec2::new(4.5, h)],
-                Stroke::new(1.6, color),
-            );
-        }
-        IconKind::SkipEnd => {
-            let h = 7.0;
-            painter.add(Shape::convex_polygon(
-                vec![
-                    c + Vec2::new(-6.0, -h),
-                    c + Vec2::new(3.0, 0.0),
-                    c + Vec2::new(-6.0, h),
-                ],
-                color,
-                Stroke::NONE,
-            ));
-            painter.line_segment(
-                [c + Vec2::new(5.0, -h), c + Vec2::new(5.0, h)],
-                Stroke::new(1.6, color),
-            );
-            let _ = Pos2::ZERO;
-        }
-    }
-}
-
-/// Thin tick ruler used by the collapsed media bar.
-///
-/// Visual match to the AD prototype: 1px axis, ticks upward, `MM:SS` labels below,
-/// playhead = thin vertical + circular knob on top.
-/// `duration_secs` is the active timeline span (bag length) — dynamic, not fixed.
-pub fn paint_prototype_ruler(
-    painter: &egui::Painter,
-    rect: egui::Rect,
-    playhead_t: f32,
-    duration_secs: f64,
-    is_sequence: bool,
-) {
-    use egui::{Align2, Pos2, Stroke};
-
-    let (left, right) = prototype_ruler_x_range(rect);
-    if right - left < 20.0 {
+/// Scene-editor slider, with receipt-confirmed buffer segments underneath progress.
+pub fn paint_media_slider(painter: &egui::Painter, rect: egui::Rect, playhead_t: f32) {
+    use egui::{Pos2, Rect, Stroke};
+    let (left, right) = media_slider_x_range(rect);
+    if right <= left {
         return;
     }
-
-    // Axis slightly above center so labels fit below (matches 0.19 prototype).
-    let y = rect.center().y - 4.0;
-
-    painter.line_segment(
-        [Pos2::new(left, y), Pos2::new(right, y)],
-        Stroke::new(1.0, ad_theme::AXIS.gamma_multiply(0.55)),
-    );
-
-    let duration = duration_secs.max(0.0);
-    if duration > 0.0 {
-        let (major_secs, minor_secs) = nice_ruler_tick_interval(duration);
-        let x_at = |sec: f64| -> f32 {
-            let u = (sec / duration).clamp(0.0, 1.0) as f32;
-            left + u * (right - left)
-        };
-
-        // Collect tick times: minors from 0..duration, plus exact end.
-        let mut secs: Vec<f64> = Vec::new();
-        let mut t = 0.0;
-        while t < duration - minor_secs * 0.25 {
-            secs.push(t);
-            t += minor_secs;
-        }
-        secs.push(duration);
-
-        for &sec in &secs {
-            let major = is_major_tick(sec, major_secs, duration);
-            let h = if major { 7.0 } else { 3.5 };
-            let x = x_at(sec);
-            painter.line_segment(
-                [Pos2::new(x, y), Pos2::new(x, y - h)],
-                Stroke::new(
-                    1.0,
-                    ad_theme::AXIS.gamma_multiply(if major { 0.7 } else { 0.35 }),
-                ),
-            );
-            if major {
-                let align = if sec <= 1e-9 {
-                    Align2::LEFT_TOP
-                } else if (duration - sec).abs() <= 1e-6 {
-                    Align2::RIGHT_TOP
-                } else {
-                    Align2::CENTER_TOP
-                };
-                painter.text(
-                    Pos2::new(x, y + 3.0),
-                    align,
-                    format_ruler_tick_label(sec, is_sequence),
-                    tick_font(),
-                    ad_theme::MUTED,
-                );
-            }
+    let y = rect.center().y;
+    let segment = |a, b, color| {
+        painter.rect_filled(
+            Rect::from_min_max(Pos2::new(a, y - 2.0), Pos2::new(b, y + 2.0)),
+            2.0,
+            color,
+        );
+    };
+    segment(left, right, ad_theme::BORDER);
+    let cached = painter.ctx().data(|d| {
+        d.get_temp::<(i64, i64)>(egui::Id::new("web_monitor_header_time_range_ns"))
+            .zip(d.get_temp::<Vec<(i64, i64)>>(egui::Id::new("web_monitor_cached_ranges_ns")))
+    });
+    if let Some(((begin, end), ranges)) = cached
+        && end > begin
+    {
+        for (a, b) in ranges {
+            let x = |t: i64| {
+                left + ((t.saturating_sub(begin)) as f64 / (end - begin) as f64).clamp(0.0, 1.0)
+                    as f32
+                    * (right - left)
+            };
+            segment(x(a), x(b), ad_theme::CACHED);
         }
     }
-
-    // Playhead: circle knob on TOP of the vertical line.
-    let t = playhead_t.clamp(0.0, 1.0);
-    let px = left + t * (right - left);
-    let top = y - 9.0;
-    painter.line_segment(
-        [Pos2::new(px, top), Pos2::new(px, y + 1.0)],
-        Stroke::new(1.0, ad_theme::ACCENT_STRONG),
-    );
-    painter.circle_filled(Pos2::new(px, top), 3.0, ad_theme::ACCENT_STRONG);
+    let x = left + playhead_t.clamp(0.0, 1.0) * (right - left);
+    segment(left, x, ad_theme::ACCENT);
+    painter.circle_filled(Pos2::new(x, y), 5.0, ad_theme::INPUT);
+    painter.circle_stroke(Pos2::new(x, y), 5.0, Stroke::new(2.0, ad_theme::ACCENT));
 }
 
-/// Choose major/minor seconds so ~6–10 major ticks span the bag (e.g. 60s → 10s / 2s).
-fn nice_ruler_tick_interval(duration_secs: f64) -> (f64, f64) {
-    const MAJORS: &[f64] = &[
-        0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 15.0, 30.0, 60.0, 120.0, 300.0, 600.0, 900.0,
-        1800.0, 3600.0,
-    ];
-    let target = (duration_secs / 8.0).max(0.05);
-    let major = MAJORS
-        .iter()
-        .copied()
-        .find(|&c| c >= target)
-        .unwrap_or_else(|| {
-            let hours = (target / 3600.0).ceil().max(1.0);
-            hours * 3600.0
-        });
-    (major, major / 5.0)
+pub fn media_slider_x_range(rect: egui::Rect) -> (f32, f32) {
+    (rect.left() + 6.0, rect.right() - 6.0)
 }
 
-fn is_major_tick(sec: f64, major_secs: f64, duration: f64) -> bool {
-    if (duration - sec).abs() <= 1e-6 {
-        return true;
-    }
-    if major_secs <= 0.0 {
-        return false;
-    }
-    let q = sec / major_secs;
-    (q - q.round()).abs() < 1e-6
+pub fn media_bar_is_compact(width: f32) -> bool {
+    width < 740.0
 }
 
-fn format_ruler_tick_label(secs: f64, is_sequence: bool) -> String {
-    if is_sequence {
-        return format!("{}", secs.round() as i64);
-    }
-    let total = secs.round().max(0.0) as u64;
-    let h = total / 3600;
-    let m = (total % 3600) / 60;
-    let s = total % 60;
-    if h > 0 {
-        format!("{h:02}:{m:02}:{s:02}")
-    } else {
-        format!("{m:02}:{s:02}")
-    }
+fn format_timestamp_seconds(ns: i64) -> String {
+    let sign = if ns < 0 { "-" } else { "" };
+    let value = ns.unsigned_abs();
+    format!(
+        "{sign}{}.{:09}",
+        value / 1_000_000_000,
+        value % 1_000_000_000
+    )
 }
 
-pub fn prototype_ruler_x_range(rect: egui::Rect) -> (f32, f32) {
-    let pad = 22.0;
-    (rect.left() + pad, rect.right() - pad)
-}
-
-pub fn format_clock_hmsm(time: Option<re_log_types::TimeInt>) -> String {
-    match time {
-        Some(t) if t.is_static() => "static".into(),
-        Some(t) => format_ns_hmsm(t.as_i64().max(0) as u64),
-        None => "00:00:00.000".into(),
-    }
-}
-
-fn format_ns_hmsm(mut ns: u64) -> String {
-    let ms = (ns / 1_000_000) % 1000;
-    ns /= 1_000_000_000;
-    let s = ns % 60;
-    let m = (ns / 60) % 60;
-    let h = ns / 3600;
-    format!("{h:02}:{m:02}:{s:02}.{ms:03}")
-}
-
-pub fn parse_clock_hmsm(input: &str) -> Option<i64> {
-    let s = input.trim();
-    if s.is_empty() {
+/// Parse absolute seconds without passing epoch-sized timestamps through f64.
+fn parse_timestamp_seconds(input: &str) -> Option<i64> {
+    let input = input.trim();
+    let (negative, value) = input
+        .strip_prefix('-')
+        .map_or((false, input), |s| (true, s));
+    let (seconds, fraction) = value.split_once('.').unwrap_or((value, ""));
+    if seconds.is_empty()
+        || !seconds.bytes().all(|b| b.is_ascii_digit())
+        || fraction.len() > 9
+        || !fraction.bytes().all(|b| b.is_ascii_digit())
+    {
         return None;
     }
-    // Accept HH:MM:SS.mmm or MM:SS.mmm or SS.mmm
-    let parts: Vec<&str> = s.split(':').collect();
-    let (h, m, rest) = match parts.as_slice() {
-        [h, m, rest] => (h.parse::<u64>().ok()?, m.parse::<u64>().ok()?, *rest),
-        [m, rest] => (0, m.parse::<u64>().ok()?, *rest),
-        [rest] => (0, 0, *rest),
-        _ => return None,
-    };
-    let (sec, ms) = if let Some((sec, ms)) = rest.split_once('.') {
-        (sec.parse::<u64>().ok()?, ms.parse::<u64>().ok().unwrap_or(0).min(999))
+    let seconds = seconds.parse::<u64>().ok()?;
+    let nanos = if fraction.is_empty() {
+        0
     } else {
-        (rest.parse::<u64>().ok()?, 0)
+        fraction
+            .parse::<u64>()
+            .ok()?
+            .checked_mul(10_u64.pow(9 - fraction.len() as u32))?
     };
-    let total_ms = (((h * 60 + m) * 60) + sec) * 1000 + ms;
-    Some((total_ms as i64).saturating_mul(1_000_000))
+    let total = i128::from(seconds.checked_mul(1_000_000_000)?.checked_add(nanos)?);
+    i64::try_from(if negative { -total } else { total }).ok()
 }
 
 pub fn panel_fill() -> egui::Color32 {
     ad_theme::BAR_BG
 }
-
 pub fn panel_stroke() -> egui::Stroke {
-    egui::Stroke::new(1.0, ad_theme::ACCENT.gamma_multiply(0.2))
+    egui::Stroke::new(1.0, ad_theme::BORDER)
+}
+
+#[cfg(test)]
+mod media_bar_tests {
+    use super::{
+        format_timestamp_seconds, media_bar_is_compact, parse_timestamp_seconds, stepped_time,
+    };
+    #[test]
+    fn timestamp_roundtrip_preserves_nanoseconds() {
+        for ns in [0, 1, -1, 1_789_000_000_123_456_789, i64::MAX, i64::MIN] {
+            assert_eq!(
+                parse_timestamp_seconds(&format_timestamp_seconds(ns)),
+                Some(ns)
+            );
+        }
+        assert_eq!(parse_timestamp_seconds("30.05"), Some(30_050_000_000));
+        assert_eq!(
+            parse_timestamp_seconds("1789000000.000000001"),
+            Some(1_789_000_000_000_000_001)
+        );
+        for invalid in [
+            "",
+            "NaN",
+            "1:x",
+            "01:02:03",
+            "1.abc",
+            "1.1234567890",
+            "9223372036.854775808",
+        ] {
+            assert_eq!(parse_timestamp_seconds(invalid), None, "{invalid}");
+        }
+    }
+    #[test]
+    fn steps_use_header_bounds_not_loaded_window() {
+        let begin = 1_789_000_000_000_000_000;
+        let end = begin + 60_000_000_000;
+        assert_eq!(
+            stepped_time(begin + 5_000_000_000, 10, begin, end),
+            begin + 5_010_000_000
+        );
+        assert_eq!(stepped_time(begin, -10, begin, end), begin);
+        assert_eq!(stepped_time(end, 10, begin, end), end);
+    }
+    #[test]
+    fn narrow_viewports_keep_controls_on_two_rows() {
+        assert!(media_bar_is_compact(604.0));
+        assert!(!media_bar_is_compact(824.0));
+    }
 }

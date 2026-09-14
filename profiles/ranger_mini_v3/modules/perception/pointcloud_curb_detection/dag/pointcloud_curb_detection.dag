@@ -1,0 +1,14 @@
+module_config {
+  module_library : "modules/perception/pointcloud_curb_detection/libpointcloud_curb_detection_component.so"
+  components {
+    class_name : "PointCloudCurbComponent"
+    config {
+      name : "PointCloudCurbDetection"
+      config_file_path : "/apollo/modules/perception/pointcloud_curb_detection/conf/pointcloud_curb_detection_config.pb.txt"
+      flag_file_path: "/apollo/modules/perception/data/flag/perception_common.flag"
+      readers {
+        channel: "/perception/lidar/pointcloud_ground_detection"
+      }
+    }
+  }
+}

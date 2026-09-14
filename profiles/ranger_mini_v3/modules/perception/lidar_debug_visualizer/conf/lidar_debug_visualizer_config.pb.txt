@@ -1,0 +1,18 @@
+# Lidar Debug Visualizer Config
+output_channel_name: "/perception/lidar/debug_visualization"
+http_port: 7077
+enable_http: true
+visualization_rate_hz: 10.0
+max_points: 100000
+point_stride: 1
+log_every_n_frames: 100
+enable_hdmap: true
+map_radius: 250.0
+map_update_distance: 50.0
+map_max_points: 300000
+html_file_path: "modules/perception/lidar_debug_visualizer/web/index.html"
+# Must match the active pointcloud_preprocessor cloud_output_frame_id.
+cloud_output_frame_id: "virtual_lidar"
+# This platform's vehicle-forward direction is localization +Y. This correction
+# is local to the debug marker and does not modify Apollo TF.
+vehicle_forward_yaw_offset_deg: 90.0

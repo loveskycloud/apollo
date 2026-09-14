@@ -200,7 +200,7 @@ impl TimeColumns {
 
 type ByTopic = BTreeMap<String, Vec<TimeColumns>>;
 
-/// Raw mode: walk MCAP messages directly; only `message_log_time`/`message_publish_time`
+/// Raw mode: walk MCAP messages directly; only `message_time`/`publish_time`
 /// are available. Grouped by (topic, mcap chunk).
 fn collect_by_topic_raw(bytes: &[u8], summary: &mcap::Summary) -> anyhow::Result<ByTopic> {
     let mut by_topic_chunk: BTreeMap<String, BTreeMap<usize, TimeColumns>> = BTreeMap::new();
@@ -214,11 +214,11 @@ fn collect_by_topic_raw(bytes: &[u8], summary: &mcap::Summary) -> anyhow::Result
                 .or_default()
                 .push_pairs([
                     (
-                        TimelineName::from("message_log_time"),
+                        TimelineName::from("message_time"),
                         msg.log_time.cast_signed(),
                     ),
                     (
-                        TimelineName::from("message_publish_time"),
+                        TimelineName::from("publish_time"),
                         msg.publish_time.cast_signed(),
                     ),
                 ]);

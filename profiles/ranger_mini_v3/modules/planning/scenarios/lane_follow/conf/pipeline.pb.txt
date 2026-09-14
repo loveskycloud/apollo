@@ -1,0 +1,62 @@
+stage: {
+  name: "LANE_FOLLOW_STAGE"
+  type: "LaneFollowStage"
+  enabled: true
+# Apollo 10 standard path pipeline. The custom reference-line-only and offset
+# tasks are not installed; this restores standard lateral path planning.
+# task { name: "REFERENCE_LINE_AS_PATH" type: "ReferenceLineAsPath" }
+# task { name: "REFERENCE_LINE_OFFSET_STOP_DECIDER" type: "ReferenceLineOffsetStopDecider" }
+  task {
+    name: "LANE_CHANGE_PATH"
+    type: "LaneChangePath"
+  }
+  task {
+    name: "LANE_FOLLOW_PATH"
+    type: "LaneFollowPath"
+  }
+  task {
+    name: "LANE_BORROW_PATH"
+    type: "LaneBorrowPath"
+  }
+  task {
+    name: "FALLBACK_PATH"
+    type: "FallbackPath"
+  }
+  task {
+    name: "PATH_DECIDER"
+    type: "PathDecider"
+  }
+  task {
+    name: "RULE_BASED_STOP_DECIDER"
+    type: "RuleBasedStopDecider"
+  }
+  task {
+    name: "SPEED_BOUNDS_PRIORI_DECIDER"
+    type: "SpeedBoundsDecider"
+  }
+  task {
+    name: "SPEED_HEURISTIC_OPTIMIZER"
+    type: "PathTimeHeuristicOptimizer"
+  }
+  task {
+    name: "SPEED_DECIDER"
+    type: "SpeedDecider"
+  }
+  task {
+    name: "SPEED_BOUNDS_FINAL_DECIDER"
+    type: "SpeedBoundsDecider"
+  }
+  task {
+    name: "PIECEWISE_JERK_SPEED"
+    type: "PiecewiseJerkSpeedOptimizer"
+  }
+  # Unavailable extension; standard stage's built-in fallback is used.
+  # fallback_task: {
+  #   name: "SMOOTH_STOP_TRAJECTORY_FALLBACK"
+  #   type: "SmoothStopTrajectoryFallback"
+  # }
+#  task {
+#    name: "PIECEWISE_JERK_SPEED_NONLINEAR"
+#    type: "PiecewiseJerkSpeedNonlinearOptimizer"
+# }
+}

@@ -1,0 +1,208 @@
+{
+  "header": {
+    "version": "1.0.0",
+    "date": "2026-08-28",
+    "projection": {
+      "zone_id": 0,
+      "proj": "ENU"
+    }
+  },
+  "road": [
+    { "id": { "id": "road_main" } },
+    { "id": { "id": "road_branch" } },
+    { "id": { "id": "road_pass" } }
+  ],
+  "junction": [
+    {
+      "id": { "id": "junc_cross" },
+      "polygon": {
+        "point": [
+          { "x": 116, "y": 4, "z": 0 },
+          { "x": 124, "y": 4, "z": 0 },
+          { "x": 124, "y": 12, "z": 0 },
+          { "x": 116, "y": 12, "z": 0 }
+        ]
+      }
+    }
+  ],
+  "lane": [
+    {
+      "id": { "id": "lane_main_fwd" },
+      "name": "main_forward",
+      "width": 6,
+      "central_curve": {
+        "segment": [
+          {
+            "line_segment": {
+              "point": [
+                { "x": 0, "y": 0, "z": 0 },
+                { "x": 40, "y": 0, "z": 0 },
+                { "x": 80, "y": 4, "z": 0 },
+                { "x": 120, "y": 8, "z": 0 }
+              ]
+            }
+          }
+        ]
+      },
+      "left_boundary": {
+        "curve": {
+          "segment": [
+            {
+              "line_segment": {
+                "point": [
+                  { "x": 0, "y": 3, "z": 0 },
+                  { "x": 40, "y": 3, "z": 0 },
+                  { "x": 80, "y": 7, "z": 0 },
+                  { "x": 120, "y": 11, "z": 0 }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "right_boundary": {
+        "curve": {
+          "segment": [
+            {
+              "line_segment": {
+                "point": [
+                  { "x": 0, "y": -3, "z": 0 },
+                  { "x": 40, "y": -3, "z": 0 },
+                  { "x": 80, "y": 1, "z": 0 },
+                  { "x": 120, "y": 5, "z": 0 }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "successor_id": [{ "id": "lane_main_end" }, { "id": "lane_branch_a" }]
+    },
+    {
+      "id": { "id": "lane_main_end" },
+      "name": "main_end",
+      "width": 6,
+      "central_curve": {
+        "segment": [
+          {
+            "line_segment": {
+              "point": [
+                { "x": 120, "y": 8, "z": 0 },
+                { "x": 160, "y": 8, "z": 0 },
+                { "x": 200, "y": 4, "z": 0 },
+                { "x": 220, "y": 0, "z": 0 }
+              ]
+            }
+          }
+        ]
+      },
+      "left_boundary": {
+        "curve": {
+          "segment": [
+            {
+              "line_segment": {
+                "point": [
+                  { "x": 120, "y": 11, "z": 0 },
+                  { "x": 160, "y": 11, "z": 0 },
+                  { "x": 200, "y": 7, "z": 0 },
+                  { "x": 220, "y": 3, "z": 0 }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "right_boundary": {
+        "curve": {
+          "segment": [
+            {
+              "line_segment": {
+                "point": [
+                  { "x": 120, "y": 5, "z": 0 },
+                  { "x": 160, "y": 5, "z": 0 },
+                  { "x": 200, "y": 1, "z": 0 },
+                  { "x": 220, "y": -3, "z": 0 }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "predecessor_id": [{ "id": "lane_main_fwd" }]
+    },
+    {
+      "id": { "id": "lane_branch_a" },
+      "name": "branch_a",
+      "width": 5,
+      "central_curve": {
+        "segment": [
+          {
+            "line_segment": {
+              "point": [
+                { "x": 120, "y": 8, "z": 0 },
+                { "x": 130, "y": 28, "z": 0 },
+                { "x": 145, "y": 48, "z": 0 },
+                { "x": 160, "y": 60, "z": 0 }
+              ]
+            }
+          }
+        ]
+      },
+      "left_boundary": {
+        "curve": {
+          "segment": [
+            {
+              "line_segment": {
+                "point": [
+                  { "x": 117.5, "y": 9, "z": 0 },
+                  { "x": 127.5, "y": 29, "z": 0 },
+                  { "x": 142.5, "y": 49, "z": 0 },
+                  { "x": 157.5, "y": 61, "z": 0 }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "right_boundary": {
+        "curve": {
+          "segment": [
+            {
+              "line_segment": {
+                "point": [
+                  { "x": 122.5, "y": 7, "z": 0 },
+                  { "x": 132.5, "y": 27, "z": 0 },
+                  { "x": 147.5, "y": 47, "z": 0 },
+                  { "x": 162.5, "y": 59, "z": 0 }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "predecessor_id": [{ "id": "lane_main_fwd" }]
+    },
+    {
+      "id": { "id": "lane_pass_bay" },
+      "name": "pass_bay",
+      "width": 7,
+      "central_curve": {
+        "segment": [
+          {
+            "line_segment": {
+              "point": [
+                { "x": 80, "y": 4, "z": 0 },
+                { "x": 85, "y": -12, "z": 0 },
+                { "x": 100, "y": -16, "z": 0 },
+                { "x": 115, "y": -8, "z": 0 },
+                { "x": 120, "y": 8, "z": 0 }
+              ]
+            }
+          }
+        ]
+      },
+      "successor_id": [{ "id": "lane_main_fwd" }],
+      "predecessor_id": [{ "id": "lane_main_fwd" }]
+    }
+  ]
+}

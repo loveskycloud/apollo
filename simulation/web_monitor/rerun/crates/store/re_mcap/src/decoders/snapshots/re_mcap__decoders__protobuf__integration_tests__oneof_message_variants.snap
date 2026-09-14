@@ -9,10 +9,10 @@ expression: "format_chunk(&chunks[0])"
 │ * version: [**REDACTED**]                                                                                                                                                      │
 ├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
 │ ┌───────────────────────────────────────────────┬──────────────────────────────┬──────────────────────────────────┬──────────────────────────────────────────────────────────┐ │
-│ │ RowId                                         ┆ message_log_time             ┆ message_publish_time             ┆ com.example.Shape:message                                │ │
+│ │ RowId                                         ┆ message_time             ┆ publish_time             ┆ com.example.Shape:message                                │ │
 │ │ ---                                           ┆ ---                          ┆ ---                              ┆ ---                                                      │ │
 │ │ type: non-null FixedSizeBinary(16)            ┆ type: Duration(ns)           ┆ type: Duration(ns)               ┆ type: List(Struct("name": Utf8, "geometry":              │ │
-│ │ ARROW:extension:metadata: {"namespace":"row"} ┆ index_name: message_log_time ┆ index_name: message_publish_time ┆ Struct("circle": Struct("radius": Float32), "rectangle": │ │
+│ │ ARROW:extension:metadata: {"namespace":"row"} ┆ index_name: message_time ┆ index_name: publish_time ┆ Struct("circle": Struct("radius": Float32), "rectangle": │ │
 │ │ ARROW:extension:name: TUID                    ┆ is_sorted: true              ┆ is_sorted: true                  ┆ Struct("width": Float32, "height": Float32)), metadata:  │ │
 │ │ is_sorted: true                               ┆ kind: index                  ┆ kind: index                      ┆ {"ARROW:extension:name":                                 │ │
 │ │ kind: control                                 ┆                              ┆                                  ┆ "rerun.datatypes.ProtobufOneOf"}))                       │ │

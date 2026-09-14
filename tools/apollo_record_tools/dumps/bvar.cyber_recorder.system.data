@@ -1,0 +1,33 @@
+cyber_recorder_kernel_version : "Linux in-dev-docker 6.8.7-custom #9 SMP PREEMPT_DYNAMIC Wed Jun  5 01:50:35 CST 2024 x86_64 x86_64 x86_64 GNU/Linux
+"
+cyber_recorder_process_cmdline : "cyber_recorder
+info
+/apollo_workspace/data/bag/slice_test.record
+"
+cyber_recorder_process_context_switches_involuntary_second : 0
+cyber_recorder_process_context_switches_voluntary_second : 0
+cyber_recorder_process_cpu_usage : 0
+cyber_recorder_process_cpu_usage_system : 0
+cyber_recorder_process_cpu_usage_user : 0
+cyber_recorder_process_disk_read_bytes_second : 0
+cyber_recorder_process_disk_write_bytes_second : 0
+cyber_recorder_process_faults_major : 0
+cyber_recorder_process_faults_minor_second : 0
+cyber_recorder_process_fd_count : 9
+cyber_recorder_process_inblocks_second : 0
+cyber_recorder_process_io_read_bytes_second : 0
+cyber_recorder_process_io_read_second : 0
+cyber_recorder_process_io_write_bytes_second : 0
+cyber_recorder_process_io_write_second : 0
+cyber_recorder_process_memory_data_and_stack : 68157440
+cyber_recorder_process_memory_resident : 50204672
+cyber_recorder_process_memory_shared : 39223296
+cyber_recorder_process_memory_text : 606208
+cyber_recorder_process_memory_virtual : 163184640
+cyber_recorder_process_nice : 0
+cyber_recorder_process_outblocks_second : 0
+cyber_recorder_process_priority : 20
+cyber_recorder_process_thread_count : 2
+cyber_recorder_process_uptime : 0.003611
+cyber_recorder_process_username : "unknown (No such device or address)"
+cyber_recorder_process_work_dir : "/apollo_workspace/tools/apollo_record_tools"
