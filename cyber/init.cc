@@ -126,7 +126,10 @@ bool Init(const char* binary_name, const std::string& dag_info) {
   SetState(STATE_INITIALIZED);
 
   auto global_data = GlobalData::Instance();
-  if (global_data->IsMockTimeMode()) {
+  // An in-process simulation has exactly one clock owner: its synchronous
+  // scheduler. A /clock reader would allow an unrelated publisher to advance
+  // time inside a frozen round and also outlive BlockerManager at static exit.
+  if (global_data->IsMockTimeMode() && global_data->IsRealityMode()) {
     auto node_name = kClockNode + std::to_string(getpid());
     clock_node = std::unique_ptr<Node>(new Node(node_name));
     auto cb =
@@ -163,6 +166,7 @@ void Clear() {
   if (GetState() == STATE_SHUTDOWN || GetState() == STATE_UNINITIALIZED) {
     return;
   }
+  clock_node.reset();  // Readers must unsubscribe before global dispatch teardown.
   SysMo::CleanUp();
   TaskManager::CleanUp();
   TimingWheel::CleanUp();
