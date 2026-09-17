@@ -371,6 +371,11 @@ textarea {
   color: #dbeafe;
 }
 
+.route-list-item.initial:not(.active) {
+  border-color: rgba(148, 163, 184, 0.35);
+  color: #cbd5e1;
+}
+
 .route-list-empty {
   color: var(--text-dim);
   font-size: 11px;

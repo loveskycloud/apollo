@@ -1,7 +1,7 @@
 /******************************************************************************
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
-#include "simulation/worldsim/agent/agents.h"
+#include "modules/simulation/worldsim/agent/agents.h"
 
 #include <cmath>
 #include <memory>

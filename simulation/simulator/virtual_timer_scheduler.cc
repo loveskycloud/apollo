@@ -4,7 +4,7 @@
 
 #include <utility>
 
-#include "simulation/simulator/virtual_timer_scheduler.h"
+#include "modules/simulation/simulator/virtual_timer_scheduler.h"
 
 #include "cyber/timer/sim_timer_registry.h"
 

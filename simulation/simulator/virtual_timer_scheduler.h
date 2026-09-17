@@ -7,9 +7,9 @@
 
 #include <vector>
 
-#include "simulation/simulator/emulator_message_queue.h"
-#include "simulation/simulator/periodic_trigger_generator.h"
-#include "simulation/simulator/sim_event.h"
+#include "modules/simulation/simulator/emulator_message_queue.h"
+#include "modules/simulation/simulator/periodic_trigger_generator.h"
+#include "modules/simulation/simulator/sim_event.h"
 
 namespace apollo {
 namespace simulation {

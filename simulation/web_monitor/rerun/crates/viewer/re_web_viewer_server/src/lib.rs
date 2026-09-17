@@ -367,6 +367,11 @@ pub type McapTopicsHandler =
 pub type TopicDebugHandler =
     std::sync::Arc<dyn Fn(&str, &str, Option<i64>) -> Result<String, String> + Send + Sync>;
 
+/// `POST /api/upload_recording` — browser uploads a bag from the client machine.
+/// Args: `(filename, raw_bytes)` → JSON `{"status":"ok","path":"/host/path"}`.
+pub type UploadRecordingHandler =
+    std::sync::Arc<dyn Fn(&str, &[u8]) -> Result<String, String> + Send + Sync>;
+
 pub type DebugQueryHandler = std::sync::Arc<dyn Fn(&str) -> Result<String, String> + Send + Sync>;
 
 /// `POST /api/playback_window` — body lines:
@@ -439,6 +444,8 @@ struct WebViewerServerInner {
     convert_record: parking_lot::Mutex<Option<ConvertRecordHandler>>,
     /// Optional convert job status lookup.
     convert_status: parking_lot::Mutex<Option<ConvertStatusHandler>>,
+    /// Optional client→host bag upload (remote browser users).
+    upload_recording: parking_lot::Mutex<Option<UploadRecordingHandler>>,
     /// Optional MCAP summary topic list (header/channels, no message decode).
     mcap_topics: parking_lot::Mutex<Option<McapTopicsHandler>>,
     topic_debug: parking_lot::Mutex<Option<TopicDebugHandler>>,
@@ -519,6 +526,7 @@ impl WebViewerServer {
             open_local: parking_lot::Mutex::new(None),
             convert_record: parking_lot::Mutex::new(None),
             convert_status: parking_lot::Mutex::new(None),
+            upload_recording: parking_lot::Mutex::new(None),
             mcap_topics: parking_lot::Mutex::new(None),
             topic_debug: parking_lot::Mutex::new(None),
             debug_query: parking_lot::Mutex::new(None),
@@ -572,6 +580,11 @@ impl WebViewerServer {
     /// Install handler for `GET /api/convert_record?job_id=…`.
     pub fn set_convert_status_handler(&self, handler: ConvertStatusHandler) {
         *self.inner.convert_status.lock() = Some(handler);
+    }
+
+    /// Install handler for `POST /api/upload_recording` (client machine bag → host path).
+    pub fn set_upload_recording_handler(&self, handler: UploadRecordingHandler) {
+        *self.inner.upload_recording.lock() = Some(handler);
     }
 
     /// Install handler for `GET|POST /api/mcap_topics` (MCAP summary channel list).
@@ -874,6 +887,89 @@ impl WebViewerServerInner {
         };
         match handler(path) {
             Ok(body) => request.respond(make_response(200, body)),
+            Err(err) => request.respond(make_response(
+                400,
+                format!(r#"{{"status":"error","message":{}}}"#, json_escape(&err)),
+            )),
+        }
+    }
+
+    #[cfg(not(disable_web_viewer_server))]
+    fn handle_upload_recording(
+        &self,
+        mut request: tiny_http::Request,
+    ) -> Result<(), std::io::Error> {
+        use std::io::Read as _;
+
+        let cors =
+            tiny_http::Header::from_str("Access-Control-Allow-Origin: *").expect("valid header");
+        if request.method() == &tiny_http::Method::Options {
+            let mut response = tiny_http::Response::empty(204);
+            response.add_header(cors);
+            if let Ok(h) =
+                tiny_http::Header::from_str("Access-Control-Allow-Methods: POST, OPTIONS")
+            {
+                response.add_header(h);
+            }
+            if let Ok(h) = tiny_http::Header::from_str(
+                "Access-Control-Allow-Headers: Content-Type, X-Filename, X-Map",
+            ) {
+                response.add_header(h);
+            }
+            return request.respond(response);
+        }
+
+        let make_response = |status: u16, body: String| {
+            let mut response = tiny_http::Response::from_string(body).with_status_code(status);
+            if let Ok(h) = tiny_http::Header::from_str("Access-Control-Allow-Origin: *") {
+                response.add_header(h);
+            }
+            if let Ok(h) =
+                tiny_http::Header::from_str("Content-Type: application/json; charset=utf-8")
+            {
+                response.add_header(h);
+            }
+            response
+        };
+
+        if request.method() != &tiny_http::Method::Post {
+            return request.respond(make_response(
+                405,
+                r#"{"status":"error","message":"use POST with X-Filename and raw body"}"#.into(),
+            ));
+        }
+
+        let filename = request
+            .headers()
+            .iter()
+            .find(|h| h.field.equiv("X-Filename"))
+            .map(|h| h.value.as_str().to_owned())
+            .unwrap_or_default();
+        if filename.trim().is_empty() {
+            return request.respond(make_response(
+                400,
+                r#"{"status":"error","message":"missing X-Filename header"}"#.into(),
+            ));
+        }
+
+        let mut body = Vec::new();
+        request.as_reader().read_to_end(&mut body)?;
+        if body.is_empty() {
+            return request.respond(make_response(
+                400,
+                r#"{"status":"error","message":"empty upload body"}"#.into(),
+            ));
+        }
+
+        let Some(handler) = self.upload_recording.lock().clone() else {
+            return request.respond(make_response(
+                501,
+                r#"{"status":"error","message":"upload_recording handler not configured"}"#.into(),
+            ));
+        };
+
+        match handler(&filename, &body) {
+            Ok(json) => request.respond(make_response(200, json)),
             Err(err) => request.respond(make_response(
                 400,
                 format!(r#"{{"status":"error","message":{}}}"#, json_escape(&err)),
@@ -1213,6 +1309,9 @@ impl WebViewerServerInner {
         }
         if path == "/api/convert_record" {
             return self.handle_convert_record(request);
+        }
+        if path == "/api/upload_recording" {
+            return self.handle_upload_recording(request);
         }
         if path == "/api/mcap_topics" {
             return self.handle_mcap_topics(request);

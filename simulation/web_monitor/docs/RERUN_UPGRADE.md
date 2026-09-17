@@ -291,7 +291,7 @@
 ## 回滚
 
 ```bash
-cd /apollo_workspace/simulation/web_monitor
+cd /apollo_workspace/modules/simulation/web_monitor
 # 若新版不可用：
 rm -rf rerun
 mv rerun_0.19.1_backup rerun
@@ -328,7 +328,7 @@ docker exec -e HOME=/home/wangsheng \
   -e RUSTUP_HOME=/home/wangsheng/.rustup \
   -u wangsheng apollo_neo_dev_wangsheng bash -lc '
 source "$HOME/.cargo/env"
-cd /apollo_workspace/simulation/web_monitor
+cd /apollo_workspace/modules/simulation/web_monitor
 bash scripts/build_viewer.sh
 '
 ```
@@ -336,7 +336,7 @@ bash scripts/build_viewer.sh
 等价手工步骤（改 UI 后务必 **先 wasm 再 cli**，否则嵌入的 web 资源是旧的）：
 
 ```bash
-cd /apollo_workspace/simulation/web_monitor/rerun
+cd /apollo_workspace/modules/simulation/web_monitor/rerun
 cargo run -p re_dev_tools --release -- build-web-viewer --debug
 # 若有 wasm-opt：--release -g
 cargo build -p rerun-cli --release --no-default-features \

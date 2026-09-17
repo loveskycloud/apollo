@@ -52,8 +52,8 @@ Run inside `apollo_neo_dev_wangsheng`, against the deployed server:
 
 ```sh
 /apollo_workspace/tools/apollo_record_tools/.venv/bin/python \
-  /apollo_workspace/simulation/web_monitor/scripts/test_session_recovery_browser.py \
-  --out /apollo_workspace/simulation/web_monitor/test-artifacts/session-recovery-20260913/deployed-final
+  /apollo_workspace/modules/simulation/web_monitor/scripts/test_session_recovery_browser.py \
+  --out /apollo_workspace/modules/simulation/web_monitor/test-artifacts/session-recovery-20260913/deployed-final
 ```
 
 The test opens Sim Replay with actual mouse input **once**, then reloads without

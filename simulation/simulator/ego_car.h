@@ -7,8 +7,8 @@
 
 #include <string>
 
-#include "simulation/logsim/proto/simulation_task.pb.h"
-#include "simulation/simulator/proto/scenario.pb.h"
+#include "modules/simulation/logsim/proto/simulation_task.pb.h"
+#include "modules/simulation/simulator/proto/scenario.pb.h"
 
 namespace apollo {
 namespace simulation {

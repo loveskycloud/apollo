@@ -64,7 +64,7 @@ async def main():
             s=await capture('editable-'+task_id)
             assert s['draft_config']==expected, (s['draft_config'],expected)
             assert s['config_from']==task_id and s['inspected_task'] is None
-            for key in ['Scenario','Map','Vehicle config','Profile','seed','runs']:
+            for key in ['Scenario','Map','Vehicle','seed','runs']:
                 assert key in s
 
         async def drag_edit(key, value):

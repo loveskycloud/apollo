@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/emulator_controller.h"
+#include "modules/simulation/simulator/emulator_controller.h"
 
 #include <vector>
 
@@ -16,6 +16,7 @@ namespace {
 class FakeMessageSource : public IMessageSource {
  public:
   void Enqueue(SimEvent ev) { events_.push_back(std::move(ev)); }
+  void set_end_ns(uint64_t end_ns) { end_ns_ = end_ns; }
 
   bool Open(const SourceConfig& /*cfg*/) override { return true; }
   bool HasNext() const override { return index_ < events_.size(); }
@@ -34,12 +35,13 @@ class FakeMessageSource : public IMessageSource {
     return true;
   }
   uint64_t begin_ns() const override { return 0; }
-  uint64_t end_ns() const override { return 1000; }
+  uint64_t end_ns() const override { return end_ns_; }
   uint64_t total_messages() const override { return events_.size(); }
 
  private:
   std::vector<SimEvent> events_;
   size_t index_ = 0;
+  uint64_t end_ns_ = 1000;
 };
 
 class FakeMessageConsumer : public MessageConsumer {
@@ -168,6 +170,37 @@ TEST(EmulatorControllerTest, RejectBackwardsTime) {
   ASSERT_TRUE(controller.Init(options)); ASSERT_TRUE(controller.LoadFromSource());
   ASSERT_TRUE(controller.PublishNext()); EXPECT_FALSE(controller.PublishNext());
   EXPECT_NE(controller.error().find("non-monotonic"), std::string::npos);
+}
+
+TEST(EmulatorControllerTest, TimersStopWhenSourceEndShrinks) {
+  auto source = std::make_shared<FakeMessageSource>();
+  source->set_end_ns(100);
+  FakeMessageConsumer consumer;
+  EmulatorController controller;
+  EmulatorController::Options options;
+  options.source = source;
+  options.consumer = &consumer;
+  ASSERT_TRUE(controller.Init(options));
+  ASSERT_TRUE(controller.LoadFromSource());
+  std::vector<uint64_t> fired;
+  SimEvent timer;
+  timer.type = SimEventType::TIMER_FIRE;
+  timer.sim_time_ns = 100;
+  timer.interval_ns = 10;
+  timer.repeat_end_ns = 200;
+  timer.channel = "control";
+  timer.process = [&]() {
+    fired.push_back(cyber::Clock::Now().ToNanosecond());
+    return true;
+  };
+  FabricatedMessageQueue timers;
+  timers.Push(timer);
+  controller.MergeFabricated(&timers);
+  cyber::Clock::SetMode(cyber::proto::MODE_MOCK);
+  while (controller.PublishNext()) {
+  }
+  EXPECT_EQ(fired, (std::vector<uint64_t>{100}));
+  EXPECT_TRUE(controller.error().empty());
 }
 
 }  // namespace

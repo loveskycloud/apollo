@@ -1,12 +1,12 @@
 /******************************************************************************
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
-#include "simulation/worldsim/trigger/trigger_base.h"
+#include "modules/simulation/worldsim/trigger/trigger_base.h"
 
 #include <cmath>
 #include <memory>
 
-#include "simulation/worldsim/core/world.h"
+#include "modules/simulation/worldsim/core/world.h"
 
 namespace apollo {
 namespace simulation {

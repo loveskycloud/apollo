@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/sim_progress.h"
+#include "modules/simulation/simulator/sim_progress.h"
 
 #include <fstream>
 #include <algorithm>
@@ -38,6 +38,13 @@ void SimProgress::OnEvent(uint64_t sim_time_ns, const std::string& channel) {
   state_.wall_elapsed_s = wall_now - wall_start_s_;
   if (state_.wall_elapsed_s > 0.0) {
     state_.speedup = (state_.sim_time_s - state_.begin_s) / state_.wall_elapsed_s;
+  }
+}
+
+void SimProgress::MarkComplete() {
+  state_.percent = 100.0;
+  if (state_.sim_time_s > state_.begin_s) {
+    state_.end_s = state_.sim_time_s;
   }
 }
 

@@ -14,7 +14,7 @@
 
 #include "cyber/record/record_reader.h"
 #include "cyber/record/record_viewer.h"
-#include "simulation/simulator/i_message_source.h"
+#include "modules/simulation/simulator/i_message_source.h"
 
 namespace apollo {
 namespace simulation {

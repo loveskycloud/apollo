@@ -70,7 +70,11 @@ fn escape(s: &str) -> String {
             '\n' => out.push_str("\\n"),
             '\r' => out.push_str("\\r"),
             '\t' => out.push_str("\\t"),
-            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
+            // Always \u-escape non-ASCII so clients never see raw multi-byte UTF-8
+            // in hand-rolled JSON (avoids "…" → "Ã¢Â€Â¦" mojibake).
+            c if (c as u32) < 0x20 || (c as u32) > 0x7E => {
+                out.push_str(&format!("\\u{:04x}", c as u32));
+            }
             c => out.push(c),
         }
     }
@@ -287,18 +291,37 @@ fn cache_dir() -> PathBuf {
     PathBuf::from("/apollo_workspace/data/bag/.wm_mcap_cache")
 }
 
+/// Apollo record ↔ MCAP tools live under simulation/ (symlink in application-core).
+pub(super) fn apollo_record_tools_dir() -> PathBuf {
+    if let Ok(p) = std::env::var("WEB_MONITOR_RECORD_TOOLS") {
+        return PathBuf::from(p);
+    }
+    const CANDIDATES: &[&str] = &[
+        "/apollo_workspace/modules/simulation/tools/apollo_record_tools",
+        "/apollo_workspace/simulation/tools/apollo_record_tools",
+        "/apollo_workspace/tools/apollo_record_tools",
+    ];
+    for candidate in CANDIDATES {
+        let path = PathBuf::from(candidate);
+        if path.is_dir() {
+            return path;
+        }
+    }
+    PathBuf::from(CANDIDATES[0])
+}
+
 fn converter_script() -> PathBuf {
     if let Ok(p) = std::env::var("WEB_MONITOR_RECORD_TO_MCAP") {
         return PathBuf::from(p);
     }
-    PathBuf::from("/apollo_workspace/tools/apollo_record_tools/apollo_record_to_semantic_mcap.py")
+    apollo_record_tools_dir().join("apollo_record_to_semantic_mcap.py")
 }
 
 fn record_tool() -> PathBuf {
     if let Ok(p) = std::env::var("WEB_MONITOR_RECORD_TOOL") {
         return PathBuf::from(p);
     }
-    PathBuf::from("/apollo_workspace/tools/apollo_record_tools/bin/apollo_record_tool")
+    apollo_record_tools_dir().join("bin/apollo_record_tool")
 }
 
 fn resolve_map(source: &Path, explicit: Option<PathBuf>) -> Result<Option<PathBuf>, String> {
@@ -483,23 +506,37 @@ fn json_str_field(text: &str, key: &str) -> Option<String> {
     let pat = format!("\"{key}\":");
     let idx = text.find(&pat)?;
     let rest = text[idx + pat.len()..].trim_start();
-    let bytes = rest.as_bytes();
     if !rest.starts_with('"') {
         return None;
     }
+    // Iterate by Unicode scalar values — never push raw UTF-8 bytes as chars
+    // (that turns "…" into mojibake like "Ã¢Â€Â¦").
     let mut out = String::new();
-    let mut i = 1usize;
-    while i < bytes.len() {
-        match bytes[i] {
-            b'"' => return Some(out),
-            b'\\' if i + 1 < bytes.len() => {
-                out.push(bytes[i + 1] as char);
-                i += 2;
+    let mut chars = rest[1..].chars();
+    while let Some(c) = chars.next() {
+        match c {
+            '"' => return Some(out),
+            '\\' => {
+                let esc = chars.next()?;
+                match esc {
+                    'n' => out.push('\n'),
+                    'r' => out.push('\r'),
+                    't' => out.push('\t'),
+                    '"' => out.push('"'),
+                    '\\' => out.push('\\'),
+                    '/' => out.push('/'),
+                    'u' => {
+                        let hex: String = chars.by_ref().take(4).collect();
+                        if hex.len() != 4 {
+                            return None;
+                        }
+                        let cp = u32::from_str_radix(&hex, 16).ok()?;
+                        out.push(char::from_u32(cp)?);
+                    }
+                    other => out.push(other),
+                }
             }
-            b => {
-                out.push(b as char);
-                i += 1;
-            }
+            c => out.push(c),
         }
     }
     None
@@ -540,7 +577,7 @@ fn run_converter(
         let mut jobs = mgr.jobs.lock();
         if let Some(job) = jobs.get_mut(&job_id) {
             job.status = "running".into();
-            job.message = "Converting Apollo record → MCAP…".into();
+            job.message = "Converting Apollo record -> MCAP...".into();
             job.progress = 0.01;
         }
     }
@@ -604,7 +641,7 @@ fn run_converter(
             job.status = "done".into();
             job.progress = 1.0;
             job.output = Some(output.clone());
-            job.message = format!("Converted → {}", output.display());
+            job.message = format!("Converted -> {}", output.display());
             job.error = None;
             re_log::info!("web_monitor convert_record: done {}", output.display());
         }

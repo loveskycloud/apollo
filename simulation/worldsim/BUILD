@@ -30,7 +30,7 @@ apollo_cc_library(
     copts = WORLDSIM_COPTS,
     deps = [
         "//cyber",
-        "//simulation/worldsim/proto:scenario_proto",
+        "//modules/simulation/worldsim/proto:scenario_proto",
         "@com_google_protobuf//:protobuf",
     ],
 )
@@ -38,7 +38,7 @@ apollo_cc_library(
 apollo_cc_binary(
     name = "worldsim",
     srcs = ["main.cc"],
-    deps = ["//simulation/simulator:apollo_simulation_core"],
+    deps = ["//modules/simulation/simulator:apollo_simulation_core"],
 )
 
 filegroup(

@@ -178,7 +178,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help=(
             "Also write bulky Apollo payloads (camera images / lidar). "
-            "By default, non-bulky topics (pose, chassis, …) already write protobuf "
+            "By default, non-bulky topics (pose, chassis, ...) already write protobuf "
             "payloads for Topic View; bulky topics stay schemas-only + semantic overlays."
         ),
     )
@@ -816,7 +816,7 @@ def main() -> int:
                         "status": "running",
                         "progress": 0.01,
                         "phase": "dump",
-                        "message": "Reading Apollo record…",
+                        "message": "Reading Apollo record...",
                         "begin_ns": begin_ns,
                         "end_ns": end_ns,
                     },
@@ -924,7 +924,7 @@ def main() -> int:
                         "end_ns": end_ns,
                         "message": (
                             f"Converted {converted} msgs "
-                            f"(passthrough={passthrough_msgs}, semantic={semantic_msgs})…"
+                            f"(passthrough={passthrough_msgs}, semantic={semantic_msgs})..."
                         ),
                     },
                 )

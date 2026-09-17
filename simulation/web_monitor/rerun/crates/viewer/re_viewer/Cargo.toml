@@ -197,15 +197,19 @@ web-sys = { workspace = true, features = [
   "File",
   "FileList",
   "FilePropertyBag",
+  "FileReader",
   "History",
   "HtmlElement",
   "HtmlInputElement",
   "Node",
   "PopStateEvent",
+  "ProgressEvent",
   "Storage",
   "StorageEvent",
   "UrlSearchParams",
   "Window",
+  "XmlHttpRequest",
+  "XmlHttpRequestUpload",
 ] }
 
 

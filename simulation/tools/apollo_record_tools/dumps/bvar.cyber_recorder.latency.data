@@ -1,0 +1,14 @@
+cyber_recorder_cpu_usage_latency : 0
+cyber_recorder_cpu_usage_latency_80 : 0
+cyber_recorder_cpu_usage_latency_90 : 0
+cyber_recorder_cpu_usage_latency_99 : 0
+cyber_recorder_cpu_usage_latency_999 : 0
+cyber_recorder_cpu_usage_latency_9999 : 0
+cyber_recorder_cpu_usage_max_latency : 0
+cyber_recorder_mem_resident_usage_latency : 0
+cyber_recorder_mem_resident_usage_latency_80 : 0
+cyber_recorder_mem_resident_usage_latency_90 : 0
+cyber_recorder_mem_resident_usage_latency_99 : 0
+cyber_recorder_mem_resident_usage_latency_999 : 0
+cyber_recorder_mem_resident_usage_latency_9999 : 0
+cyber_recorder_mem_resident_usage_max_latency : 0

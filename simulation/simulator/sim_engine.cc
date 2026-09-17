@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/sim_engine.h"
+#include "modules/simulation/simulator/sim_engine.h"
 
 #include "cyber/common/log.h"
 
@@ -62,8 +62,12 @@ int SimEngine::RunAFAP() {
     }
     return 1;
   }
-  if (progress_ && !progress_path_.empty()) {
-    progress_->WriteJson(progress_path_);
+  if (progress_) {
+    // Clean EOF (duration or mission_complete+parking_brake) counts as done.
+    progress_->MarkComplete();
+    if (!progress_path_.empty()) {
+      progress_->WriteJson(progress_path_);
+    }
   }
   if (monitor_ && monitor_->HasFatal()) {
     return 1;

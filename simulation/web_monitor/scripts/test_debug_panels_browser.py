@@ -13,7 +13,20 @@ import sys
 import time
 
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
-sys.path.insert(0, "/apollo_workspace/tools/apollo_record_tools")
+
+
+def _apollo_record_tools():
+    for candidate in (
+        "/apollo_workspace/modules/simulation/tools/apollo_record_tools",
+        "/apollo_workspace/simulation/tools/apollo_record_tools",
+        str(Path(__file__).resolve().parents[2] / "tools/apollo_record_tools"),
+    ):
+        if Path(candidate).is_dir():
+            return candidate
+    return "/apollo_workspace/modules/simulation/tools/apollo_record_tools"
+
+
+sys.path.insert(0, _apollo_record_tools())
 from google.protobuf.message_factory import GetMessageClass
 from mcap.reader import make_reader
 from mcap_topic_debug import pool_from_file_descriptor_set

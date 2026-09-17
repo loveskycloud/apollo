@@ -43,7 +43,7 @@ bash simulation/web_monitor/scripts/build_viewer.sh
 source "$HOME/.cargo/env"   # rustup 1.96.0 + wasm32-unknown-unknown
 
 # Compile forked Viewer (wasm + CLI → bin/rerun)
-bash /apollo_workspace/simulation/web_monitor/scripts/build_viewer.sh
+bash /apollo_workspace/modules/simulation/web_monitor/scripts/build_viewer.sh
 
 # Package launcher + install layouts/bin via buildtool
 cd /apollo_workspace
@@ -76,8 +76,8 @@ export WEB_MONITOR_GRPC_PORT=9876       # public gRPC port
 web_monitor_main --grpc_host=10.0.0.5 --web_port=80 --recording=/path/to/data.rrd
 
 # Native viewer
-AD_LAYOUT_DIR=/apollo_workspace/simulation/web_monitor/layouts \
-  /apollo_workspace/simulation/web_monitor/bin/rerun /path/to/data.rrd
+AD_LAYOUT_DIR=/apollo_workspace/modules/simulation/web_monitor/layouts \
+  /apollo_workspace/modules/simulation/web_monitor/bin/rerun /path/to/data.rrd
 # Or: web_monitor_main --recording=/path/to/data.rrd --native
 ```
 
@@ -87,5 +87,7 @@ The web viewer renders through WebGL 2 or WebGPU. Use a current Chrome/Edge brow
 The HTTP page loading successfully does not prove that the browser can render the Viewer.
 For a local service use `http://127.0.0.1:9090/` (not `172.0.0.1`); for a remote/container deployment, use that host's reachable IP or DNS name.
 If the page reports that WebGL 2 is unavailable, do not retry the same GPU-disabled browser: use a GPU/WebGL-capable desktop session, or run `web_monitor_main --native` on the host instead.
+
+Playback needs both ports from the **same browser host**: HTTP UI `:9090` and gRPC proxy `:9876`. A `Failed to fetch rerun+http://HOST:9876/proxy` error means the page loaded but the browser could not call the proxy (CORS, firewall, or only 9090 published). Restart `web_monitor_main` after a viewer rebuild so LAN CORS is enabled; open `http://HOST:9090/` (not a mix of localhost and LAN IP).
 
 In the left rail: **Layout** → **Planning** / **Perception** / **Control**.

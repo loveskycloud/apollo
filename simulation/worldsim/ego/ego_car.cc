@@ -1,7 +1,7 @@
 /******************************************************************************
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
-#include "simulation/worldsim/ego/ego_car.h"
+#include "modules/simulation/worldsim/ego/ego_car.h"
 
 namespace apollo {
 namespace simulation {
@@ -57,6 +57,22 @@ std::vector<Waypoint> EgoCar::GetRoutingWaypoints() const {
     break;
   }
   return out;
+}
+
+bool EgoCar::SwitchToNextRoute() {
+  int idx = -1;
+  for (int i = 0; i < config_.routes_size(); ++i) {
+    if (config_.routes(i).id() == active_route_id_) {
+      idx = i;
+      break;
+    }
+  }
+  if (idx < 0 || idx + 1 >= config_.routes_size()) {
+    return false;
+  }
+  active_route_id_ = config_.routes(idx + 1).id();
+  config_.set_active_route_id(active_route_id_);
+  return true;
 }
 
 }  // namespace worldsim

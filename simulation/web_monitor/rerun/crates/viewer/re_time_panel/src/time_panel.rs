@@ -1,8 +1,8 @@
 use egui::emath::Rangef;
 use egui::scroll_area::ScrollSource;
 use egui::{
-    Align, CursorIcon, Modifiers, NumExt as _, Painter, PointerButton, Rect, Response, RichText,
-    TextEdit, Ui, Vec2, WidgetInfo, WidgetType,
+    Align, Color32, CursorIcon, Modifiers, NumExt as _, Painter, PointerButton, Rect, Response,
+    RichText, TextEdit, Ui, Vec2, WidgetInfo, WidgetType,
 };
 use re_context_menu::{SelectionUpdateBehavior, context_menu_ui_for_item_with_context};
 use re_data_ui::DataUi as _;
@@ -1683,11 +1683,23 @@ impl TimePanel {
 
             let text_edit_width = 200.0.at_most(ui.available_width());
 
+            // Hard-code AD chrome colors. Reading visuals is unreliable here: Secondary
+            // wrap_widget + design tokens can leave a light Gray.900 slab under light TEXT.
+            let edit_bg = Color32::from_rgb(0x3A, 0x31, 0x50); // ad_shell::theme::CARD_BG
+            let edit_fg = Color32::from_rgb(0xF3, 0xEE, 0xFF); // ad_shell::theme::TEXT
+
             let response = ReButton::wrap_widget(ui, Variant::Secondary, Size::Tiny, false, |ui| {
+                ui.visuals_mut().text_edit_bg_color = Some(edit_bg);
+                ui.visuals_mut().override_text_color = Some(edit_fg);
+                ui.visuals_mut().extreme_bg_color = edit_bg;
                 // `TextEdit::min_size` is ignored for some reason so we need add_sized
                 ui.add_sized(
                     Vec2::new(text_edit_width, Size::Tiny.height()),
-                    TextEdit::singleline(&mut time_str).vertical_align(Align::Center),
+                    TextEdit::singleline(&mut time_str)
+                        .vertical_align(Align::Center)
+                        .background_color(edit_bg)
+                        .text_color(edit_fg)
+                        .margin(egui::Margin::symmetric(6, 2)),
                 )
             });
             if response.changed() {

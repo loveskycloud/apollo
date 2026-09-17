@@ -2,7 +2,7 @@
 
 即原 `scenario-editor` Web 工程，现位于：
 
-`/apollo_workspace/simulation/scene_editor/`（容器内）
+`/apollo_workspace/modules/simulation/scene_editor/`（容器内）
 
 编辑器保存可继续编辑的项目，也可单独导出供统一仿真器加载的 WorldSim Scenario proto JSON。
 
@@ -10,7 +10,7 @@
 
 ```bash
 source ~/.nvm/nvm.sh && nvm use --lts
-cd /apollo_workspace/simulation/scene_editor
+cd /apollo_workspace/modules/simulation/scene_editor
 npm install   # 首次
 npm run dev -- --host 0.0.0.0 --port 5173
 ```

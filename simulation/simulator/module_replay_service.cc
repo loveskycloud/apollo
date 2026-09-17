@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/module_replay_service.h"
+#include "modules/simulation/simulator/module_replay_service.h"
 
 namespace apollo {
 namespace simulation {

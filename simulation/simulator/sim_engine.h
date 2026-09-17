@@ -7,12 +7,12 @@
 
 #include <memory>
 
-#include "simulation/simulator/emulator_controller.h"
-#include "simulation/simulator/emulator_message_queue.h"
-#include "simulation/simulator/result_sink.h"
-#include "simulation/simulator/sim_monitor.h"
-#include "simulation/simulator/sim_progress.h"
-#include "simulation/simulator/virtual_timer_scheduler.h"
+#include "modules/simulation/simulator/emulator_controller.h"
+#include "modules/simulation/simulator/emulator_message_queue.h"
+#include "modules/simulation/simulator/result_sink.h"
+#include "modules/simulation/simulator/sim_monitor.h"
+#include "modules/simulation/simulator/sim_progress.h"
+#include "modules/simulation/simulator/virtual_timer_scheduler.h"
 
 namespace apollo {
 namespace simulation {

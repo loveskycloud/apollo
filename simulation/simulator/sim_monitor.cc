@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/sim_monitor.h"
+#include "modules/simulation/simulator/sim_monitor.h"
 
 namespace apollo {
 namespace simulation {

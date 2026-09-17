@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/emulator_message_queue.h"
+#include "modules/simulation/simulator/emulator_message_queue.h"
 
 #include <algorithm>
 #include <utility>

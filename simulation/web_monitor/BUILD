@@ -40,8 +40,8 @@ filegroup(
 )
 
 # Builds the forked Rerun viewer via cargo. Requires rustup/cargo in the Apollo container.
-# Prefer: bash simulation/web_monitor/scripts/build_viewer.sh
-# Then: buildtool build -p simulation/web_monitor (picks up bin/rerun via filegroup).
+# Prefer: bash modules/simulation/web_monitor/scripts/build_viewer.sh
+# Then: buildtool build -p modules/simulation (picks up bin/rerun via filegroup).
 genrule(
     name = "rerun_cli",
     srcs = [
@@ -55,7 +55,9 @@ genrule(
         export HOME="$${HOME:-/tmp}"
         export PATH="$$HOME/.cargo/bin:/usr/local/cargo/bin:$$PATH"
         WS="$$(pwd)"
-        if [[ -f "$$WS/simulation/web_monitor/scripts/build_viewer.sh" ]]; then
+        if [[ -f "$$WS/modules/simulation/web_monitor/scripts/build_viewer.sh" ]]; then
+          ROOT="$$WS/modules/simulation/web_monitor"
+        elif [[ -f "$$WS/simulation/web_monitor/scripts/build_viewer.sh" ]]; then
           ROOT="$$WS/simulation/web_monitor"
         else
           ROOT="$$WS"

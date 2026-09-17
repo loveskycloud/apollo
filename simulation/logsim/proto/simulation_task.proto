@@ -2,7 +2,7 @@ syntax = "proto2";
 
 package apollo.simulation.logsim;
 
-import "simulation/logsim/proto/channel_policy.proto";
+import "modules/simulation/logsim/proto/channel_policy.proto";
 
 enum SimMode {
   DEFAULT = 0;

@@ -4,7 +4,8 @@ import json
 from pathlib import Path
 import urllib.request
 
-from configuration_tools import GLOBAL_FLAGS, VEHICLE_CONFIG, vehicle_geometry
+from configuration_tools import (APOLLO_GLOBAL_FLAGS, GLOBAL_FLAGS, VEHICLE_CONFIG,
+                                 resolve_global_flagfile, vehicle_geometry)
 
 
 def active_flags(path):
@@ -68,9 +69,11 @@ if __name__ == "__main__":
     root = Path("/apollo_workspace")
     last = results[-1]["effective_configuration"]
     assert (root / "profiles/current").resolve() == Path(last["profile"])
-    assert (root / VEHICLE_CONFIG).resolve() == Path(last["vehicle_config_path"])
-    flags = active_flags(root / GLOBAL_FLAGS)
+    # Vehicle may stay under profiles/ only; do not require a modules/common stub.
+    assert Path(last["vehicle_config_path"]).resolve() == Path(last["profile"]).resolve() / VEHICLE_CONFIG
+    flags = active_flags(resolve_global_flagfile(root))
     assert flags["map_dir"] == last["map_dir"]
     assert flags["vehicle_config_path"] == last["vehicle_config_path"]
     assert float(flags["half_vehicle_width"]) == last["half_vehicle_width"]
+    assert str(Path(last["global_flagfile"])) == str(resolve_global_flagfile(root))
     print(json.dumps({"workspace_checks": "PASS", "jobs": results}, indent=2))

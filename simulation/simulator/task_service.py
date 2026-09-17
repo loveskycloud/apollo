@@ -29,14 +29,92 @@ import xml.etree.ElementTree as ET
 # do not inherit a shell's `cpp` setting without the matching extension module.
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "simulation/logsim/tools"))
+
+def _dedupe_dirs(paths):
+    """Keep both bind-mount aliases (e.g. /apollo_workspace vs host checkout)."""
+    ordered = []
+    seen = set()
+    for raw in paths:
+        if not raw:
+            continue
+        path = Path(raw)
+        if not path.is_dir():
+            continue
+        for form in (path, path.absolute()):
+            try:
+                resolved = form.resolve()
+            except OSError:
+                resolved = form
+            for candidate in (form, resolved):
+                key = str(candidate)
+                if key in seen or not Path(key).exists():
+                    continue
+                seen.add(key)
+                ordered.append(Path(key))
+    return ordered
+
+
+def _simulation_package_root() -> Path:
+    """Directory that contains simulator/, logsim/, worldsim/ (follows symlinks)."""
+    return Path(__file__).resolve().parents[1]
+
+
+def _workspace_root():
+    """Prefer the container/workspace mount over a symlinked simulation/ checkout.
+
+    ``modules/simulation`` (or legacy ``simulation``) may point at another repo
+    (e.g. apollo-private). Using ``Path(__file__).resolve()`` alone would make
+    ROOT that other repo and reject map paths under application-core /
+    /apollo_workspace.
+    """
+    def _looks_like_workspace(path: Path) -> bool:
+        if not path.is_dir() or not (path / "data").is_dir():
+            return False
+        return (path / "modules/simulation").exists() or (path / "simulation").exists()
+
+    for candidate in (
+        os.environ.get("APOLLO_WORKSPACE"),
+        os.environ.get("APOLLO_ENV_WORKROOT"),
+        "/apollo_workspace",
+        "/home/wangsheng/test/application-core",
+    ):
+        if not candidate:
+            continue
+        path = Path(candidate)
+        if _looks_like_workspace(path):
+            return path
+    for parent in Path(__file__).resolve().parents:
+        if _looks_like_workspace(parent):
+            return parent
+    return Path(__file__).resolve().parents[3]
+
+
+ROOT = _workspace_root()
+# Simulation package root (…/simulation or …/modules/simulation), not the workspace.
+SIM_PKG = _simulation_package_root()
+CODE_ROOT = SIM_PKG
+INPUT_ROOTS = _dedupe_dirs([
+    ROOT,
+    SIM_PKG,
+    ROOT / "modules/simulation",
+    ROOT / "simulation",
+    "/apollo_workspace",
+    "/home/wangsheng/test/application-core",
+    "/opt/apollo/neo/share",
+])
+_SIM_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(_SIM_DIR))
+_logsim_tools = SIM_PKG / "logsim/tools"
+sys.path.insert(0, str(_logsim_tools))
+if str(ROOT / "modules/simulation/logsim/tools") not in sys.path:
+    sys.path.insert(0, str(ROOT / "modules/simulation/logsim/tools"))
 from bag_diff import compare, messages, difference_page
-from configuration_tools import (apply_workspace_configuration, configuration_lock,
-                                 update_global_flagfile, vehicle_geometry)
+from configuration_tools import (APOLLO_GLOBAL_FLAGS, apply_workspace_configuration,
+                                 configuration_lock, update_global_flagfile, vehicle_geometry)
 
 MODULES = {
     "PREDICTION": ("modules/prediction/dag/prediction.dag", "/apollo/prediction"),
+    "fake_prediction": ("modules/fake_prediction/dag/fake_prediction.dag", "/apollo/prediction"),
     "PLANNING": ("modules/planning/planning_component/dag/planning.dag", "/apollo/planning"),
     "CONTROL": ("modules/control/control_component/dag/control.dag", "/apollo/control"),
     "ROUTING": ("modules/routing/dag/routing.dag", "/apollo/raw_routing_response"),
@@ -45,6 +123,23 @@ INPUTS = ["/apollo/canbus/chassis", "/apollo/localization/pose", "/apollo/percep
 STAGES = ["queued", "data_preparation", "map_update", "profile_update", "model_update",
           "simulation_start", "simulation_running", "simulation_end", "result_analysis", "completed"]
 TERMINAL = {"completed", "failed", "cancelled", "interrupted"}
+APOLLO_MODULES = Path("/apollo/modules")
+
+
+def _prediction_selected(modules):
+    return "PREDICTION" in modules or "fake_prediction" in modules
+
+
+def _module_dir_name(module):
+    """modules/<name>/... → name."""
+    return Path(MODULES[module][0]).parts[1]
+
+
+def _module_base(name):
+    for candidate in (APOLLO_MODULES / name, ROOT / "modules" / name):
+        if candidate.is_dir():
+            return candidate
+    return None
 
 
 def stop_process(child, sig=signal.SIGTERM):
@@ -90,7 +185,11 @@ def preflight_world(path):
             "不要仅删除 kind 字段：主车、路径和触发器也需要转换。")
     sys.path.insert(0, "/opt/apollo/neo/python")
     from google.protobuf.json_format import Parse
-    from simulation.worldsim.proto.scenario_pb2 import Scenario
+    try:
+        from modules.simulation.worldsim.proto.scenario_pb2 import Scenario
+    except ModuleNotFoundError:
+        # Legacy install path when simulation lived outside modules/.
+        from simulation.worldsim.proto.scenario_pb2 import Scenario
     scenario = Parse(text, Scenario(), ignore_unknown_fields=False)
     def finite(message):
         for field, value in message.ListFields():
@@ -137,19 +236,71 @@ def digest(path):
 
 def resolve(path, directory=False):
     value = str(path)
-    host_prefix = "/home/wangsheng/code/apollo/"
-    if value.startswith(host_prefix):
-        value = str(ROOT / value[len(host_prefix):])
+    # Normalize common host → container workspace aliases.
+    aliases = (
+        ("/home/wangsheng/code/apollo/", str(ROOT) + "/"),
+        ("/home/wangsheng/test/application-core/", "/apollo_workspace/"),
+    )
+    for src, dst in aliases:
+        if value.startswith(src):
+            value = dst + value[len(src):]
+            break
     out = Path(value)
     if not out.is_absolute():
         out = ROOT / out
     out = out.resolve(strict=True)
-    allowed = [ROOT.resolve(), Path("/opt/apollo/neo/share").resolve()]
-    if not any(out.is_relative_to(root) for root in allowed):
+    if not any(out.is_relative_to(root) for root in INPUT_ROOTS):
         raise ValueError(f"Path outside simulation input roots: {out}")
     if directory != out.is_dir() or (not directory and not out.is_file()):
         raise ValueError(f"Wrong input path type: {out}")
     return out
+
+
+def _expand_vehicle_profile(config):
+    """Dreamview-style vehicle pick: identity is a profile/pack dir.
+
+    UI sends the vehicle/profile directory; backend applies profile overlay and
+    derives modules/common/data/vehicle_param.pb.txt. Legacy clients may still
+    send a vehicle_param file path (optionally with profile).
+    """
+    raw = str(config.get("vehicle", "") or "").strip()
+    if not raw:
+        raise ValueError("Choose a vehicle")
+    try:
+        selected = resolve(raw, directory=True)
+        as_dir = True
+    except ValueError:
+        selected = resolve(raw, directory=False)
+        as_dir = False
+
+    if as_dir:
+        profile = Path(selected)
+        vehicle_param = profile / "modules/common/data/vehicle_param.pb.txt"
+        if not vehicle_param.is_file():
+            raise ValueError(f"Vehicle has no vehicle parameters: {vehicle_param}")
+        config["profile"] = str(profile)
+        config["vehicle"] = str(vehicle_param.resolve())
+        return
+
+    vehicle_param = Path(selected)
+    config["vehicle"] = str(vehicle_param)
+    if config.get("profile"):
+        config["profile"] = str(resolve(config["profile"], directory=True))
+        expected = Path(config["profile"]) / "modules/common/data/vehicle_param.pb.txt"
+        if not expected.is_file() or expected.resolve() != vehicle_param.resolve():
+            raise ValueError(
+                f"Vehicle config does not match the selected profile; select {expected}")
+        return
+
+    # Derive profile when vehicle_param lives under <profile>/modules/common/data/.
+    marker = ("modules", "common", "data", "vehicle_param.pb.txt")
+    parts = vehicle_param.parts
+    profile = ""
+    for i in range(len(parts) - len(marker) + 1):
+        if parts[i:i + len(marker)] == marker:
+            profile = str(Path(*parts[:i])) if i else ""
+            break
+    config["profile"] = profile
 
 
 def validate(request):
@@ -158,16 +309,17 @@ def validate(request):
         raise ValueError("Choose bag or world input")
     config["source"] = str(resolve(config.get("source", "")))
     config["map"] = str(resolve(config.get("map", ""), directory=True))
-    config["vehicle"] = str(resolve(config.get("vehicle", "")))
     if not any((Path(config["map"]) / name).is_file() for name in ("base_map.bin", "base_map.txt")):
         raise ValueError("Selected map has no base_map.bin / base_map.txt")
+    _expand_vehicle_profile(config)
     selected = config.get("modules", [])
     if not isinstance(selected, list) or not selected or len(set(selected)) != len(selected):
         raise ValueError("Choose distinct algorithm modules")
     if any(module not in MODULES for module in selected):
         raise ValueError("Unsupported algorithm module")
+    if "PREDICTION" in selected and "fake_prediction" in selected:
+        raise ValueError("Choose either PREDICTION or fake_prediction, not both")
     config["modules"] = [module for module in MODULES if module in selected]
-    config["profile"] = str(resolve(config["profile"], directory=True)) if config.get("profile") else ""
     config["repeat"] = int(config.get("repeat", 2))
     if config["repeat"] not in (1, 2, 3):
         raise ValueError("Repeat count must be 1, 2 or 3")
@@ -182,7 +334,7 @@ def validate(request):
         raise ValueError("Unsupported ego model")
     config["timeout_s"] = int(config.get("timeout_s", 600))
     if not 10 <= config["timeout_s"] <= 7200:
-        raise ValueError("Job wall timeout must be between 10 and 7200 s")
+        raise ValueError("Max duration / wall timeout must be between 10 and 7200 s")
     for name in ("begin_s", "end_s"):
         config[name] = float(config.get(name, 0))
         if not math.isfinite(config[name]) or config[name] < 0:
@@ -192,8 +344,8 @@ def validate(request):
     if config["kind"] == "world":
         if Path(config["source"]).suffix != ".json":
             raise ValueError("World input must be a scenario JSON")
-        if not {"ROUTING", "PREDICTION", "PLANNING"}.issubset(selected):
-            raise ValueError("World closed loop requires ROUTING, PREDICTION and PLANNING")
+        if not {"ROUTING", "PLANNING"}.issubset(selected) or not _prediction_selected(selected):
+            raise ValueError("World closed loop requires ROUTING, PLANNING and PREDICTION or fake_prediction")
         if config["model"] == "kinematic_control" and "CONTROL" not in selected:
             raise ValueError("kinematic_control requires CONTROL")
     elif ".record" not in Path(config["source"]).name:
@@ -202,21 +354,46 @@ def validate(request):
 
 
 def catalog():
-    records = sorted(str(p) for p in (ROOT / "data/bag").glob("*.record*") if p.is_file())
-    records += sorted(str(p) for p in (ROOT / "data/bag/data_with_map/extracted").glob("*.record*") if p.is_file())
-    worlds = sorted(str(p) for p in (ROOT / "simulation/scene_editor/examples").glob("*.json"))
-    worlds += sorted(str(p) for p in (ROOT / "data/scenarios").glob("*.json"))
+    search_roots = _dedupe_dirs([ROOT, SIM_PKG, ROOT / "modules/simulation", ROOT / "simulation"])
+    records = []
+    worlds = []
     maps = set()
-    for base in (ROOT / "modules/map/data", ROOT / "data/bag/data_with_map/extracted"):
-        for name in ("base_map.bin", "base_map.txt"):
-            maps.update(str(p.parent) for p in base.glob("*/" + name))
-    profiles = sorted(str(p) for p in (ROOT / "profiles").iterdir() if p.is_dir()) if (ROOT / "profiles").is_dir() else []
-    extracted = ROOT / "data/bag/data_with_map/extracted/Jiyu_01"
-    if extracted.is_dir():
-        profiles.append(str(extracted))
-    vehicles = [str(ROOT / "modules/common/data/vehicle_param.pb.txt")]
-    vehicles += [str(Path(p) / "modules/common/data/vehicle_param.pb.txt") for p in profiles]
-    vehicles = [p for p in vehicles if Path(p).is_file()]
+    profiles = []
+    for base_root in search_roots:
+        records += sorted(str(p) for p in (base_root / "data/bag").glob("*.record*") if p.is_file())
+        records += sorted(
+            str(p) for p in (base_root / "data/bag/data_with_map/extracted").glob("*.record*") if p.is_file())
+        for examples in (
+            base_root / "modules/simulation/scene_editor/examples",
+            base_root / "simulation/scene_editor/examples",
+            base_root / "scene_editor/examples",  # when base_root is SIM_PKG
+        ):
+            worlds += sorted(str(p) for p in examples.glob("*.json"))
+        worlds += sorted(str(p) for p in (base_root / "data/scenarios").glob("*.json"))
+        for base in (
+            base_root / "modules/map/data",
+            base_root / "data/map_data",
+            base_root / "data/bag/data_with_map/extracted",
+            base_root / "modules/simulation/scene_editor/public/maps",
+            base_root / "simulation/scene_editor/public/maps",
+            base_root / "scene_editor/public/maps",
+        ):
+            for name in ("base_map.bin", "base_map.txt"):
+                maps.update(str(p.parent) for p in base.glob("*/" + name))
+        if (base_root / "profiles").is_dir():
+            profiles += sorted(
+                str(p) for p in (base_root / "profiles").iterdir()
+                if p.is_dir() and p.name != "current")
+        extracted = base_root / "data/bag/data_with_map/extracted/Jiyu_01"
+        if extracted.is_dir():
+            profiles.append(str(extracted))
+    records = sorted(set(records))
+    worlds = sorted(set(worlds))
+    profiles = sorted(set(profiles))
+    # Dreamview-style vehicle list: named packs/profiles that carry vehicle_param.
+    vehicles = sorted(
+        p for p in profiles
+        if (Path(p) / "modules/common/data/vehicle_param.pb.txt").is_file())
     return {"modules": list(MODULES), "bags": records, "worlds": worlds, "maps": sorted(maps),
             "profiles": profiles, "vehicles": vehicles, "stages": STAGES,
             "models": ["perfect_planning", "kinematic_control"]}
@@ -407,14 +584,33 @@ class TaskService:
                 else:
                     dest.symlink_to(chosen.resolve())
         # Module roots need directory traversal so each selected module's conf is frozen.
+        # Prefer /apollo/modules as the base; overlay workspace/profile on top.
         modules_dir = runtime / "modules"
         modules_dir.mkdir()
-        for item in sorted((ROOT / "modules").iterdir()):
-            custom = profile / "modules" / item.name if profile else None
-            if item.name in ("common", "planning", "prediction", "control", "routing") or (custom and custom.exists()):
-                overlay(item, custom, modules_dir / item.name)
+        names = set()
+        if (ROOT / "modules").is_dir():
+            names.update(p.name for p in (ROOT / "modules").iterdir())
+        if profile and (profile / "modules").is_dir():
+            names.update(p.name for p in (profile / "modules").iterdir())
+        names.update(_module_dir_name(module) for module in config["modules"])
+        names.add("common")
+        for name in sorted(names):
+            base = _module_base(name)
+            if base is None:
+                continue
+            workspace_item = ROOT / "modules" / name
+            custom = profile / "modules" / name if profile else None
+            if custom and custom.exists():
+                override = custom
+            elif base.resolve() != workspace_item.resolve() and workspace_item.is_dir():
+                override = workspace_item
             else:
-                (modules_dir / item.name).symlink_to(item.resolve(), target_is_directory=item.is_dir())
+                override = None
+            selected = any(_module_dir_name(module) == name for module in config["modules"])
+            if name in ("common", "planning", "prediction", "control", "routing", "fake_prediction") or selected or override:
+                overlay(base, override, modules_dir / name)
+            else:
+                (modules_dir / name).symlink_to(base.resolve(), target_is_directory=base.is_dir())
         if profile and (profile / "cyber").is_dir():
             overlay(ROOT / "cyber", profile / "cyber", runtime / "cyber")
         else:
@@ -424,8 +620,10 @@ class TaskService:
         (runtime / "data").mkdir()
         # Actual component flagfiles include this path. Freeze the selected
         # vehicle here too; direct relative reads must agree with gflags.
+        # Seed from the canonical container flagfile, not /apollo_workspace.
         runtime_vehicle = snapshot(vehicle, runtime / "modules/common/data/vehicle_param.pb.txt")
         global_flags = runtime / "modules/common/data/global_flagfile.txt"
+        snapshot(APOLLO_GLOBAL_FLAGS, global_flags)
         update_global_flagfile(global_flags, map_dir, runtime_vehicle)
         manifests[str(global_flags.relative_to(job_dir))] = digest(global_flags)
         if vehicle_geometry(runtime_vehicle) != vehicle_geometry(vehicle):
@@ -464,7 +662,7 @@ class TaskService:
                 inject += ["/apollo/planning/command", "/apollo/planning_command_history"]
                 if "ROUTING" in config["modules"]:
                     inject.append("/apollo/raw_routing_request")
-                if "PREDICTION" not in config["modules"]:
+                if not _prediction_selected(config["modules"]):
                     inject.append("/apollo/prediction")
                 if "PLANNING" not in config["modules"]:
                     inject.append("/apollo/planning")
@@ -473,15 +671,33 @@ class TaskService:
                 "vehicle_config_path": str(vehicle), "output_record_path": str(output),
                 "progress_path": str(progress), "random_seed": config["seed"], "step_ms": config["step_ms"],
                 "ego_model": config["model"], "profile_path": str(runtime),
-                "cyber_conf_path": str(ROOT / "simulation/simulator/conf/cyber_sim.pb.conf")}
+                "cyber_conf_path": str(
+                    next(
+                        (p for p in (
+                            SIM_PKG / "simulator/conf/cyber_sim.pb.conf",
+                            ROOT / "modules/simulation/simulator/conf/cyber_sim.pb.conf",
+                            ROOT / "simulation/simulator/conf/cyber_sim.pb.conf",
+                        ) if p.is_file()),
+                        SIM_PKG / "simulator/conf/cyber_sim.pb.conf",
+                    ))}
             if config["kind"] == "world":
-                fields["world_scenario_path"] = str(source)
+                # UI timeout_s is the max sim-clock duration. Scenario JSON often
+                # defaults to 60s; patch a run-local copy so the config takes effect.
+                scenario = json.loads(Path(source).read_text())
+                scenario["duration"] = float(config["timeout_s"])
+                patched = run_dir / "scenario.timeout.json"
+                patched.write_text(json.dumps(scenario, ensure_ascii=False, indent=2) + "\n")
+                fields["world_scenario_path"] = str(patched)
             else:
                 fields.update(record_paths=str(source), log_start_s=config["begin_s"], log_end_s=config["end_s"])
             def pb(value): return json.dumps(value) if isinstance(value, str) else str(value)
+            def simulator_module(name):
+                # simulator_main ModuleCatalog only knows PREDICTION/PLANNING/...;
+                # fake_prediction reuses that slot with an overridden dag path.
+                return "PREDICTION" if name == "fake_prediction" else name
             lines = [f"{key}: {pb(value)}" for key, value in fields.items()]
             lines += ["input_kind: " + ("WORLD" if config["kind"] == "world" else "BAG")]
-            lines += [f"runtime_modules: {pb(m)}" for m in config["modules"]]
+            lines += [f"runtime_modules: {pb(simulator_module(m))}" for m in config["modules"]]
             lines += [f"dag_paths: {pb(str(runtime / MODULES[m][0]))}" for m in config["modules"]]
             lines += ["channel_policy {"]
             for key, values in (("inject_channels", inject), ("suppress_channels", suppress), ("record_channels", suppress)):
@@ -500,13 +716,18 @@ class TaskService:
             env.pop("SIM_OUTPUT_RECORD", None)
             env["SIM_PARENT_PID"] = str(os.getpid())
             log = run_dir / "runtime.log"
+            # World AFAP can be slower than sim-clock; keep timeout_s as sim duration
+            # but give the subprocess a larger wall budget.
+            wall_s = config["timeout_s"]
+            if config["kind"] == "world":
+                wall_s = min(7200, max(config["timeout_s"] * 5, config["timeout_s"] + 120))
             with log.open("wb") as stream:
                 self.child = subprocess.Popen([str(binary), "--task_dir=" + str(run_dir)], cwd=runtime,
                     env=env, stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
                 start = time.monotonic()
                 self.update(job_id, stage="simulation_running", log_path=str(log), process_id=self.child.pid)
                 while self.child.poll() is None:
-                    if job_id in self.cancelled or self.stopping or time.monotonic() - start > config["timeout_s"]:
+                    if job_id in self.cancelled or self.stopping or time.monotonic() - start > wall_s:
                         stop_process(self.child)
                         try: self.child.wait(timeout=3)
                         except subprocess.TimeoutExpired:
@@ -525,11 +746,11 @@ class TaskService:
                         detail = tail.read().decode(errors="replace")
                     raise RuntimeError(f"Simulator exited {self.child.returncode}; {detail}")
             self.update(job_id, stage="simulation_end")
-            # Cyber RecordWriter may append a segment suffix; require exactly one
-            # completed segment here rather than accidentally replaying an index.
+            # Prefer a single unsplit file (ResultSink disables Cyber segmenting).
+            # Fall back to one segment suffix for older binaries.
             candidates = [output] if output.is_file() else sorted(run_dir.glob("simulation.record.*"))
             if len(candidates) != 1:
-                raise RuntimeError(f"Expected one simulation record segment, found {len(candidates)}")
+                raise RuntimeError(f"Expected one simulation record (no split), found {len(candidates)}: {candidates}")
             outputs.append(str(candidates[0]))
             self.update(job_id, outputs=outputs)
         self.update(job_id, stage="result_analysis")

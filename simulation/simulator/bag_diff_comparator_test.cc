@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/bag_diff_comparator.h"
+#include "modules/simulation/simulator/bag_diff_comparator.h"
 
 #include "gtest/gtest.h"
 

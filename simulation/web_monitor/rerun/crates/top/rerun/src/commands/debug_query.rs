@@ -15,9 +15,30 @@ impl Drop for DebugWorker {
 }
 
 impl DebugWorker {
+    fn apollo_record_tools_dir() -> std::path::PathBuf {
+        if let Ok(p) = std::env::var("WEB_MONITOR_RECORD_TOOLS") {
+            return std::path::PathBuf::from(p);
+        }
+        const CANDIDATES: &[&str] = &[
+            "/apollo_workspace/modules/simulation/tools/apollo_record_tools",
+            "/apollo_workspace/simulation/tools/apollo_record_tools",
+            "/apollo_workspace/tools/apollo_record_tools",
+        ];
+        for candidate in CANDIDATES {
+            let path = std::path::PathBuf::from(candidate);
+            if path.is_dir() {
+                return path;
+            }
+        }
+        std::path::PathBuf::from(CANDIDATES[0])
+    }
+
     pub fn start() -> Result<Self, String> {
         let script = std::env::var("WEB_MONITOR_DEBUG_QUERY").unwrap_or_else(|_| {
-            "/apollo_workspace/tools/apollo_record_tools/mcap_debug_query.py".into()
+            Self::apollo_record_tools_dir()
+                .join("mcap_debug_query.py")
+                .display()
+                .to_string()
         });
         Self::start_script(&script)
     }

@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/logsim/record_file_source.h"
+#include "modules/simulation/logsim/record_file_source.h"
 
 #include "gtest/gtest.h"
 

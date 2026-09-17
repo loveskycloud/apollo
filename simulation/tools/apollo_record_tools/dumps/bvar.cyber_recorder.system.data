@@ -1,0 +1,33 @@
+cyber_recorder_kernel_version : "Linux in-dev-docker 5.15.0-139-generic #149~20.04.1-Ubuntu SMP Wed Apr 16 08:29:56 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
+"
+cyber_recorder_process_cmdline : "cyber_recorder
+info
+/apollo_workspace/data/simulation/jobs/68fce3ddae8444d8/run-2/simulation.record.00000.20260916134541
+"
+cyber_recorder_process_context_switches_involuntary_second : 0
+cyber_recorder_process_context_switches_voluntary_second : 0
+cyber_recorder_process_cpu_usage : 0
+cyber_recorder_process_cpu_usage_system : 0
+cyber_recorder_process_cpu_usage_user : 0
+cyber_recorder_process_disk_read_bytes_second : 0
+cyber_recorder_process_disk_write_bytes_second : 0
+cyber_recorder_process_faults_major : 0
+cyber_recorder_process_faults_minor_second : 0
+cyber_recorder_process_fd_count : 9
+cyber_recorder_process_inblocks_second : 0
+cyber_recorder_process_io_read_bytes_second : 0
+cyber_recorder_process_io_read_second : 0
+cyber_recorder_process_io_write_bytes_second : 0
+cyber_recorder_process_io_write_second : 0
+cyber_recorder_process_memory_data_and_stack : 77594624
+cyber_recorder_process_memory_resident : 51097600
+cyber_recorder_process_memory_shared : 39198720
+cyber_recorder_process_memory_text : 315392
+cyber_recorder_process_memory_virtual : 171868160
+cyber_recorder_process_nice : 0
+cyber_recorder_process_outblocks_second : 0
+cyber_recorder_process_priority : 20
+cyber_recorder_process_thread_count : 2
+cyber_recorder_process_uptime : 0.004809
+cyber_recorder_process_username : "unknown (No such device or address)"
+cyber_recorder_process_work_dir : "/home/wangsheng/workspace/apollo-private/simulation/tools/apollo_record_tools"

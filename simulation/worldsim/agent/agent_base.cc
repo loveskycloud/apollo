@@ -1,7 +1,7 @@
 /******************************************************************************
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
-#include "simulation/worldsim/agent/agent_base.h"
+#include "modules/simulation/worldsim/agent/agent_base.h"
 
 namespace apollo {
 namespace simulation {

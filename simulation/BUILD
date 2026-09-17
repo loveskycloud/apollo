@@ -8,9 +8,9 @@ package(default_visibility = ["//visibility:public"])
 install_src_files(
     name = "install_src",
     deps = [
-        "//simulation/logsim:install_src",
-        "//simulation/simulator:install_src",
-        "//simulation/worldsim:install_src",
+        "//modules/simulation/logsim:install_src",
+        "//modules/simulation/simulator:install_src",
+        "//modules/simulation/worldsim:install_src",
     ],
     type = "neo",
 )

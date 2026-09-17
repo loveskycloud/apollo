@@ -63,25 +63,44 @@ pub mod theme {
 
 /// Apply Carolanne purple overrides on top of Rerun design tokens.
 pub fn apply_theme(ctx: &egui::Context) {
-    ctx.style_mut_of(egui::Theme::Dark, |style| {
+    let apply = |style: &mut egui::Style| {
         let v = &mut style.visuals;
+        v.dark_mode = true;
         v.panel_fill = theme::APP_BG;
         v.window_fill = theme::PANEL_BG;
-        v.extreme_bg_color = theme::RAIL_BG;
+        v.extreme_bg_color = theme::CARD_BG;
+        // egui 0.36 TextEdit uses this (not only extreme_bg). Rerun tokens leave a
+        // near-black slab that fights AD chrome; force CARD_BG + light text.
+        v.text_edit_bg_color = Some(theme::CARD_BG);
         v.faint_bg_color = theme::PANEL_BG;
         v.code_bg_color = theme::CARD_BG;
+        v.override_text_color = Some(theme::TEXT);
+        v.widgets.noninteractive.fg_stroke = Stroke::new(1.0, theme::TEXT);
+        v.widgets.inactive.fg_stroke = Stroke::new(1.0, theme::TEXT);
+        v.widgets.hovered.fg_stroke = Stroke::new(1.0, theme::TEXT);
+        v.widgets.active.fg_stroke = Stroke::new(1.0, egui::Color32::WHITE);
+        v.widgets.open.fg_stroke = Stroke::new(1.0, theme::TEXT);
         v.widgets.noninteractive.weak_bg_fill = theme::APP_BG;
         v.widgets.noninteractive.bg_fill = theme::APP_BG;
         v.widgets.inactive.bg_fill = theme::CARD_BG;
+        v.widgets.inactive.weak_bg_fill = theme::CARD_BG;
         v.widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
         v.widgets.hovered.bg_fill = theme::CARD_BG_HOVER;
         v.widgets.active.weak_bg_fill = theme::ACCENT_STRONG.gamma_multiply(0.55);
         v.widgets.active.bg_fill = theme::ACCENT_STRONG.gamma_multiply(0.55);
+        v.widgets.open.weak_bg_fill = theme::CARD_BG;
+        v.widgets.open.bg_fill = theme::CARD_BG;
         v.selection.bg_fill = theme::ACCENT_STRONG.gamma_multiply(0.45);
         v.selection.stroke = Stroke::new(1.0, theme::ACCENT);
         v.hyperlink_color = theme::ACCENT;
+        v.window_stroke = Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.35));
         v.widgets.noninteractive.bg_stroke.color = theme::ACCENT.gamma_multiply(0.25);
-    });
+        v.widgets.inactive.bg_stroke = Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.28));
+    };
+    ctx.style_mut_of(egui::Theme::Dark, apply);
+    // Pin Light too so a system/light preference cannot resurrect white TextEdit slabs
+    // under AD's light TEXT color.
+    ctx.style_mut_of(egui::Theme::Light, apply);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -157,21 +176,20 @@ impl AdLayoutKind {
 pub enum SourceOpenMode {
     #[default]
     Local,
-    Scenario,
-    TripSegment,
+    /// Kept for persisted UI state; Scenario mode UI was removed.
+    #[serde(other)]
+    LegacyOther,
 }
 
 impl SourceOpenMode {
     fn label(self) -> &'static str {
         match self {
-            Self::Local => "From local data",
-            Self::Scenario => "From scenario ID",
-            Self::TripSegment => "Trip segment",
+            Self::Local | Self::LegacyOther => "Local bag",
         }
     }
 
-    fn all() -> [Self; 3] {
-        [Self::Local, Self::Scenario, Self::TripSegment]
+    fn all() -> [Self; 1] {
+        [Self::Local]
     }
 }
 
@@ -308,6 +326,14 @@ pub struct AdShell {
     playback_buffering: bool,
     #[serde(skip)]
     playback_request_started: Option<web_time::Instant>,
+    /// Shared sim catalog (bags + maps) for Source pickers.
+    #[serde(skip)]
+    source_catalog: serde_json::Value,
+    #[serde(skip)]
+    source_catalog_pending:
+        Option<std::sync::Arc<parking_lot::Mutex<Option<Result<serde_json::Value, String>>>>>,
+    #[serde(skip)]
+    source_catalog_at: Option<web_time::Instant>,
 }
 
 impl Default for AdShell {
@@ -371,6 +397,9 @@ impl Default for AdShell {
             playback_cached_ranges: Vec::new(),
             playback_buffering: false,
             playback_request_started: None,
+            source_catalog: serde_json::Value::Null,
+            source_catalog_pending: None,
+            source_catalog_at: None,
         }
     }
 }
@@ -436,6 +465,7 @@ impl AdShell {
             self.ensure_playback_prefetch(ctx);
             self.remember_playback_session(ctx);
             self.show_playback_status(ctx);
+            self.show_upload_progress_modal(ctx);
         }
         self.show_rail(ui);
         self.show_source_secondary(ctx, ui);
@@ -1007,8 +1037,8 @@ impl AdShell {
         egui::Panel::left("ad_panel_secondary")
             .resizable(true)
             .drag_to_open(false)
-            .default_size(220.0)
-            .min_size(180.0)
+            .default_size(260.0)
+            .min_size(200.0)
             .frame(egui::Frame {
                 fill: theme::PANEL_BG,
                 inner_margin: egui::Margin::same(12),
@@ -1016,8 +1046,17 @@ impl AdShell {
                 ..Default::default()
             })
             .show_collapsible(ui, &mut panel_open_flag, |ui| {
+                ui.visuals_mut().override_text_color = Some(theme::TEXT);
+                ui.visuals_mut().widgets.inactive.fg_stroke = Stroke::new(1.0, theme::TEXT);
+                ui.visuals_mut().widgets.hovered.fg_stroke = Stroke::new(1.0, theme::TEXT);
+                ui.visuals_mut().widgets.active.fg_stroke = Stroke::new(1.0, Color32::WHITE);
+                ui.visuals_mut().widgets.inactive.bg_fill = theme::CARD_BG;
+                ui.visuals_mut().widgets.inactive.weak_bg_fill = theme::CARD_BG;
+                ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
+                ui.visuals_mut().extreme_bg_color = theme::CARD_BG;
+
                 ui.label(
-                    RichText::new("Edit current Layout")
+                    RichText::new("Edit layout")
                         .strong()
                         .size(15.0)
                         .color(theme::TEXT),
@@ -1027,72 +1066,315 @@ impl AdShell {
                         .size(11.0)
                         .color(theme::TEXT_DIM),
                 );
-                ui.add_space(10.0);
+                ui.add_space(12.0);
 
-                ui.menu_button("Add panel / split / tabs…", |ui| {
-                    let mut presets = vec![("3D scene".to_owned(), "3D", "/lidar/up/points".to_owned(), "+ /lidar/**\n+ /vehicle/**\n+ /planning/**\n+ /perception/**\n+ /prediction/**\n+ /hdmap/**".to_owned())];
-                    for topic in self.mcap_topic_list.iter().filter(|t| t.starts_with("/camera/")) {
-                        presets.push((topic.trim_start_matches("/camera/").to_owned(), "2D", topic.clone(), format!("+ {topic}/**")));
-                    }
-                    for (name, class, origin, filter) in presets {
-                        if ui.button(format!("+ {name}")).clicked() {
-                            let mut view = re_viewport_blueprint::ViewBlueprint::new(class.into(), re_viewer_context::RecommendedView { origin: origin.into(), query_filter: re_log_types::EntityPathFilter::parse_forgiving(&filter) });
-                            view.display_name = Some(name);
-                            viewport.add_views(std::iter::once(view), None, None);
-                            viewport.mark_user_interaction(ctx);
-                            ui.close();
+                egui::ScrollArea::vertical()
+                    .id_salt("ad_panel_edit_scroll")
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
+                        section_label(ui, "Add");
+                        ui.add_space(4.0);
+
+                        let add_trigger = ui.add(
+                            egui::Button::new(
+                                RichText::new("Scene / camera / control…")
+                                    .size(12.0)
+                                    .color(theme::TEXT),
+                            )
+                            .fill(theme::CARD_BG)
+                            .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.35)))
+                            .corner_radius(6.0)
+                            .min_size(egui::vec2(ui.available_width(), 30.0)),
+                        );
+                        egui::Popup::menu(&add_trigger)
+                            .id(egui::Id::new("ad_panel_add_menu"))
+                            .align(egui::RectAlign::BOTTOM_START)
+                            .gap(4.0)
+                            .show(|ui| {
+                                egui::Frame::new()
+                                    .fill(theme::PANEL_BG)
+                                    .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.4)))
+                                    .corner_radius(8.0)
+                                    .inner_margin(egui::Margin::symmetric(8, 8))
+                                    .show(ui, |ui| {
+                                        ui.set_min_width(240.0);
+                                        ui.set_max_height(320.0);
+                                        ui.visuals_mut().override_text_color = Some(theme::TEXT);
+                                        ui.visuals_mut().widgets.hovered.weak_bg_fill =
+                                            theme::CARD_BG_HOVER;
+                                        ui.visuals_mut().selection.bg_fill =
+                                            theme::ACCENT_STRONG.gamma_multiply(0.45);
+                                        egui::ScrollArea::vertical().show(ui, |ui| {
+                                            let mut presets = vec![(
+                                                "3D scene".to_owned(),
+                                                "3D",
+                                                "/lidar/up/points".to_owned(),
+                                                "+ /lidar/**\n+ /vehicle/**\n+ /planning/**\n+ /perception/**\n+ /prediction/**\n+ /hdmap/**"
+                                                    .to_owned(),
+                                            )];
+                                            for topic in self
+                                                .mcap_topic_list
+                                                .iter()
+                                                .filter(|t| t.starts_with("/camera/"))
+                                            {
+                                                presets.push((
+                                                    topic
+                                                        .trim_start_matches("/camera/")
+                                                        .to_owned(),
+                                                    "2D",
+                                                    topic.clone(),
+                                                    format!("+ {topic}/**"),
+                                                ));
+                                            }
+                                            ui.label(
+                                                RichText::new("Spatial")
+                                                    .size(10.0)
+                                                    .strong()
+                                                    .color(theme::ACCENT),
+                                            );
+                                            ui.add_space(4.0);
+                                            for (name, class, origin, filter) in presets {
+                                                if menu_row(ui, &format!("+ {name}")).clicked() {
+                                                    let mut view =
+                                                        re_viewport_blueprint::ViewBlueprint::new(
+                                                            class.into(),
+                                                            re_viewer_context::RecommendedView {
+                                                                origin: origin.into(),
+                                                                query_filter:
+                                                                    re_log_types::EntityPathFilter::parse_forgiving(
+                                                                        &filter,
+                                                                    ),
+                                                            },
+                                                        );
+                                                    view.display_name = Some(name);
+                                                    viewport.add_views(
+                                                        std::iter::once(view),
+                                                        None,
+                                                        None,
+                                                    );
+                                                    viewport.mark_user_interaction(ctx);
+                                                    ui.close();
+                                                }
+                                            }
+                                            if !self
+                                                .mcap_topic_list
+                                                .iter()
+                                                .any(|t| t.starts_with("/camera/"))
+                                            {
+                                                ui.label(
+                                                    RichText::new("No camera channels in this bag")
+                                                        .size(11.0)
+                                                        .color(theme::TEXT_DIM),
+                                                );
+                                            }
+                                            ui.add_space(6.0);
+                                            ui.label(
+                                                RichText::new("Control extras")
+                                                    .size(10.0)
+                                                    .strong()
+                                                    .color(theme::ACCENT),
+                                            );
+                                            ui.add_space(4.0);
+                                            for (name, preset) in [
+                                                ("Acceleration tracking", "acceleration"),
+                                                ("Heading error", "heading"),
+                                                ("Controller runtime", "runtime"),
+                                                ("Full control dashboard", "control"),
+                                            ] {
+                                                if menu_row(ui, &format!("+ {name}")).clicked() {
+                                                    let mut view =
+                                                        re_viewport_blueprint::ViewBlueprint::new_with_root_wildcard(
+                                                            "AdDebug".into(),
+                                                        );
+                                                    view.space_origin =
+                                                        format!("/debug/{preset}").into();
+                                                    view.display_name = Some(name.into());
+                                                    viewport.add_views(
+                                                        std::iter::once(view),
+                                                        None,
+                                                        None,
+                                                    );
+                                                    viewport.mark_user_interaction(ctx);
+                                                    ui.close();
+                                                }
+                                            }
+                                            ui.add_space(6.0);
+                                            ui.separator();
+                                            ui.add_space(4.0);
+                                            if menu_row(ui, "More types / split / tabs…").clicked()
+                                            {
+                                                re_viewport_blueprint::ui::show_add_view_or_container_modal(
+                                                    viewport.root_container,
+                                                );
+                                                ui.close();
+                                            }
+                                        });
+                                    });
+                            });
+
+                        ui.add_space(8.0);
+                        ui.label(
+                            RichText::new("Debug panels")
+                                .size(10.0)
+                                .strong()
+                                .color(theme::ACCENT),
+                        );
+                        ui.add_space(4.0);
+                        for (name, preset) in [
+                            ("Topic inspector", "inspector"),
+                            ("Signal plot", "plot"),
+                            ("Planning profile", "profile"),
+                            ("Trajectory XY", "trajectory"),
+                            ("Speed tracking", "speed"),
+                            ("Steering feedback", "steering"),
+                            ("Tracking errors", "errors"),
+                            ("Pedals", "pedals"),
+                            ("State transitions", "states"),
+                            ("Value watch", "watch"),
+                            ("Topic health", "health"),
+                        ] {
+                            if panel_list_button(ui, name).clicked() {
+                                let mut view =
+                                    re_viewport_blueprint::ViewBlueprint::new_with_root_wildcard(
+                                        "AdDebug".into(),
+                                    );
+                                view.space_origin = format!("/debug/{preset}").into();
+                                view.display_name = Some(name.into());
+                                viewport.add_views(std::iter::once(view), None, None);
+                                viewport.mark_user_interaction(ctx);
+                                self.topics_picker_expanded = false;
+                            }
                         }
-                    }
-                    if !self.mcap_topic_list.iter().any(|t|t.starts_with("/camera/")) { ui.weak("No camera channels in this bag"); }
-                    for (name, preset) in [("Acceleration tracking", "acceleration"), ("Heading error", "heading"), ("Controller runtime", "runtime"), ("Full control dashboard", "control")] {
-                        if ui.button(format!("+ {name}")).clicked() {
-                            let mut view = re_viewport_blueprint::ViewBlueprint::new_with_root_wildcard("AdDebug".into());
-                            view.space_origin = format!("/debug/{preset}").into();
-                            view.display_name = Some(name.into());
-                            viewport.add_views(std::iter::once(view), None, None);
-                            viewport.mark_user_interaction(ctx);
-                            ui.close();
+
+                        ui.add_space(12.0);
+                        section_label(ui, "Current panels");
+                        ui.label(
+                            RichText::new("Drag their titles in the viewport to dock")
+                                .size(11.0)
+                                .color(theme::TEXT_DIM),
+                        );
+                        ui.add_space(6.0);
+                        if viewport.views.is_empty() {
+                            egui::Frame::new()
+                                .fill(theme::RAIL_BG)
+                                .corner_radius(6.0)
+                                .inner_margin(egui::Margin::symmetric(10, 8))
+                                .show(ui, |ui| {
+                                    ui.set_width(ui.available_width());
+                                    ui.label(
+                                        RichText::new("No panels yet — add one above")
+                                            .size(12.0)
+                                            .color(theme::TEXT_DIM),
+                                    );
+                                });
+                        } else {
+                            egui::Frame::new()
+                                .fill(theme::RAIL_BG)
+                                .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.16)))
+                                .corner_radius(6.0)
+                                .inner_margin(egui::Margin::symmetric(8, 6))
+                                .show(ui, |ui| {
+                                    ui.set_width(ui.available_width());
+                                    for view in viewport.views.values() {
+                                        ui.horizontal(|ui| {
+                                            let remove = ui.add(
+                                                egui::Button::new(
+                                                    RichText::new("×")
+                                                        .size(14.0)
+                                                        .color(theme::TEXT),
+                                                )
+                                                .fill(theme::CARD_BG)
+                                                .corner_radius(4.0)
+                                                .min_size(egui::vec2(24.0, 24.0)),
+                                            );
+                                            if remove
+                                                .on_hover_text("Remove this panel")
+                                                .clicked()
+                                            {
+                                                viewport.remove_contents(
+                                                    re_viewer_context::Contents::View(view.id),
+                                                );
+                                                viewport.mark_user_interaction(ctx);
+                                            }
+                                            ui.label(
+                                                RichText::new(
+                                                    view.display_name
+                                                        .as_deref()
+                                                        .unwrap_or("Unnamed panel"),
+                                                )
+                                                .size(12.0)
+                                                .color(theme::TEXT),
+                                            );
+                                        });
+                                        ui.add_space(2.0);
+                                    }
+                                });
                         }
-                    }
-                    ui.separator();
-                    if ui.button("More types / split / tabs…").clicked() {
-                        re_viewport_blueprint::ui::show_add_view_or_container_modal(viewport.root_container);
-                        ui.close();
-                    }
-                });
-                for (name, preset) in [("Topic inspector", "inspector"), ("Signal plot", "plot"), ("Planning profile", "profile"), ("Trajectory XY", "trajectory"), ("Speed tracking", "speed"), ("Steering feedback", "steering"), ("Tracking errors", "errors"), ("Pedals", "pedals"), ("State transitions", "states"), ("Value watch", "watch"), ("Topic health", "health")] {
-                    if ui.button(format!("+ {name}")).clicked() {
-                        let mut view = re_viewport_blueprint::ViewBlueprint::new_with_root_wildcard("AdDebug".into());
-                        view.space_origin = format!("/debug/{preset}").into();
-                        view.display_name = Some(name.into());
-                        viewport.add_views(std::iter::once(view), None, None);
-                        viewport.mark_user_interaction(ctx);
-                        self.topics_picker_expanded = false;
-                    }
-                }
-                ui.separator();
-                ui.label("Current panels (drag their titles to dock)");
-                for view in viewport.views.values() {
-                    ui.horizontal(|ui| {
-                        if ui.small_button("×").on_hover_text("Remove this panel").clicked() {
-                            viewport.remove_contents(re_viewer_context::Contents::View(view.id));
-                            viewport.mark_user_interaction(ctx);
+
+                        ui.add_space(12.0);
+                        section_label(ui, "Save");
+                        ui.add_space(4.0);
+                        if ui
+                            .add(
+                                egui::Button::new(
+                                    RichText::new("Save as Custom layout")
+                                        .size(12.0)
+                                        .color(Color32::WHITE),
+                                )
+                                .fill(theme::ACCENT_STRONG)
+                                .corner_radius(6.0)
+                                .min_size(egui::vec2(ui.available_width(), 32.0)),
+                            )
+                            .clicked()
+                        {
+                            match crate::saving::RrdSnapshot::blueprint(
+                                ctx.store_context.blueprint,
+                                None,
+                            )
+                            .and_then(crate::saving::RrdSnapshot::encode)
+                            {
+                                Ok(bytes) => {
+                                    self.custom_layout = bytes;
+                                    self.active_layout = Some(AdLayoutKind::Custom);
+                                    self.default_layout = Some(AdLayoutKind::Custom);
+                                }
+                                Err(err) => {
+                                    re_log::error!("Failed to save custom layout: {err}")
+                                }
+                            }
                         }
-                        ui.label(view.display_name.as_deref().unwrap_or("Unnamed panel"));
+                        ui.add_space(6.0);
+                        use re_ui::RecordingCommandSender as _;
+                        if ui
+                            .add(
+                                egui::Button::new(
+                                    RichText::new("Export layout (.rbl)")
+                                        .size(12.0)
+                                        .color(theme::TEXT),
+                                )
+                                .fill(theme::CARD_BG)
+                                .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.3)))
+                                .corner_radius(6.0)
+                                .min_size(egui::vec2(ui.available_width(), 30.0)),
+                            )
+                            .clicked()
+                        {
+                            ctx.command_sender().send_recording_command(
+                                re_ui::RecordingCommand {
+                                    recording_id: ctx.store_context.recording.store_id().clone(),
+                                    kind: re_ui::RecordingCommandKind::SaveBlueprint,
+                                },
+                            );
+                        }
+                        ui.add_space(10.0);
+                        ui.label(
+                            RichText::new(
+                                "Drag panel titles to split or tab; drag dividers to resize. Custom stays in this browser. Export .rbl for a portable backup (open via Source).",
+                            )
+                            .size(11.0)
+                            .color(theme::TEXT_DIM),
+                        );
                     });
-                }
-                if ui.button("Save as Custom layout").clicked() {
-                    match crate::saving::RrdSnapshot::blueprint(ctx.store_context.blueprint, None).and_then(crate::saving::RrdSnapshot::encode) {
-                        Ok(bytes) => { self.custom_layout = bytes; self.active_layout = Some(AdLayoutKind::Custom); self.default_layout = Some(AdLayoutKind::Custom); },
-                        Err(err) => re_log::error!("Failed to save custom layout: {err}"),
-                    }
-                }
-                use re_ui::RecordingCommandSender as _;
-                if ui.button("Export layout (.rbl)").clicked() {
-                    ctx.command_sender().send_recording_command(re_ui::RecordingCommand { recording_id: ctx.store_context.recording.store_id().clone(), kind: re_ui::RecordingCommandKind::SaveBlueprint });
-                }
-                ui.separator();
-                ui.weak("Drag panel titles to split or tab; drag dividers to resize. Custom is saved in this browser. Export .rbl for a portable backup (open it via Source).");
             });
         self.panel_open = panel_open_flag;
     }
@@ -1114,31 +1396,121 @@ impl AdShell {
             ))
             .order(egui::Order::Foreground)
             .show(ui.ctx(), |ui| {
-                if ui
-                    .button(if self.topics_picker_expanded {
-                        "Layers ▾"
+                let toggle = ui.add(
+                    egui::Button::new(
+                        RichText::new(if self.topics_picker_expanded {
+                            "Layers"
+                        } else {
+                            "Layers"
+                        })
+                        .size(12.0)
+                        .color(theme::TEXT),
+                    )
+                    .fill(if self.topics_picker_expanded {
+                        theme::ACCENT_STRONG.gamma_multiply(0.85)
                     } else {
-                        "Layers ▸"
+                        theme::CARD_BG
                     })
-                    .on_hover_text("Show or hide scene layers")
-                    .clicked()
+                    .stroke(Stroke::new(
+                        1.0,
+                        if self.topics_picker_expanded {
+                            theme::ACCENT
+                        } else {
+                            theme::ACCENT.gamma_multiply(0.35)
+                        },
+                    ))
+                    .corner_radius(6.0)
+                    .min_size(egui::vec2(72.0, 28.0)),
+                );
+                // Drawn chevron — avoid Unicode ▾ which often becomes □ on web.
                 {
+                    let r = toggle.rect;
+                    let c = egui::pos2(r.right() - 12.0, r.center().y + 0.5);
+                    let s = 3.8;
+                    let open = self.topics_picker_expanded;
+                    let pts = if open {
+                        vec![
+                            egui::pos2(c.x - s, c.y + s * 0.35),
+                            egui::pos2(c.x + s, c.y + s * 0.35),
+                            egui::pos2(c.x, c.y - s * 0.55),
+                        ]
+                    } else {
+                        vec![
+                            egui::pos2(c.x - s, c.y - s * 0.35),
+                            egui::pos2(c.x + s, c.y - s * 0.35),
+                            egui::pos2(c.x, c.y + s * 0.55),
+                        ]
+                    };
+                    ui.painter().add(egui::Shape::convex_polygon(
+                        pts,
+                        theme::TEXT_DIM,
+                        Stroke::NONE,
+                    ));
+                }
+                if toggle.on_hover_text("Show or hide scene layers").clicked() {
                     self.topics_picker_expanded = !self.topics_picker_expanded;
                 }
                 if !self.topics_picker_expanded {
                     return;
                 }
+                ui.add_space(6.0);
                 egui::Frame::new()
                     .fill(theme::PANEL_BG)
-                    .inner_margin(12)
-                    .corner_radius(10)
-                    .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.45)))
+                    .inner_margin(egui::Margin::symmetric(12, 12))
+                    .corner_radius(8.0)
+                    .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.35)))
+                    .shadow(egui::Shadow {
+                        offset: [0, 8],
+                        blur: 24,
+                        spread: 0,
+                        color: Color32::from_black_alpha(120),
+                    })
                     .show(ui, |ui| {
                         ui.set_width(300.0);
-                        ui.weak("Checked = visible in all spatial panels");
+                        // Force readable text inside this floating panel — default
+                        // checkbox / collapsing labels were near-black on PANEL_BG.
+                        ui.visuals_mut().override_text_color = Some(theme::TEXT);
+                        ui.visuals_mut().widgets.noninteractive.fg_stroke =
+                            Stroke::new(1.0, theme::TEXT);
+                        ui.visuals_mut().widgets.inactive.fg_stroke =
+                            Stroke::new(1.0, theme::TEXT);
+                        ui.visuals_mut().widgets.hovered.fg_stroke =
+                            Stroke::new(1.0, theme::TEXT);
+                        ui.visuals_mut().widgets.active.fg_stroke =
+                            Stroke::new(1.0, Color32::WHITE);
+                        ui.visuals_mut().extreme_bg_color = theme::CARD_BG;
+                        ui.visuals_mut().widgets.inactive.bg_fill = theme::CARD_BG;
+                        ui.visuals_mut().widgets.inactive.weak_bg_fill = theme::CARD_BG;
+                        ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
+
+                        ui.label(
+                            RichText::new("Layers")
+                                .size(13.0)
+                                .strong()
+                                .color(theme::TEXT),
+                        );
+                        ui.label(
+                            RichText::new("Checked = visible in all spatial panels")
+                                .size(11.0)
+                                .color(theme::TEXT_DIM),
+                        );
+                        ui.add_space(8.0);
                         ui.horizontal(|ui| {
+                            ui.spacing_mut().item_spacing.x = 6.0;
                             for (label, value) in [("All", true), ("None", false)] {
-                                if ui.small_button(label).clicked() {
+                                let r = ui.add(
+                                    egui::Button::new(
+                                        RichText::new(label).size(11.0).color(theme::TEXT),
+                                    )
+                                    .fill(theme::CARD_BG)
+                                    .stroke(Stroke::new(
+                                        1.0,
+                                        theme::ACCENT.gamma_multiply(0.3),
+                                    ))
+                                    .corner_radius(4.0)
+                                    .min_size(egui::vec2(48.0, 24.0)),
+                                );
+                                if r.clicked() {
                                     for layer in &layers {
                                         for topic in &layer.topics {
                                             self.playback_topic_enabled
@@ -1149,8 +1521,10 @@ impl AdShell {
                                 }
                             }
                         });
+                        ui.add_space(8.0);
                         egui::ScrollArea::vertical()
-                            .max_height(440.0)
+                            .id_salt("ad_layers_scroll")
+                            .max_height(420.0)
                             .show(ui, |ui| {
                                 for prefix in [
                                     "map",
@@ -1165,7 +1539,12 @@ impl AdShell {
                                 }
                             });
                         if layers.is_empty() {
-                            ui.weak("Open a bag with spatial data.");
+                            ui.add_space(4.0);
+                            ui.label(
+                                RichText::new("Open a bag with spatial data.")
+                                    .size(12.0)
+                                    .color(theme::TEXT_DIM),
+                            );
                         }
                         for layer in &layers {
                             if (layer.path.starts_with("prediction/")
@@ -1188,30 +1567,58 @@ impl AdShell {
                                         .component_batch_raw(component)
                                         .is_some_and(|batch| batch.is_empty())
                                     {
-                                        ui.weak(format!(
-                                            "{}: no geometry at current time",
-                                            layer.path
-                                        ));
+                                        ui.label(
+                                            RichText::new(format!(
+                                                "{}: no geometry at current time",
+                                                layer.path
+                                            ))
+                                            .size(11.0)
+                                            .color(theme::TEXT_DIM),
+                                        );
                                     }
                                 }
                             }
                         }
+                        ui.add_space(6.0);
                         ui.separator();
-                        ui.label("Lidar height (sensor Z, meters)");
+                        ui.add_space(6.0);
+                        ui.label(
+                            RichText::new("Lidar height (sensor Z, meters)")
+                                .size(11.0)
+                                .strong()
+                                .color(theme::TEXT),
+                        );
+                        ui.add_space(4.0);
                         ui.horizontal(|ui| {
+                            ui.spacing_mut().item_spacing.x = 10.0;
                             for (color, label) in [
                                 (Color32::from_rgb(255, 216, 64), "≤0"),
                                 (Color32::from_rgb(255, 145, 48), "2"),
                                 (Color32::from_rgb(240, 84, 114), "5"),
                                 (Color32::from_rgb(175, 130, 255), "≥10"),
                             ] {
-                                ui.colored_label(color, format!("■ {label}"));
+                                ui.horizontal(|ui| {
+                                    let (rect, _) = ui.allocate_exact_size(
+                                        egui::vec2(10.0, 10.0),
+                                        egui::Sense::hover(),
+                                    );
+                                    ui.painter().rect_filled(rect, 2.0, color);
+                                    ui.label(
+                                        RichText::new(label).size(11.0).color(theme::TEXT),
+                                    );
+                                });
                             }
                         });
-                        ui.weak(
-                            "Hover a layer for its source topic. Raw messages: Panel → Inspector.",
+                        ui.add_space(6.0);
+                        ui.label(
+                            RichText::new(
+                                "Hover a layer for its source topic. Raw messages: Panel → Inspector.",
+                            )
+                            .size(11.0)
+                            .color(theme::TEXT_DIM),
                         );
                         if let Some(error) = &self.playback_window_error {
+                            ui.add_space(4.0);
                             ui.colored_label(Color32::LIGHT_RED, error);
                         }
                     });
@@ -1312,9 +1719,18 @@ impl AdShell {
         let mut on = enabled == members.len();
         let mut changed = false;
         let name = prefix.rsplit('/').next().unwrap_or(prefix);
+        let depth = prefix.matches('/').count();
+        let label = if depth == 0 {
+            RichText::new(name)
+                .size(12.5)
+                .strong()
+                .color(theme::TEXT)
+        } else {
+            RichText::new(name).size(12.0).color(theme::TEXT)
+        };
         let mut checkbox = |ui: &mut Ui| {
             let response = ui.add(
-                egui::Checkbox::new(&mut on, name)
+                egui::Checkbox::new(&mut on, label.clone())
                     .indeterminate(enabled > 0 && enabled < members.len()),
             );
             hitboxes.insert(
@@ -1364,12 +1780,16 @@ impl AdShell {
     }
 
     fn show_source_secondary(&mut self, ctx: &AppContext<'_>, ui: &mut Ui) {
+        self.poll_source_catalog();
+        if self.source_open {
+            self.ensure_source_catalog(ctx);
+        }
         let mut source_open_flag = self.source_open;
         egui::Panel::left("ad_source_secondary")
             .resizable(true)
             .drag_to_open(false)
-            .default_size(280.0)
-            .min_size(220.0)
+            .default_size(300.0)
+            .min_size(240.0)
             .frame(egui::Frame {
                 fill: theme::PANEL_BG,
                 inner_margin: egui::Margin::same(12),
@@ -1377,18 +1797,31 @@ impl AdShell {
                 ..Default::default()
             })
             .show_collapsible(ui, &mut source_open_flag, |ui| {
+                ui.visuals_mut().override_text_color = Some(theme::TEXT);
+                ui.visuals_mut().widgets.inactive.fg_stroke = Stroke::new(1.0, theme::TEXT);
+                ui.visuals_mut().widgets.hovered.fg_stroke = Stroke::new(1.0, theme::TEXT);
+                ui.visuals_mut().extreme_bg_color = theme::CARD_BG;
+                ui.visuals_mut().widgets.inactive.bg_fill = theme::CARD_BG;
+                ui.visuals_mut().widgets.inactive.weak_bg_fill = theme::CARD_BG;
+                ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
+
                 ui.label(
                     RichText::new("Source")
                         .strong()
                         .size(15.0)
                         .color(theme::TEXT),
                 );
-                ui.add_space(8.0);
+                ui.label(
+                    RichText::new("Load a recording into the viewer")
+                        .size(11.0)
+                        .color(theme::TEXT_DIM),
+                );
+                ui.add_space(10.0);
 
                 egui::ScrollArea::vertical()
+                    .id_salt("ad_source_scroll")
                     .auto_shrink([false, false])
                     .show(ui, |ui| {
-                        // Open controls first (as requested).
                         self.source_open_section(ctx, ui);
                         ui.add_space(14.0);
                         ui.separator();
@@ -1397,6 +1830,74 @@ impl AdShell {
                     });
             });
         self.source_open = source_open_flag;
+    }
+
+    fn poll_source_catalog(&mut self) {
+        let Some(pending) = &self.source_catalog_pending else {
+            return;
+        };
+        let Some(result) = pending.lock().take() else {
+            return;
+        };
+        self.source_catalog_pending = None;
+        match result {
+            Ok(value) => {
+                if let Some(catalog) = value.get("catalog") {
+                    self.source_catalog = catalog.clone();
+                } else {
+                    self.source_catalog = value;
+                }
+                self.source_catalog_at = Some(web_time::Instant::now());
+            }
+            Err(err) => {
+                re_log::warn!("Source catalog failed: {err}");
+            }
+        }
+    }
+
+    fn ensure_source_catalog(&mut self, ctx: &AppContext<'_>) {
+        if self.source_catalog_pending.is_some() {
+            return;
+        }
+        let stale = self
+            .source_catalog_at
+            .is_none_or(|t| t.elapsed().as_secs() >= 30);
+        if !self.source_catalog.is_null() && !stale {
+            return;
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            let reply = std::sync::Arc::new(parking_lot::Mutex::new(None));
+            self.source_catalog_pending = Some(reply.clone());
+            let egui = ctx.egui_ctx.clone();
+            let Some(origin) = web_sys::window().and_then(|w| w.location().origin().ok()) else {
+                self.source_catalog_pending = None;
+                return;
+            };
+            let mut request = ehttp::Request::post(
+                format!("{origin}/api/sim"),
+                br#"{"action":"catalog"}"#.to_vec(),
+            );
+            request.headers.insert("Content-Type", "application/json");
+            ehttp::fetch(request, move |result| {
+                *reply.lock() = Some(result.and_then(|response| {
+                    if !response.ok {
+                        return Err(format!(
+                            "catalog HTTP {}: {}",
+                            response.status,
+                            String::from_utf8_lossy(&response.bytes)
+                        ));
+                    }
+                    serde_json::from_slice(&response.bytes)
+                        .map_err(|e| format!("Invalid catalog: {e}"))
+                }));
+                egui.request_repaint();
+            });
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let _ = ctx;
+        }
     }
     fn source_props_section(&mut self, ctx: &AppContext<'_>, ui: &mut Ui) {
         let tz = ctx.app_options.timestamp_format;
@@ -1500,140 +2001,109 @@ impl AdShell {
                 serde_json::json!({"controls":{},"properties":[]}),
             )
         });
+
+        // Scenario / Trip modes removed — always Local bag.
+        if self.source_open_mode != SourceOpenMode::Local {
+            self.source_open_mode = SourceOpenMode::Local;
+        }
+
+        section_label(ui, "Mode");
+        ui.add_space(4.0);
+        field_label(ui, "Open from");
+        source_mode_picker(ui, &mut self.source_open_mode);
+        ui.add_space(12.0);
+
+        section_label(ui, "Recording");
         ui.label(
-            RichText::new("Open data")
-                .strong()
-                .size(13.0)
-                .color(theme::TEXT),
-        );
-        ui.label(
-            RichText::new("Choose how to load a recording")
-                .size(11.0)
-                .color(theme::TEXT_DIM),
+            RichText::new(
+                "Choose a bag on this computer. It is uploaded to the web_monitor server, then converted or streamed for playback.",
+            )
+            .size(11.0)
+            .color(theme::TEXT_DIM),
         );
         ui.add_space(8.0);
 
-        let selector = egui::ComboBox::from_id_salt("ad_source_mode")
-            .selected_text(self.source_open_mode.label())
-            .width(ui.available_width())
-            .show_ui(ui, |ui| {
-                for mode in SourceOpenMode::all() {
-                    let row = ui.selectable_value(&mut self.source_open_mode, mode, mode.label());
-                    source_control_rect(ui, mode.label(), row.rect);
-                }
-            });
-        source_control_rect(ui, "mode", selector.response.rect);
-
-        ui.add_space(10.0);
-
-        match self.source_open_mode {
-            SourceOpenMode::Local => {
-                ui.label(
-                    RichText::new("Open a server path. Apollo .record converts to cached MCAP; .rrd/.mcap stream from the host.")
-                        .size(11.0)
-                        .color(theme::TEXT_DIM),
-                );
-                ui.add_space(8.0);
-
-                field_label(ui, "Server path (.record / .rrd / .mcap)");
-                let path_edit = themed_text_edit(
-                    ui,
-                    &mut self.open_local_path_draft,
-                    "/apollo_workspace/data/bag/20260514114049.record.00000.20260514114049",
-                );
-                source_control_rect(ui, "path", path_edit.rect);
-                ui.add_space(6.0);
-                let can_path = !self.open_local_path_draft.trim().is_empty();
-                field_label(ui, "HD map for .record (optional)");
-                themed_text_edit(
-                    ui,
-                    &mut self.open_map_path_draft,
-                    "Apollo map directory or base_map.txt / .bin / .json",
-                );
-                ui.weak("Simulation: task map is automatic. Other bags: select the matching map, then Open path. MCAP keeps its embedded map.");
-                let open_button = ui.add_enabled(
-                    can_path,
-                    primary_button("Open Path").min_size(Vec2::new(ui.available_width(), 32.0)),
-                );
-                source_control_rect(ui, "Open Path", open_button.rect);
-                // TextEdit drops focus on Enter before has_focus() is seen.
-                let open_enter = can_path
-                    && ui.input(|i| i.key_pressed(egui::Key::Enter))
-                    && (path_edit.has_focus() || path_edit.lost_focus());
-                if open_button.clicked() || open_enter {
-                    if open_enter {
-                        self.enter_handled_this_frame = true;
-                    }
-                    let path = self.open_local_path_draft.trim().to_owned();
-                    self.try_open_local_path(ctx, &path);
-                }
-
-                if !self.open_status_msg.is_empty() {
-                    ui.add_space(8.0);
-                    ui.label(
-                        RichText::new(&self.open_status_msg)
-                            .size(11.0)
-                            .color(theme::ACCENT),
-                    );
-                }
+        field_label(ui, "Bag");
+        let bag_label = if self.open_local_path_draft.is_empty() {
+            "Choose a bag…".to_owned()
+        } else if let Some((_, name)) = self.open_local_path_draft.rsplit_once('/') {
+            name.to_owned()
+        } else {
+            self.open_local_path_draft.clone()
+        };
+        // Dropdown-styled trigger → OS file picker (remote client → upload to host).
+        let choose = source_choose_trigger(ui, &bag_label);
+        source_control_rect(ui, "Choose a bag", choose.rect);
+        #[cfg(target_arch = "wasm32")]
+        if choose
+            .on_hover_text("Open file picker and upload from this computer")
+            .clicked()
+        {
+            crate::web_tools::pick_local_recording_files(
+                ctx.egui_ctx.clone(),
+                self.open_map_path_draft.clone(),
+            );
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let _ = ctx;
+            if choose.clicked() {
+                self.open_status_msg =
+                    "File upload is available in the web viewer (remote clients).".into();
             }
-            SourceOpenMode::Scenario => {
-                field_label(ui, "Scenario ID");
-                themed_text_edit(ui, &mut self.open_scenario_draft, "scenario-xxxx");
-                ui.add_space(8.0);
-                let can = !self.open_scenario_draft.trim().is_empty();
-                if ui
-                    .add_enabled(
-                        can,
-                        primary_button("Open scenario")
-                            .min_size(Vec2::new(ui.available_width(), 32.0)),
-                    )
-                    .clicked()
-                {
-                    let id = self.open_scenario_draft.trim().to_owned();
-                    self.scenario_id = id.clone();
-                    self.trip_id.clear();
-                    self.car_id.clear();
-                    self.local_bag.clear();
-                    self.open_remote_id(ctx, "scenario", &id);
-                }
-            }
-            SourceOpenMode::TripSegment => {
-                field_label(ui, "Car ID");
-                themed_text_edit(ui, &mut self.open_car_id_draft, "car-xxxx");
-                ui.add_space(6.0);
-                field_label(ui, "Start timestamp");
-                themed_text_edit(ui, &mut self.open_start_ts_draft, "2024-01-01T00:00:00Z");
-                ui.add_space(6.0);
-                field_label(ui, "End timestamp");
-                themed_text_edit(ui, &mut self.open_end_ts_draft, "2024-01-01T00:10:00Z");
-                ui.add_space(8.0);
-                let can = !self.open_car_id_draft.trim().is_empty()
-                    && !self.open_start_ts_draft.trim().is_empty()
-                    && !self.open_end_ts_draft.trim().is_empty();
-                if ui
-                    .add_enabled(
-                        can,
-                        primary_button("Open trip segment")
-                            .min_size(Vec2::new(ui.available_width(), 32.0)),
-                    )
-                    .clicked()
-                {
-                    let car = self.open_car_id_draft.trim().to_owned();
-                    let start = self.open_start_ts_draft.trim().to_owned();
-                    let end = self.open_end_ts_draft.trim().to_owned();
-                    self.car_id = car.clone();
-                    self.trip_id = format!("{car}@{start}→{end}");
-                    self.scenario_id.clear();
-                    self.local_bag.clear();
-                    self.open_trip_segment(ctx, &car, &start, &end);
-                }
-            }
+        }
+
+        ui.add_space(12.0);
+        section_label(ui, "Map");
+        ui.label(
+            RichText::new(
+                "Optional for .record convert. Simulation replay uses its own map. MCAP keeps its embedded map.",
+            )
+            .size(11.0)
+            .color(theme::TEXT_DIM),
+        );
+        ui.add_space(6.0);
+        field_label(ui, "HD map");
+        let maps = self.source_catalog.get("maps").cloned().unwrap_or_default();
+        source_path_picker(
+            ui,
+            "source_map",
+            &mut self.open_map_path_draft,
+            &maps,
+            true,
+            "None — convert without map overlay",
+        );
+        ui.add_space(4.0);
+        egui::CollapsingHeader::new(
+            RichText::new("Paste map path")
+                .size(11.0)
+                .color(theme::TEXT_DIM),
+        )
+        .id_salt("source_paste_map")
+        .show(ui, |ui| {
+            themed_text_edit(
+                ui,
+                &mut self.open_map_path_draft,
+                "/apollo_workspace/modules/map/data/…",
+            );
+        });
+
+        if !self.open_status_msg.is_empty() {
+            ui.add_space(10.0);
+            ui.label(
+                RichText::new(&self.open_status_msg)
+                    .size(11.0)
+                    .color(theme::ACCENT),
+            );
         }
     }
 
     #[cfg(target_arch = "wasm32")]
     fn take_host_open_status(&mut self, ctx: &AppContext<'_>) {
+        if let Some(path) = crate::web_tools::take_uploaded_bag_path() {
+            self.open_local_path_draft = path.clone();
+            self.local_bag = path;
+        }
         let Some(msg) = crate::web_tools::take_open_local_status() else {
             return;
         };
@@ -1653,6 +2123,7 @@ impl AdShell {
             self.playback_clock_ready = false;
             self.mcap_topic_list.clear();
             self.open_status_msg = format!("Cached MCAP missing — reconverting…\n{record}");
+            seed_convert_progress_modal(&record, "Cached MCAP missing — reconverting…");
             crate::web_tools::request_host_convert_record_with_map(
                 &record,
                 self.open_map_path_draft.trim(),
@@ -1661,6 +2132,146 @@ impl AdShell {
             return;
         }
         self.open_status_msg = msg;
+        // Non-record opens finish without a convert job — dismiss the modal once
+        // the host reports loaded / streamed / error after upload.
+        let lower = self.open_status_msg.to_ascii_lowercase();
+        if lower.starts_with("loaded ")
+            || lower.contains("host streaming")
+            || lower.contains("preparing windowed")
+        {
+            // Keep modal briefly for "preparing"; clear on loaded/streaming.
+            if lower.starts_with("loaded ") || lower.contains("host streaming") {
+                crate::web_tools::clear_upload_progress();
+            }
+        } else if lower.contains("upload failed")
+            || lower.contains("upload request failed")
+            || lower.contains("unsupported file")
+            || lower.contains("failed to read")
+        {
+            // Error already mirrored into upload progress by web_tools.
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn show_upload_progress_modal(&mut self, ctx: &AppContext<'_>) {
+        let Some(progress) = crate::web_tools::peek_upload_progress() else {
+            return;
+        };
+        if !progress.active && progress.phase != "error" {
+            return;
+        }
+
+        let title = match progress.phase.as_str() {
+            "reading" => "Reading bag",
+            "uploading" => "Uploading bag",
+            "opening" => "Opening bag",
+            "converting" => "Converting to MCAP",
+            "error" => "Failed",
+            _ => "Bag transfer",
+        };
+        let is_error = progress.phase == "error";
+        let fraction = if is_error {
+            0.0
+        } else if progress.total > 0 || progress.fraction > 0.0 {
+            progress.fraction.clamp(0.0, 1.0)
+        } else {
+            // Indeterminate: animate a soft pulse while waiting.
+            let t = ctx.egui_ctx.input(|i| i.time) as f32;
+            0.15 + 0.35 * (t * 2.5).sin().abs()
+        };
+        let show_pct = !is_error
+            && (progress.phase == "converting"
+                || (progress.total > 0 && progress.phase != "opening"));
+
+        ctx.egui_ctx.request_repaint_after(std::time::Duration::from_millis(50));
+
+        egui::Window::new(title)
+            .id(egui::Id::new("ad_upload_progress_modal"))
+            .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+            .collapsible(false)
+            .resizable(false)
+            .title_bar(true)
+            .frame(
+                egui::Frame::new()
+                    .fill(theme::PANEL_BG)
+                    .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.45)))
+                    .corner_radius(10.0)
+                    .inner_margin(egui::Margin::symmetric(16, 14))
+                    .shadow(egui::Shadow {
+                        offset: [0, 8],
+                        blur: 24,
+                        spread: 0,
+                        color: Color32::from_black_alpha(160),
+                    }),
+            )
+            .show(ctx.egui_ctx, |ui| {
+                ui.set_min_width(420.0);
+                ui.set_max_width(480.0);
+                ui.visuals_mut().override_text_color = Some(theme::TEXT);
+
+                if !progress.filename.is_empty() {
+                    ui.label(
+                        RichText::new(&progress.filename)
+                            .size(13.0)
+                            .strong()
+                            .color(theme::TEXT),
+                    );
+                    ui.add_space(4.0);
+                }
+                ui.label(
+                    RichText::new(sanitize_status_text(&progress.message))
+                        .size(12.0)
+                        .color(if is_error {
+                            Color32::from_rgb(0xFE, 0xCA, 0xCA)
+                        } else {
+                            theme::TEXT_DIM
+                        }),
+                );
+                ui.add_space(12.0);
+
+                let mut bar = egui::ProgressBar::new(fraction)
+                    .desired_width(ui.available_width())
+                    .fill(if is_error {
+                        Color32::from_rgb(0xF8, 0x71, 0x71)
+                    } else {
+                        theme::ACCENT_STRONG.gamma_multiply(0.9)
+                    });
+                if show_pct {
+                    bar = bar.show_percentage();
+                }
+                ui.add(bar);
+
+                if progress.total > 0 && matches!(progress.phase.as_str(), "reading" | "uploading")
+                {
+                    ui.add_space(6.0);
+                    ui.label(
+                        RichText::new(format!(
+                            "{} / {}",
+                            format_upload_bytes(progress.loaded),
+                            format_upload_bytes(progress.total)
+                        ))
+                        .size(11.0)
+                        .color(theme::TEXT_DIM),
+                    );
+                }
+
+                if is_error {
+                    ui.add_space(12.0);
+                    let dismiss = ui.add(
+                        egui::Button::new(
+                            RichText::new("Dismiss")
+                                .size(12.0)
+                                .color(Color32::WHITE),
+                        )
+                        .fill(theme::ACCENT_STRONG)
+                        .corner_radius(6.0)
+                        .min_size(egui::vec2(ui.available_width(), 32.0)),
+                    );
+                    if dismiss.clicked() {
+                        crate::web_tools::clear_upload_progress();
+                    }
+                }
+            });
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -1986,6 +2597,7 @@ impl AdShell {
         self.playback_topic_enabled.clear();
         self.open_status_msg = format!("Windowed playback — fetching topics for {path}…");
         self.topics_picker_expanded = true;
+        crate::web_tools::clear_upload_progress();
         if fetch_topics {
             crate::web_tools::request_host_mcap_topics(path, ctx.egui_ctx.clone());
         }
@@ -2515,7 +3127,7 @@ impl AdShell {
     fn apply_convert_status_json(&mut self, ctx: &AppContext<'_>, body: &str) {
         let status = json_field(body, "status").unwrap_or_default();
         let progress = json_f64(body, "progress").unwrap_or(0.0);
-        let message = json_field(body, "message").unwrap_or_default();
+        let message = sanitize_status_text(&json_field(body, "message").unwrap_or_default());
         if let Some(job_id) = json_field(body, "job_id") {
             self.convert_job_id = Some(job_id);
         }
@@ -2531,9 +3143,34 @@ impl AdShell {
             }
         }
         let pct = (progress * 100.0).clamp(0.0, 100.0);
-        self.open_status_msg = format!("Record→MCAP {pct:.0}% — {message}");
+        self.open_status_msg = format!("Record->MCAP {pct:.0}% - {message}");
+        // Shared Source/Sim modal: always mirror convert progress (do not require a
+        // prior upload — Sim replay opens a server .record path directly).
+        let filename = self
+            .local_bag
+            .rsplit('/')
+            .next()
+            .filter(|s| !s.is_empty())
+            .or_else(|| {
+                self.open_local_path_draft
+                    .rsplit('/')
+                    .next()
+                    .filter(|s| !s.is_empty())
+            })
+            .unwrap_or("bag")
+            .to_owned();
+        crate::web_tools::set_upload_progress(&crate::web_tools::UploadProgress {
+            active: true,
+            phase: "converting".into(),
+            filename: filename.clone(),
+            fraction: progress.clamp(0.0, 1.0) as f32,
+            loaded: 0,
+            total: 0,
+            message: format!("Converting on server… {pct:.0}% — {message}"),
+        });
 
         if status == "done" || status == "ready" {
+            crate::web_tools::clear_upload_progress();
             if let Some(out) = json_field(body, "output_path") {
                 if self.convert_opened_output.as_deref() != Some(out.as_str()) {
                     self.convert_opened_output = Some(out.clone());
@@ -2555,6 +3192,7 @@ impl AdShell {
                 self.convert_opened_output = None;
                 self.convert_job_id = None;
                 self.open_status_msg = format!("Cached MCAP missing — reconverting…\n{record}");
+                seed_convert_progress_modal(&record, "Cached MCAP missing — reconverting…");
                 crate::web_tools::request_host_convert_record_with_map(
                     &record,
                     self.open_map_path_draft.trim(),
@@ -2563,6 +3201,15 @@ impl AdShell {
             } else {
                 self.open_status_msg = format!("Conversion failed: {message}");
                 self.convert_job_id = None;
+                crate::web_tools::set_upload_progress(&crate::web_tools::UploadProgress {
+                    active: true,
+                    phase: "error".into(),
+                    filename,
+                    fraction: 0.0,
+                    loaded: 0,
+                    total: 0,
+                    message: format!("Conversion failed: {message}"),
+                });
             }
         }
     }
@@ -2599,6 +3246,7 @@ impl AdShell {
             {
                 self.open_status_msg = format!("Converting Apollo record → MCAP…\n{path}");
                 self.convert_job_id = None;
+                seed_convert_progress_modal(path, "Starting Record → MCAP conversion…");
                 crate::web_tools::request_host_convert_record_with_map(
                     path,
                     self.open_map_path_draft.trim(),
@@ -2828,6 +3476,96 @@ impl AdShell {
     }
 }
 
+fn section_label(ui: &mut Ui, text: &str) {
+    ui.label(
+        RichText::new(text.to_ascii_uppercase())
+            .size(10.0)
+            .strong()
+            .color(theme::ACCENT),
+    );
+}
+
+/// Seed / refresh the shared Source progress modal for Record→MCAP conversion
+/// (upload flow and Sim replay both use this).
+#[cfg(target_arch = "wasm32")]
+fn seed_convert_progress_modal(path: &str, message: &str) {
+    let filename = path
+        .rsplit('/')
+        .next()
+        .filter(|s| !s.is_empty())
+        .unwrap_or(path)
+        .to_owned();
+    crate::web_tools::set_upload_progress(&crate::web_tools::UploadProgress {
+        active: true,
+        phase: "converting".into(),
+        filename,
+        fraction: 0.0,
+        loaded: 0,
+        total: 0,
+        message: message.to_owned(),
+    });
+}
+
+fn format_upload_bytes(n: u64) -> String {
+    const KIB: f64 = 1024.0;
+    const MIB: f64 = 1024.0 * 1024.0;
+    const GIB: f64 = 1024.0 * 1024.0 * 1024.0;
+    let n = n as f64;
+    if n >= GIB {
+        format!("{:.2} GiB", n / GIB)
+    } else if n >= MIB {
+        format!("{:.1} MiB", n / MIB)
+    } else if n >= KIB {
+        format!("{:.0} KiB", n / KIB)
+    } else {
+        format!("{n:.0} B")
+    }
+}
+
+/// Fix UTF-8 mojibake from byte-wise JSON parsers (e.g. "…" → "Ã¢Â€Â¦" / "â€¦").
+fn sanitize_status_text(s: &str) -> String {
+    let mut out = s
+        .replace("Ã¢Â€Â¦", "...")
+        .replace("Ã¢Â\u{80}Â¦", "...")
+        .replace("â€¦", "...")
+        .replace("\u{2026}", "...") // …
+        .replace('\u{2014}', "-") // —
+        .replace('\u{2013}', "-") // –
+        .replace('\u{2192}', "->"); // →
+    // Collapse the raw byte-wise decode of U+2026: U+00E2 U+0080 U+00A6
+    out = out.replace("\u{00e2}\u{0080}\u{00a6}", "...");
+    // Drop leftover C1 controls that fonts render as tofu/boxes.
+    out.chars()
+        .filter(|c| {
+            let u = *c as u32;
+            !(0x80..=0x9F).contains(&u)
+        })
+        .collect()
+}
+
+fn menu_row(ui: &mut Ui, label: &str) -> egui::Response {
+    ui.add_sized(
+        [ui.available_width(), 28.0],
+        egui::Button::new(RichText::new(label).size(12.0).color(theme::TEXT))
+            .fill(Color32::TRANSPARENT)
+            .corner_radius(4.0),
+    )
+}
+
+fn panel_list_button(ui: &mut Ui, label: &str) -> egui::Response {
+    ui.add(
+        egui::Button::new(
+            RichText::new(format!("+ {label}"))
+                .size(12.0)
+                .color(theme::TEXT),
+        )
+        .fill(theme::CARD_BG)
+        .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.22)))
+        .corner_radius(4.0)
+        .min_size(egui::vec2(ui.available_width(), 28.0)),
+    )
+}
+
 fn prop_row(ui: &mut Ui, label: &str, value: &str) {
     // Long file paths must wrap below the label, never overlap neighboring rows.
     ui.label(RichText::new(label).size(11.0).color(theme::TEXT_DIM));
@@ -2857,19 +3595,298 @@ fn source_control_rect(ui: &Ui, name: &str, rect: Rect) {
 }
 
 fn field_label(ui: &mut Ui, label: &str) {
-    ui.label(RichText::new(label).size(11.0).color(theme::TEXT_DIM));
-    ui.add_space(2.0);
+    ui.label(
+        RichText::new(label)
+            .size(11.0)
+            .strong()
+            .color(theme::TEXT),
+    );
+    ui.add_space(4.0);
+}
+
+/// Mode dropdown (Local bag only — Scenario / Trip removed).
+fn source_mode_picker(ui: &mut Ui, selected: &mut SourceOpenMode) {
+    let height = 34.0;
+    let width = ui.available_width();
+    let (rect, response) =
+        ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
+    let fill = if response.hovered() || response.has_focus() {
+        theme::CARD_BG_HOVER
+    } else {
+        theme::CARD_BG
+    };
+    ui.painter().rect(
+        rect,
+        6.0,
+        fill,
+        Stroke::new(
+            1.0,
+            if response.hovered() {
+                theme::ACCENT.gamma_multiply(0.55)
+            } else {
+                theme::ACCENT.gamma_multiply(0.32)
+            },
+        ),
+        StrokeKind::Inside,
+    );
+    let chevron_w = 28.0;
+    let text_rect = egui::Rect::from_min_max(
+        egui::pos2(rect.left() + 10.0, rect.top()),
+        egui::pos2(rect.right() - chevron_w, rect.bottom()),
+    );
+    ui.painter().text(
+        text_rect.left_center(),
+        egui::Align2::LEFT_CENTER,
+        selected.label(),
+        egui::FontId::proportional(13.0),
+        theme::TEXT,
+    );
+    let c = egui::pos2(rect.right() - chevron_w * 0.5, rect.center().y + 0.5);
+    let s = 4.5;
+    ui.painter().add(egui::Shape::convex_polygon(
+        vec![
+            egui::pos2(c.x - s, c.y - s * 0.55),
+            egui::pos2(c.x + s, c.y - s * 0.55),
+            egui::pos2(c.x, c.y + s * 0.7),
+        ],
+        theme::TEXT_DIM,
+        Stroke::NONE,
+    ));
+
+    egui::Popup::menu(&response)
+        .id(egui::Id::new("source_mode_picker"))
+        .align(egui::RectAlign::BOTTOM_START)
+        .gap(4.0)
+        .show(|ui| {
+            egui::Frame::new()
+                .fill(theme::PANEL_BG)
+                .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.4)))
+                .corner_radius(8.0)
+                .inner_margin(egui::Margin::symmetric(8, 8))
+                .show(ui, |ui| {
+                    ui.set_min_width(response.rect.width().max(220.0));
+                    ui.visuals_mut().override_text_color = Some(theme::TEXT);
+                    ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
+                    ui.visuals_mut().selection.bg_fill =
+                        theme::ACCENT_STRONG.gamma_multiply(0.45);
+                    for mode in SourceOpenMode::all() {
+                        let on = *selected == mode;
+                        if menu_row(ui, mode.label()).clicked() {
+                            *selected = mode;
+                            ui.close();
+                        }
+                        let _ = on;
+                    }
+                });
+        });
+
+    source_control_rect(ui, "Mode", response.rect);
+}
+
+/// Dropdown-looking control that opens the OS file picker when clicked.
+fn source_choose_trigger(ui: &mut Ui, label: &str) -> egui::Response {
+    let height = 34.0;
+    let width = ui.available_width();
+    let (rect, response) =
+        ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
+    let fill = if response.hovered() || response.has_focus() {
+        theme::CARD_BG_HOVER
+    } else {
+        theme::CARD_BG
+    };
+    ui.painter().rect(
+        rect,
+        6.0,
+        fill,
+        Stroke::new(
+            1.0,
+            if response.hovered() {
+                theme::ACCENT.gamma_multiply(0.55)
+            } else {
+                theme::ACCENT.gamma_multiply(0.32)
+            },
+        ),
+        StrokeKind::Inside,
+    );
+    let chevron_w = 28.0;
+    let text_rect = egui::Rect::from_min_max(
+        egui::pos2(rect.left() + 10.0, rect.top()),
+        egui::pos2(rect.right() - chevron_w, rect.bottom()),
+    );
+    ui.painter().text(
+        text_rect.left_center(),
+        egui::Align2::LEFT_CENTER,
+        label,
+        egui::FontId::proportional(13.0),
+        theme::TEXT,
+    );
+    let c = egui::pos2(rect.right() - chevron_w * 0.5, rect.center().y + 0.5);
+    let s = 4.5;
+    ui.painter().add(egui::Shape::convex_polygon(
+        vec![
+            egui::pos2(c.x - s, c.y - s * 0.55),
+            egui::pos2(c.x + s, c.y - s * 0.55),
+            egui::pos2(c.x, c.y + s * 0.7),
+        ],
+        theme::TEXT_DIM,
+        Stroke::NONE,
+    ));
+    response.on_hover_cursor(egui::CursorIcon::PointingHand)
+}
+
+/// Dark path dropdown matching Simulation Config map/vehicle pickers.
+fn source_path_picker(
+    ui: &mut Ui,
+    id: &str,
+    selected: &mut String,
+    values: &serde_json::Value,
+    optional: bool,
+    empty_label: &str,
+) {
+    let short = if selected.is_empty() {
+        empty_label.to_owned()
+    } else if let Some((_, name)) = selected.rsplit_once('/') {
+        name.to_owned()
+    } else {
+        selected.clone()
+    };
+
+    let height = 34.0;
+    let width = ui.available_width();
+    let (rect, response) =
+        ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
+    let fill = if response.hovered() || response.has_focus() {
+        theme::CARD_BG_HOVER
+    } else {
+        theme::CARD_BG
+    };
+    ui.painter().rect(
+        rect,
+        6.0,
+        fill,
+        Stroke::new(
+            1.0,
+            if response.hovered() {
+                theme::ACCENT.gamma_multiply(0.55)
+            } else {
+                theme::ACCENT.gamma_multiply(0.32)
+            },
+        ),
+        StrokeKind::Inside,
+    );
+    let chevron_w = 28.0;
+    let text_rect = egui::Rect::from_min_max(
+        egui::pos2(rect.left() + 10.0, rect.top()),
+        egui::pos2(rect.right() - chevron_w, rect.bottom()),
+    );
+    ui.painter().text(
+        text_rect.left_center(),
+        egui::Align2::LEFT_CENTER,
+        &short,
+        egui::FontId::proportional(13.0),
+        theme::TEXT,
+    );
+    let c = egui::pos2(rect.right() - chevron_w * 0.5, rect.center().y + 0.5);
+    let s = 4.5;
+    ui.painter().add(egui::Shape::convex_polygon(
+        vec![
+            egui::pos2(c.x - s, c.y - s * 0.55),
+            egui::pos2(c.x + s, c.y - s * 0.55),
+            egui::pos2(c.x, c.y + s * 0.7),
+        ],
+        theme::TEXT_DIM,
+        Stroke::NONE,
+    ));
+
+    egui::Popup::menu(&response)
+        .id(egui::Id::new(("source_path_picker", id)))
+        .align(egui::RectAlign::BOTTOM_START)
+        .gap(4.0)
+        .show(|ui| {
+            egui::Frame::new()
+                .fill(theme::PANEL_BG)
+                .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.4)))
+                .corner_radius(8.0)
+                .inner_margin(egui::Margin::symmetric(8, 8))
+                .show(ui, |ui| {
+                    ui.set_min_width(response.rect.width().max(260.0));
+                    ui.set_max_height(280.0);
+                    ui.visuals_mut().override_text_color = Some(theme::TEXT);
+                    ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
+                    ui.visuals_mut().selection.bg_fill =
+                        theme::ACCENT_STRONG.gamma_multiply(0.45);
+                    egui::ScrollArea::vertical().show(ui, |ui| {
+                        if optional && menu_row(ui, empty_label).clicked() {
+                            selected.clear();
+                            ui.close();
+                        }
+                        if let Some(values) = values.as_array() {
+                            for item in values {
+                                if let Some(path) = item.as_str() {
+                                    let leaf = path.rsplit('/').next().unwrap_or(path);
+                                    let on = *selected == path;
+                                    let text = RichText::new(leaf).size(12.0).color(if on {
+                                        Color32::WHITE
+                                    } else {
+                                        theme::TEXT
+                                    });
+                                    let r = ui.add_sized(
+                                        [ui.available_width(), 28.0],
+                                        egui::Button::new(text)
+                                            .fill(if on {
+                                                theme::ACCENT_STRONG.gamma_multiply(0.7)
+                                            } else {
+                                                Color32::TRANSPARENT
+                                            })
+                                            .corner_radius(4.0),
+                                    );
+                                    if r.on_hover_text(path).clicked() {
+                                        *selected = path.to_owned();
+                                        ui.close();
+                                    }
+                                }
+                            }
+                            if values.is_empty() {
+                                ui.label(
+                                    RichText::new("No catalog entries yet")
+                                        .size(11.0)
+                                        .color(theme::TEXT_DIM),
+                                );
+                            }
+                        } else {
+                            ui.label(
+                                RichText::new("Loading catalog…")
+                                    .size(11.0)
+                                    .color(theme::TEXT_DIM),
+                            );
+                        }
+                    });
+                });
+        });
 }
 
 fn themed_text_edit(ui: &mut Ui, text: &mut String, hint: &str) -> egui::Response {
+    dark_framed_text_edit(ui, text, hint, ui.available_width())
+}
+
+/// Dark CARD_BG slab + TEXT — never use Frame::NONE (skips TextEdit background_color).
+fn dark_framed_text_edit(
+    ui: &mut Ui,
+    text: &mut String,
+    hint: &str,
+    width: f32,
+) -> egui::Response {
     ui.scope(|ui| {
-        ui.visuals_mut().extreme_bg_color = theme::CARD_BG;
         ui.visuals_mut().override_text_color = Some(theme::TEXT);
+        ui.visuals_mut().text_edit_bg_color = Some(theme::CARD_BG);
+        ui.visuals_mut().extreme_bg_color = theme::CARD_BG;
         ui.add(
             egui::TextEdit::singleline(text)
-                .desired_width(ui.available_width())
+                .desired_width(width.max(40.0))
+                .background_color(theme::CARD_BG)
+                .text_color(theme::TEXT)
                 .hint_text(RichText::new(hint).color(theme::TEXT_DIM))
-                .text_color(theme::TEXT),
+                .margin(egui::Margin::symmetric(8, 5)),
         )
     })
     .inner
@@ -3152,38 +4169,36 @@ fn json_field(text: &str, key: &str) -> Option<String> {
     if rest.starts_with("null") {
         return None;
     }
-    let bytes = rest.as_bytes();
     if !rest.starts_with('"') {
         return None;
     }
+    // Char-wise parse so multi-byte UTF-8 (e.g. "…") is not split into mojibake.
     let mut out = String::new();
-    let mut i = 1usize;
-    while i < bytes.len() {
-        match bytes[i] {
-            b'"' => return Some(out),
-            b'\\' if i + 1 < bytes.len() => {
-                match bytes[i + 1] {
-                    b'n' => out.push('\n'),
-                    b'r' => out.push('\r'),
-                    b't' => out.push('\t'),
-                    b'"' => out.push('"'),
-                    b'\\' => out.push('\\'),
-                    b'/' => out.push('/'),
-                    b'u' if i + 5 < bytes.len() => {
-                        let hex = std::str::from_utf8(&bytes[i + 2..i + 6]).ok()?;
-                        let cp = u32::from_str_radix(hex, 16).ok()?;
+    let mut chars = rest[1..].chars();
+    while let Some(c) = chars.next() {
+        match c {
+            '"' => return Some(out),
+            '\\' => {
+                let esc = chars.next()?;
+                match esc {
+                    'n' => out.push('\n'),
+                    'r' => out.push('\r'),
+                    't' => out.push('\t'),
+                    '"' => out.push('"'),
+                    '\\' => out.push('\\'),
+                    '/' => out.push('/'),
+                    'u' => {
+                        let hex: String = chars.by_ref().take(4).collect();
+                        if hex.len() != 4 {
+                            return None;
+                        }
+                        let cp = u32::from_str_radix(&hex, 16).ok()?;
                         out.push(char::from_u32(cp)?);
-                        i += 6;
-                        continue;
                     }
-                    other => out.push(other as char),
+                    other => out.push(other),
                 }
-                i += 2;
             }
-            b => {
-                out.push(b as char);
-                i += 1;
-            }
+            c => out.push(c),
         }
     }
     None

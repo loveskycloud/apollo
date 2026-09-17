@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/sim_scheduler.h"
+#include "modules/simulation/simulator/sim_scheduler.h"
 
 #include "gtest/gtest.h"
 

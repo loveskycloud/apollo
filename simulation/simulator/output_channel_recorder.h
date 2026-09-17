@@ -11,7 +11,7 @@
 
 #include "cyber/node/node.h"
 #include "cyber/node/reader_base.h"
-#include "simulation/simulator/result_sink.h"
+#include "modules/simulation/simulator/result_sink.h"
 
 namespace apollo {
 namespace simulation {

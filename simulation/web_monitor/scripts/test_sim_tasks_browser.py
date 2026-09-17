@@ -63,10 +63,16 @@ async def main():
                     await page.wait_for_function("id=>window._handle.get_simulation_state().jobs.some(j=>j.id===id)",arg=job_id,timeout=15000)
                     return job_id
                 root = "/apollo_workspace"
-                fixtures = root + "/simulation/web_monitor/test-artifacts/simulation-20260912"
+                fixtures = next(
+                    (p for p in (
+                        root + "/modules/simulation/web_monitor/test-artifacts/simulation-20260912",
+                        root + "/simulation/web_monitor/test-artifacts/simulation-20260912",
+                    ) if Path(p).is_dir()),
+                    root + "/modules/simulation/web_monitor/test-artifacts/simulation-20260912",
+                )
                 await fill("Scenario", fixtures + "/input.record")
                 await fill("Map", root + "/data/bag/data_with_map/extracted/od_hq_map")
-                await fill("Vehicle config", root + "/data/bag/data_with_map/extracted/Jiyu_01/modules/common/data/vehicle_param.pb.txt")
+                await fill("Vehicle", root + "/data/bag/data_with_map/extracted/Jiyu_01")
                 bag_job = await enqueue()
                 await click("config_tab")
                 await click("world")

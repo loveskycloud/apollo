@@ -116,12 +116,19 @@ export function Viewport3D() {
               : state.selectedIds[0] ?? 'ego';
         const agent = state.scenario.agents.find((a) => a.id === agentId);
         if (!agent) return;
-        let routeId = agent.activeRouteId;
+        // 路点追加到当前编辑中的 Route（selected），不是仿真初始 activeRouteId
+        let routeId =
+          sel?.kind === 'route' && sel.agentId === agent.id
+            ? sel.routeId
+            : agent.activeRouteId;
         if (!routeId) {
           state.addRoute(agent.id);
-          routeId = useScenarioStore
-            .getState()
-            .scenario.agents.find((a) => a.id === agent.id)?.activeRouteId;
+          const next = useScenarioStore.getState();
+          const nextSel = next.selected;
+          routeId =
+            nextSel?.kind === 'route' && nextSel.agentId === agent.id
+              ? nextSel.routeId
+              : next.scenario.agents.find((a) => a.id === agent.id)?.activeRouteId;
         }
         // 落点保持点击坐标（行人自由平面 / 车辆已在视口校验车道内）
         if (routeId) state.addWaypoint(agent.id, routeId, apollo, heading);
@@ -229,12 +236,14 @@ export function Viewport3D() {
 
   useEffect(() => {
     const selectedTriggerId = selected?.kind === 'trigger' ? selected.id : null;
+    const editingRouteId = selected?.kind === 'route' ? selected.routeId : null;
     viewportRef.current?.syncScenario(
       scenario,
       runtime,
       selectedIds,
       selectedTriggerId,
       simRunning,
+      editingRouteId,
     );
   }, [scenario, runtime, selectedIds, selected, simRunning]);
 
@@ -298,6 +307,7 @@ export function Viewport3D() {
       s.selectedIds,
       s.selected?.kind === 'trigger' ? s.selected.id : null,
       simRunning,
+      s.selected?.kind === 'route' ? s.selected.routeId : null,
     );
   }, [routingPath, map, simRunning]);
 

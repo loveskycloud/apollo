@@ -1,10 +1,10 @@
 /******************************************************************************
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
-#include "simulation/worldsim/core/world.h"
+#include "modules/simulation/worldsim/core/world.h"
 
 #include "cyber/common/log.h"
-#include "simulation/worldsim/agent/agents.h"
+#include "modules/simulation/worldsim/agent/agents.h"
 
 namespace apollo {
 namespace simulation {

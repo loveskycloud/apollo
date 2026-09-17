@@ -13,8 +13,18 @@ import sys
 import tempfile
 import uuid
 
+# Relative path used by profiles and gflags --flagfile=...
 GLOBAL_FLAGS = Path("modules/common/data/global_flagfile.txt")
 VEHICLE_CONFIG = Path("modules/common/data/vehicle_param.pb.txt")
+# Canonical live flagfile inside the Apollo container.
+APOLLO_GLOBAL_FLAGS = Path("/apollo/modules/common/data/global_flagfile.txt")
+
+
+def resolve_global_flagfile(workspace):
+    """Prefer the container Apollo path; fall back to workspace only for tests."""
+    if APOLLO_GLOBAL_FLAGS.parent.is_dir():
+        return APOLLO_GLOBAL_FLAGS
+    return Path(workspace) / GLOBAL_FLAGS
 
 
 def vehicle_geometry(path):
@@ -78,6 +88,16 @@ def update_global_flagfile(path, map_dir, vehicle_path):
     return geometry
 
 
+def _can_link_into_workspace(root, relative):
+    """Refuse to create modules/<pkg> stubs that break buildtool (no cyberfile)."""
+    parts = Path(relative).parts
+    if len(parts) >= 2 and parts[0] == "modules":
+        package = Path(root) / "modules" / parts[1]
+        if not (package / "cyberfile.xml").is_file():
+            return False
+    return True
+
+
 def _target(root, relative):
     relative = Path(relative)
     if relative.is_absolute() or ".." in relative.parts:
@@ -115,6 +135,11 @@ def apply_workspace_configuration(workspace, profile, map_dir, vehicle_path):
 
     Overwrites are explicitly requested profile changes. Preflight before any
     write; report I/O failures as failures even if some files were already set.
+
+    Profile files under modules/<pkg>/ are only linked into the workspace when
+    that package already has cyberfile.xml. Otherwise buildtool treats the path
+    as occupied and refuses to sync the real package (ErrCode.FileIoErr).
+    Runtime overlay still reads the profile tree directly.
     """
     root = Path(workspace).resolve()
     profile = Path(profile).resolve() if profile else None
@@ -130,6 +155,7 @@ def apply_workspace_configuration(workspace, profile, map_dir, vehicle_path):
     if not profile and current.is_symlink():
         raise ValueError("An active workspace profile exists; explicitly select a profile instead of inheriting it as workspace defaults")
     planned = {}
+    linked = {}
     if profile:
         profile_vehicle = profile / VEHICLE_CONFIG
         if not profile_vehicle.is_file():
@@ -157,23 +183,30 @@ def apply_workspace_configuration(workspace, profile, map_dir, vehicle_path):
                             target.resolve().is_relative_to(previous) or
                             str(current) in os.readlink(target)):
                         raise ValueError(f"Selected profile is missing active configuration {relative}; automatic recovery is disabled")
-    global_path = _target(root, GLOBAL_FLAGS)
-    _target(root, VEHICLE_CONFIG)
-    content = (profile / GLOBAL_FLAGS).read_text() if profile and GLOBAL_FLAGS in planned else global_path.read_text()
+    global_path = resolve_global_flagfile(root)
+    if profile and GLOBAL_FLAGS in planned:
+        content = (profile / GLOBAL_FLAGS).read_text()
+    else:
+        content = global_path.read_text()
     updated = rewrite_global_flags(content, map_dir, vehicle_path, geometry["half_vehicle_width"])
     if profile:
         _link(profile, current)
         for relative in sorted(planned):
-            if relative != GLOBAL_FLAGS:
-                _link(current / relative, _target(root, relative))
-    if not profile and vehicle_path != root / VEHICLE_CONFIG:
+            if relative == GLOBAL_FLAGS or not _can_link_into_workspace(root, relative):
+                continue
+            target = _target(root, relative)
+            _link(current / relative, target)
+            linked[relative] = planned[relative]
+    elif vehicle_path != root / VEHICLE_CONFIG and _can_link_into_workspace(root, VEHICLE_CONFIG):
         _link(vehicle_path, root / VEHICLE_CONFIG)
+        linked[VEHICLE_CONFIG] = vehicle_path
     atomic_text(global_path, updated)
-    for relative, source in planned.items():
-        if relative != GLOBAL_FLAGS and (root / relative).resolve(strict=True) != source.resolve(strict=True):
+    for relative, source in linked.items():
+        if (root / relative).resolve(strict=True) != Path(source).resolve(strict=True):
             raise RuntimeError(f"Profile application did not take effect: {relative}")
     if global_path.read_text() != updated:
         raise RuntimeError(f"Global flagfile application did not take effect: {global_path}")
     return {"profile": str(profile) if profile else "", "map_dir": str(map_dir),
             "vehicle_config_path": str(vehicle_path), **geometry,
-            "global_flagfile": str(global_path), "profile_file_count": len(planned)}
+            "global_flagfile": str(global_path), "profile_file_count": len(planned),
+            "workspace_link_count": len(linked)}

@@ -29,6 +29,8 @@ class SimProgress {
  public:
   void Init(const SimProgressState& initial);
   void OnEvent(uint64_t sim_time_ns, const std::string& channel);
+  /** Mark a clean run finish (EOF / mission stop) as 100% progress. */
+  void MarkComplete();
   const SimProgressState& state() const { return state_; }
   void WriteJson(const std::string& path) const;
 

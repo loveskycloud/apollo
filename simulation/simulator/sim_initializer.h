@@ -9,14 +9,14 @@
 #include <string>
 
 #include "cyber/node/node.h"
-#include "simulation/logsim/proto/simulation_task.pb.h"
-#include "simulation/simulator/emulator_controller.h"
-#include "simulation/simulator/message_consumer.h"
-#include "simulation/simulator/output_channel_recorder.h"
-#include "simulation/simulator/result_sink.h"
-#include "simulation/simulator/sim_engine.h"
-#include "simulation/simulator/sim_monitor.h"
-#include "simulation/simulator/sim_progress.h"
+#include "modules/simulation/logsim/proto/simulation_task.pb.h"
+#include "modules/simulation/simulator/emulator_controller.h"
+#include "modules/simulation/simulator/message_consumer.h"
+#include "modules/simulation/simulator/output_channel_recorder.h"
+#include "modules/simulation/simulator/result_sink.h"
+#include "modules/simulation/simulator/sim_engine.h"
+#include "modules/simulation/simulator/sim_monitor.h"
+#include "modules/simulation/simulator/sim_progress.h"
 
 namespace apollo {
 namespace simulation {

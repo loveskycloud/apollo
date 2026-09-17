@@ -10,7 +10,7 @@ apollo_cc_library(
     deps = [
         "//cyber",
         "//cyber/record:cyber_record",
-        "//simulation/simulator:apollo_simulation_event",
+        "//modules/simulation/simulator:apollo_simulation_event",
     ],
 )
 

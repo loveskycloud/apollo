@@ -76,7 +76,7 @@ def write_task_pb(task_dir, scenario_id, record_paths, modules, map_dir,
         dag_paths: {dags!r}
         map_dir: "{map_dir}"
         vehicle_config_path: "{vehicle_config_path}"
-        cyber_conf_path: "simulation/simulator/conf"
+        cyber_conf_path: "modules/simulation/simulator/conf"
         output_record_dir: "{output_record_dir}"
         channel_policy {{
           inject_channels: {DEFAULT_INJECT!r}

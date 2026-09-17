@@ -1,7 +1,7 @@
 /******************************************************************************
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
-#include "simulation/worldsim/core/scenario_loader.h"
+#include "modules/simulation/worldsim/core/scenario_loader.h"
 
 #include <fstream>
 #include <sstream>

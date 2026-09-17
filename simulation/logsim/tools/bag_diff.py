@@ -15,7 +15,7 @@ from decimal import Decimal
 
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[2]  # simulation/
 TOOL = ROOT / "tools/apollo_record_tools/bin/apollo_record_tool"
 
 EXCLUDED_WALL_FIELDS = [

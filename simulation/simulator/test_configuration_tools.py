@@ -26,6 +26,12 @@ class ConfigurationTests(unittest.TestCase):
         path = profile / VEHICLE_CONFIG
         path.parent.mkdir(parents=True)
         path.write_text(f"vehicle_param {{ width: {width} }}")
+        # Allow linking into modules/<pkg> without creating buildtool stubs.
+        for pkg in ("common", "planning"):
+            cyber = self.root / "modules" / pkg / "cyberfile.xml"
+            cyber.parent.mkdir(parents=True, exist_ok=True)
+            if not cyber.exists():
+                cyber.write_text(f'<package><name>{pkg}</name></package>\n')
         config = profile / "modules/planning/conf/test.pb.txt"
         config.parent.mkdir(parents=True)
         config.write_text(name)

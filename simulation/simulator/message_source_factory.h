@@ -7,9 +7,9 @@
 
 #include <memory>
 
-#include "simulation/logsim/record_file_source.h"
-#include "simulation/simulator/i_message_source.h"
-#include "simulation/worldsim/world_message_source.h"
+#include "modules/simulation/logsim/record_file_source.h"
+#include "modules/simulation/simulator/i_message_source.h"
+#include "modules/simulation/worldsim/world_message_source.h"
 
 namespace apollo {
 namespace simulation {

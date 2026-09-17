@@ -90,8 +90,8 @@ docker exec -u wangsheng -w /apollo_workspace/tools/apollo_record_tools \
 
 # 独立、干净的测试服务：HTTP 9091，gRPC 9877
 docker exec -u wangsheng apollo_neo_dev_wangsheng python3 \
-  /apollo_workspace/simulation/web_monitor/scripts/test_debug_panels_browser.py \
-  --out /apollo_workspace/simulation/web_monitor/test-artifacts/debug-panels-20260912/recheck
+  /apollo_workspace/modules/simulation/web_monitor/scripts/test_debug_panels_browser.py \
+  --out /apollo_workspace/modules/simulation/web_monitor/test-artifacts/debug-panels-20260912/recheck
 ```
 
 浏览器脚本只通过真实鼠标/键盘改变 UI，JS API 只读取诊断状态。

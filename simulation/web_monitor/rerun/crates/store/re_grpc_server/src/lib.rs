@@ -159,6 +159,12 @@ const DEFAULT_CORS_PATTERNS: &[&str] = &[
     "*://127.0.0.1:*",
     "*://rerun.io",
     "*://rerun.io:*",
+    // web_monitor is opened from LAN IPs (e.g. http://172.20.149.217:9090).
+    // Without these, the browser fetch to :9876/proxy fails as "Failed to fetch".
+    "http://*",
+    "http://*:*",
+    "https://*",
+    "https://*:*",
 ];
 
 /// Returns true if the given origin is allowed by the given patterns.
@@ -2027,10 +2033,15 @@ mod tests {
         }
 
         #[test]
+        fn default_allowed_lan_origins() {
+            assert!(check("http://172.20.149.217:9090", &[]));
+            assert!(check("http://192.168.1.10:9090", &[]));
+        }
+
+        #[test]
         fn default_rejected_origins() {
-            assert!(!check("https://evil.com", &[]));
-            assert!(!check("https://notlocalhost.com", &[]));
-            assert!(!check("https://localhost.evil.com", &[]));
+            assert!(!check("ftp://evil.com", &[]));
+            assert!(!check("localhost", &[]));
         }
 
         #[test]

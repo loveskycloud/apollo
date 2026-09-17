@@ -10,13 +10,13 @@
 #include <vector>
 
 #include "cyber/proto/dag_conf.pb.h"
-#include "simulation/simulator/class_controller.h"
-#include "simulation/simulator/ego_car.h"
-#include "simulation/simulator/module_catalog.h"
-#include "simulation/simulator/module_instance.h"
-#include "simulation/simulator/proto/scenario.pb.h"
-#include "simulation/simulator/scenario_util.h"
-#include "simulation/simulator/sim_class_loader.h"
+#include "modules/simulation/simulator/class_controller.h"
+#include "modules/simulation/simulator/ego_car.h"
+#include "modules/simulation/simulator/module_catalog.h"
+#include "modules/simulation/simulator/module_instance.h"
+#include "modules/simulation/simulator/proto/scenario.pb.h"
+#include "modules/simulation/simulator/scenario_util.h"
+#include "modules/simulation/simulator/sim_class_loader.h"
 
 namespace apollo {
 namespace simulation {

@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/ego_car.h"
+#include "modules/simulation/simulator/ego_car.h"
 
 #include <fstream>
 #include <iomanip>
@@ -14,7 +14,7 @@
 #include "modules/common/configs/config_gflags.h"
 #include "modules/common/configs/vehicle_config_helper.h"
 #include "modules/map/hdmap/hdmap_util.h"
-#include "simulation/simulator/environment_tools.h"
+#include "modules/simulation/simulator/environment_tools.h"
 
 namespace apollo {
 namespace simulation {

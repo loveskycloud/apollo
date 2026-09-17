@@ -5,7 +5,7 @@
 
 #include <string>
 
-#include "simulation/worldsim/proto/scenario.pb.h"
+#include "modules/simulation/worldsim/proto/scenario.pb.h"
 
 namespace apollo {
 namespace simulation {

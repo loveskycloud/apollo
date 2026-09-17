@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "simulation/worldsim/proto/scenario.pb.h"
+#include "modules/simulation/worldsim/proto/scenario.pb.h"
 
 namespace apollo {
 namespace simulation {
@@ -35,6 +35,8 @@ class EgoCar {
   bool GetRouteEnd(double* x, double* y, double* heading) const;
   /** Collect routing waypoints (excluding start pose) for LaneFollow. */
   std::vector<Waypoint> GetRoutingWaypoints() const;
+  /** Advance active_route_id to the next declared route; false if none. */
+  bool SwitchToNextRoute();
 
  private:
   EgoConfig config_;

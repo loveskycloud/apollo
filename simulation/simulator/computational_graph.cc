@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/computational_graph.h"
+#include "modules/simulation/simulator/computational_graph.h"
 
 namespace apollo {
 namespace simulation {

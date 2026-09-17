@@ -2,9 +2,9 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/dag_controller.h"
-#include "simulation/simulator/ego_car.h"
-#include "simulation/simulator/scenario_util.h"
+#include "modules/simulation/simulator/dag_controller.h"
+#include "modules/simulation/simulator/ego_car.h"
+#include "modules/simulation/simulator/scenario_util.h"
 
 #include "gtest/gtest.h"
 #include "gflags/gflags.h"
@@ -12,9 +12,9 @@
 #include <cstdio>
 #include <fstream>
 #include "modules/common/configs/config_gflags.h"
-#include "simulation/simulator/environment_tools.h"
+#include "modules/simulation/simulator/environment_tools.h"
 
-#include "simulation/simulator/module_catalog.h"
+#include "modules/simulation/simulator/module_catalog.h"
 
 namespace apollo {
 namespace simulation {

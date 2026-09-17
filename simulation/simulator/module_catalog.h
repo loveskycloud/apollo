@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "simulation/simulator/proto/scenario.pb.h"
+#include "modules/simulation/simulator/proto/scenario.pb.h"
 
 namespace apollo {
 namespace simulation {

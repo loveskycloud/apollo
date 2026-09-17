@@ -64,6 +64,7 @@ export interface Agent {
   speed: number;
   size: Vec3;
   color: string;
+  /** 仿真初始路径（按添加顺序默认第一条）；编辑选中走 selected.kind==='route'，勿与此混淆 */
   activeRouteId?: string;
   routes: Route[];
   locked?: boolean;

@@ -12,9 +12,9 @@
 #include <queue>
 #include <string>
 
-#include "simulation/simulator/computational_graph.h"
-#include "simulation/simulator/module_replay_service.h"
-#include "simulation/simulator/task_queues.h"
+#include "modules/simulation/simulator/computational_graph.h"
+#include "modules/simulation/simulator/module_replay_service.h"
+#include "modules/simulation/simulator/task_queues.h"
 
 namespace apollo {
 namespace simulation {

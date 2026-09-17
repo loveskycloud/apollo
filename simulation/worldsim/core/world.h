@@ -8,10 +8,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "simulation/worldsim/agent/agent_base.h"
-#include "simulation/worldsim/ego/ego_car.h"
-#include "simulation/worldsim/proto/scenario.pb.h"
-#include "simulation/worldsim/trigger/trigger_base.h"
+#include "modules/simulation/worldsim/agent/agent_base.h"
+#include "modules/simulation/worldsim/ego/ego_car.h"
+#include "modules/simulation/worldsim/proto/scenario.pb.h"
+#include "modules/simulation/worldsim/trigger/trigger_base.h"
 
 namespace apollo {
 namespace simulation {

@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/dag_controller.h"
+#include "modules/simulation/simulator/dag_controller.h"
 
 #include "cyber/common/file.h"
 #include "cyber/common/global_data.h"

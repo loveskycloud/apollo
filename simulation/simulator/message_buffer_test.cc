@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/message_buffer.h"
+#include "modules/simulation/simulator/message_buffer.h"
 
 #include "gtest/gtest.h"
 

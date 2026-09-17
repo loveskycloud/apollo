@@ -10,10 +10,10 @@
 #include <set>
 #include <string>
 
-#include "simulation/logsim/proto/channel_policy.pb.h"
-#include "simulation/simulator/emulator_message_queue.h"
-#include "simulation/simulator/i_message_source.h"
-#include "simulation/simulator/message_consumer.h"
+#include "modules/simulation/logsim/proto/channel_policy.pb.h"
+#include "modules/simulation/simulator/emulator_message_queue.h"
+#include "modules/simulation/simulator/i_message_source.h"
+#include "modules/simulation/simulator/message_consumer.h"
 
 namespace apollo {
 namespace simulation {

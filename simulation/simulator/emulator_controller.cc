@@ -4,7 +4,7 @@
 
 #include <utility>
 
-#include "simulation/simulator/emulator_controller.h"
+#include "modules/simulation/simulator/emulator_controller.h"
 
 #include "cyber/time/clock.h"
 
@@ -64,7 +64,11 @@ bool EmulatorController::PublishNext() {
   while (true) {
     SimEvent input, timer;
     const bool has_input = source_->Peek(&input);
-    const bool has_timer = message_queue_.Peek(&timer);
+    // Source end_ns can shrink (e.g. WorldSim mission_complete). Do not run
+    // algorithm timers past the live source horizon or pose/chassis stop while
+    // PnC keeps ticking on a stale localization.
+    const bool has_timer =
+        message_queue_.Peek(&timer) && timer.sim_time_ns <= source_->end_ns();
     if (!has_input && source_->HasNext()) {
       error_ = "source Peek failed before EOF";
       return false;
@@ -104,9 +108,12 @@ bool EmulatorController::PublishNext() {
   }
   if (ev.interval_ns > 0 && ev.repeat_end_ns >= ev.sim_time_ns &&
       ev.repeat_end_ns - ev.sim_time_ns >= ev.interval_ns) {
-    ev.sim_time_ns += ev.interval_ns;
-    ++ev.sequence;
-    message_queue_.Push(std::move(ev));
+    const uint64_t next_ns = ev.sim_time_ns + ev.interval_ns;
+    if (next_ns <= source_->end_ns() && next_ns <= ev.repeat_end_ns) {
+      ev.sim_time_ns = next_ns;
+      ++ev.sequence;
+      message_queue_.Push(std::move(ev));
+    }
   }
   return true;
 }

@@ -10,9 +10,9 @@
 #include <queue>
 #include <vector>
 
-#include "simulation/simulator/computational_graph.h"
-#include "simulation/simulator/message_buffer.h"
-#include "simulation/simulator/sim_event.h"
+#include "modules/simulation/simulator/computational_graph.h"
+#include "modules/simulation/simulator/message_buffer.h"
+#include "modules/simulation/simulator/sim_event.h"
 
 namespace apollo {
 namespace simulation {

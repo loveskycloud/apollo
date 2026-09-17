@@ -10,7 +10,18 @@ import numpy as np
 from PIL import Image
 from playwright.async_api import async_playwright
 
-sys.path.insert(0, "/apollo_workspace/tools/apollo_record_tools")
+def _apollo_record_tools():
+    for candidate in (
+        "/apollo_workspace/modules/simulation/tools/apollo_record_tools",
+        "/apollo_workspace/simulation/tools/apollo_record_tools",
+        str(Path(__file__).resolve().parents[2] / "tools/apollo_record_tools"),
+    ):
+        if Path(candidate).is_dir():
+            return candidate
+    return "/apollo_workspace/modules/simulation/tools/apollo_record_tools"
+
+
+sys.path.insert(0, _apollo_record_tools())
 from mcap_debug_query import DebugQueries
 
 STATE = """()=>({hud:window._handle.get_vehicle_dashboard_state(),

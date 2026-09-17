@@ -67,8 +67,11 @@ std::string ResolveRerunBinary() {
     return env;
   }
   const char* candidates[] = {
+      "/apollo_workspace/modules/simulation/web_monitor/bin/rerun",
       "/apollo_workspace/simulation/web_monitor/bin/rerun",
+      "/opt/apollo/neo/share/modules/simulation/web_monitor/bin/rerun",
       "/opt/apollo/neo/share/simulation/web_monitor/bin/rerun",
+      "modules/simulation/web_monitor/bin/rerun",
       "simulation/web_monitor/bin/rerun",
       "bin/rerun",
       "./rerun",
@@ -79,6 +82,23 @@ std::string ResolveRerunBinary() {
     }
   }
   return "rerun";
+}
+
+std::string DefaultLayoutDir() {
+  const char* candidates[] = {
+      "/apollo_workspace/modules/simulation/web_monitor/layouts",
+      "/apollo_workspace/simulation/web_monitor/layouts",
+      "/opt/apollo/neo/share/modules/simulation/web_monitor/layouts",
+      "/opt/apollo/neo/share/simulation/web_monitor/layouts",
+      "modules/simulation/web_monitor/layouts",
+      "simulation/web_monitor/layouts",
+  };
+  for (const char* path : candidates) {
+    if (access(path, R_OK) == 0) {
+      return path;
+    }
+  }
+  return "/apollo_workspace/modules/simulation/web_monitor/layouts";
 }
 
 }  // namespace
@@ -139,7 +159,9 @@ int main(int argc, char** argv) {
     cmd += FLAGS_layout_dir;
     cmd += "\" ";
   } else {
-    cmd += "AD_LAYOUT_DIR=\"/apollo_workspace/simulation/web_monitor/layouts\" ";
+    cmd += "AD_LAYOUT_DIR=\"";
+    cmd += DefaultLayoutDir();
+    cmd += "\" ";
   }
 
   cmd += "\"";
@@ -163,6 +185,10 @@ int main(int argc, char** argv) {
     cmd += " --hide-welcome-screen";
     // Large Apollo bags (~1GiB+) must stay in proxy history for late/slow web clients.
     cmd += " --server-memory-limit 8GiB";
+    // Browser origin is http://<LAN-IP>:9090, not localhost. Without this the
+    // WASM client cannot fetch rerun+http://HOST:9876/proxy (Failed to fetch).
+    cmd += " --cors-allow-origin http://* --cors-allow-origin http://*:*";
+    cmd += " --cors-allow-origin https://* --cors-allow-origin https://*:*";
   }
 
   if (!FLAGS_recording.empty()) {

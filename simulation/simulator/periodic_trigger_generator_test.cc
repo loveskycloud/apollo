@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/periodic_trigger_generator.h"
+#include "modules/simulation/simulator/periodic_trigger_generator.h"
 #include <limits>
 
 #include "gtest/gtest.h"

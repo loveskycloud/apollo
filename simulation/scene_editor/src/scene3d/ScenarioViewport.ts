@@ -199,6 +199,8 @@ export class ScenarioViewport {
   private primaryId: string | null = null;
   private selectedIds: string[] = [];
   private selectedTriggerId: string | null = null;
+  /** 当前编辑中的 Route（UI 选中），≠ 仿真初始 activeRouteId */
+  private editingRouteId: string | null = null;
   private toolMode: ToolMode = 'select';
   private placeType: string | null = null;
   private transformMode: TransformMode = 'translate';
@@ -666,7 +668,12 @@ export class ScenarioViewport {
       (this.primaryId && this.scenario?.agents.find((a) => a.id === this.primaryId)) ||
       this.scenario?.agents.find((a) => a.type === 'ego');
     if (!agent) return 0;
-    const route = agent.routes.find((r) => r.id === agent.activeRouteId);
+    const route =
+      (this.editingRouteId
+        ? agent.routes.find((r) => r.id === this.editingRouteId)
+        : null) ??
+      agent.routes.find((r) => r.id === agent.activeRouteId) ??
+      agent.routes[0];
     const wps = route?.waypoints ?? [];
     if (wps.length >= 2) {
       const a = wps[wps.length - 2].position;
@@ -1466,10 +1473,12 @@ export class ScenarioViewport {
     selectedIds: string[],
     selectedTriggerId: string | null = null,
     simRunning = false,
+    editingRouteId: string | null = null,
   ) {
     this.scenario = scenario;
     this.selectedIds = selectedIds;
     this.selectedTriggerId = selectedTriggerId;
+    this.editingRouteId = editingRouteId;
     const liveIds = new Set(scenario.agents.map((a) => a.id));
     for (const [id, mesh] of this.agentMeshes) {
       if (!liveIds.has(id)) {
@@ -1622,6 +1631,7 @@ export class ScenarioViewport {
     const routeRenderKey = JSON.stringify({
       map: this.map?.id ?? null,
       selectedIds,
+      editingRouteId: this.editingRouteId,
       apolloRouting: this.apolloRoutingPts?.map((p) => [p.x.toFixed(2), p.y.toFixed(2)]) ?? null,
       routes: scenario.agents.map((a) => ({
         id: a.id,
@@ -1741,11 +1751,12 @@ export class ScenarioViewport {
             0,
             agent.routes.findIndex((r) => r.id === route.id),
           );
-          // 一段 Route 固定一色（按创建顺序），不随 active 切换改色
+          // 一段 Route 固定一色（按创建顺序），不随编辑选中切换改色
           const routeColor = ROUTE_PALETTE[paletteIdx % ROUTE_PALETTE.length];
-          const isActive = route.id === agent.activeRouteId;
+          const isInitialRoute = route.id === agent.activeRouteId;
+          const isEditingRoute = route.id === this.editingRouteId;
 
-          // 活动 Ego Route：主车若已偏离首路点，从当前位置起笔以便路径连贯
+          // 仿真初始 Ego Route：主车若已偏离首路点，从当前位置起笔以便路径连贯
           const origin = toRenderCoords(agent.position, this.map);
           const pathWaypoints = (() => {
             const rest = route.waypoints.map((w) => {
@@ -1759,7 +1770,7 @@ export class ScenarioViewport {
             });
             const prependActiveEgo =
               agent.type === 'ego' &&
-              isActive &&
+              isInitialRoute &&
               rest.length > 0 &&
               Math.hypot(rest[0].x - origin.x, rest[0].y - origin.y) >= 0.2;
             if (prependActiveEgo) {
@@ -1772,7 +1783,7 @@ export class ScenarioViewport {
               return [{ x: origin.x, y: origin.y, z: 0, heading: agent.heading }];
             }
             return rest.map((w, idx) =>
-              idx === 0 && agent.type === 'ego' && isActive
+              idx === 0 && agent.type === 'ego' && isInitialRoute
                 ? { ...w, heading: w.heading ?? agent.heading }
                 : w,
             );
@@ -1780,7 +1791,7 @@ export class ScenarioViewport {
           const apolloPts =
             this.apolloRoutingPts?.map((p) => ({ x: p.x, y: p.y, z: p.z })) ?? null;
           const useApolloRouting =
-            isActive &&
+            isInitialRoute &&
             agent.type === 'ego' &&
             apolloPts != null &&
             isPlausibleRoutePath(apolloPts);
@@ -1805,7 +1816,7 @@ export class ScenarioViewport {
                 displayPts,
                 routeColor,
                 ribbonWidth,
-                isActive ? 0.38 : 0.32,
+                isEditingRoute ? 0.42 : isInitialRoute ? 0.38 : 0.32,
               );
             } else {
               addRouteTrajectoryIdle(this.routeGroup, displayPts, ROUTE_LINE_Z);

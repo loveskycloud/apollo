@@ -18,5 +18,5 @@
   <depend repo_name="com_github_gflags_gflags" lib_names="gflags">3rd-gflags</depend>
   <depend repo_name="com_google_protobuf" lib_names="protobuf">3rd-protobuf</depend>
   <depend expose="False">3rd-rules-proto</depend>
-  <src_path url="https://github.com/ApolloAuto/apollo">//simulation/worldsim</src_path>
+  <src_path url="https://github.com/ApolloAuto/apollo">//modules/simulation/worldsim</src_path>
 </package>

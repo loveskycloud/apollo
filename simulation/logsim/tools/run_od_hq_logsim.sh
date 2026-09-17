@@ -2,23 +2,28 @@
 # Launch LogSim on od_hq extracted bag + map.
 #
 # Usage (inside apollo_neo_dev container, cwd = /apollo_workspace):
-#   bash simulation/logsim/tools/run_od_hq_logsim.sh
-#   bash simulation/logsim/tools/run_od_hq_logsim.sh --smoke          # skip PnC .so
-#   bash simulation/logsim/tools/run_od_hq_logsim.sh --skip-ego-env
-#   bash simulation/logsim/tools/run_od_hq_logsim.sh --rebuild
+#   bash modules/simulation/logsim/tools/run_od_hq_logsim.sh
+#   bash modules/simulation/logsim/tools/run_od_hq_logsim.sh --smoke          # skip PnC .so
+#   bash modules/simulation/logsim/tools/run_od_hq_logsim.sh --skip-ego-env
+#   bash modules/simulation/logsim/tools/run_od_hq_logsim.sh --rebuild
 #
 # From host:
 #   docker exec -u wangsheng -w /apollo_workspace apollo_neo_dev_wangsheng \
-#     bash simulation/logsim/tools/run_od_hq_logsim.sh
+#     bash modules/simulation/logsim/tools/run_od_hq_logsim.sh
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Resolve Apollo root: prefer /apollo_workspace in container, else repo root.
-if [[ -d /apollo_workspace/simulation ]]; then
+# Package lives at modules/simulation (preferred) or legacy simulation/.
+if [[ -d /apollo_workspace/modules/simulation ]] || [[ -d /apollo_workspace/simulation ]]; then
   APOLLO_ROOT=/apollo_workspace
+elif [[ -d "${SCRIPT_DIR}/../../../../cyber" ]]; then
+  # …/modules/simulation/logsim/tools → workspace
+  APOLLO_ROOT="$(cd "${SCRIPT_DIR}/../../../.." && pwd)"
 elif [[ -d "${SCRIPT_DIR}/../../../cyber" ]]; then
+  # …/simulation/logsim/tools → workspace (legacy)
   APOLLO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 else
   APOLLO_ROOT="$(pwd)"

@@ -1,8 +1,10 @@
 //! Read-only algorithm debug tools sharing the AD playback clock.
-use egui::{Color32, RichText, Ui};
+use egui::{Color32, RichText, Stroke, StrokeKind, Ui};
 use re_viewer_context::{AppContext, TimeControlCommand};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+
+use super::ad_shell::theme;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub(super) enum Kind {
@@ -167,6 +169,10 @@ pub(super) struct Panel {
 }
 
 impl Panel {
+    pub(super) fn kind_title(&self) -> &'static str {
+        self.kind.title()
+    }
+
     pub(super) fn new(kind: Kind, id: u64) -> Self {
         let topic = if kind == Kind::States {
             "/apollo/canbus/chassis"
@@ -194,13 +200,17 @@ impl Panel {
             .into(),
             filter: String::new(),
             signals,
-            pins: vec![
-                "speed".into(),
-                "throttle".into(),
-                "brake".into(),
-                "steering_target".into(),
-                "gear_location".into(),
-            ],
+            pins: match kind {
+                // Inspector/Watch start empty so chassis defaults don't stick on pose.
+                Kind::Inspector | Kind::Watch => Vec::new(),
+                _ => vec![
+                    "speed".into(),
+                    "throttle".into(),
+                    "brake".into(),
+                    "steering_target".into(),
+                    "gear_location".into(),
+                ],
+            },
             follow: true,
             window_s: 10.0,
             runtime: Runtime::default(),
@@ -231,12 +241,17 @@ impl Panel {
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
             .show(ui, |ui| {
+                apply_debug_visuals(ui);
                 if mcap.is_empty()
                     || at.is_none()
                     || origin.is_none()
                     || !matches!(clock.as_deref(), Some("publish_time" | "message_time"))
                 {
-                    ui.colored_label(Color32::YELLOW, source_notice);
+                    ui.label(
+                        RichText::new(source_notice)
+                            .size(12.0)
+                            .color(Color32::from_rgb(0xFE, 0xF0, 0x8C)),
+                    );
                     return;
                 }
                 let (at, origin) = (at.expect("checked"), origin.expect("checked"));
@@ -299,19 +314,19 @@ impl Panel {
         clock: &str,
     ) {
         self.topic_ui = json!({"available_topics":topics});
-        ui.horizontal_wrapped(|ui| {
-            ui.checkbox(&mut self.follow, "Follow playhead");
-            if ui.button("Refresh").clicked() {
-                self.runtime.key.clear();
-            }
-            ui.label(format!("{:.3} s  |  {clock}", (at - origin) as f64 / 1e9));
-        });
-        egui::CollapsingHeader::new("Topic / signal settings")
+        // Always track the playhead (no Follow / Refresh toolbar — timeline is enough).
+        self.follow = true;
+        egui::CollapsingHeader::new(
+            RichText::new("Topic / signal settings")
+                .size(12.0)
+                .color(theme::TEXT),
+        )
             .default_open(matches!(
                 self.kind,
                 Kind::Inspector | Kind::Watch | Kind::Health
             ))
             .show(ui, |ui| {
+                apply_debug_visuals(ui);
                 if !matches!(
                     self.kind,
                     Kind::Control | Kind::Trajectory | Kind::Profile | Kind::Health
@@ -319,11 +334,15 @@ impl Panel {
                     self.topic_selector(ui, topics);
                 }
                 if matches!(self.kind, Kind::Plot | Kind::States) {
-                    ui.horizontal_wrapped(|ui| {
-                        ui.label("Field");
+                    ui.label(
+                        RichText::new("Field")
+                            .size(11.0)
+                            .color(theme::TEXT_DIM),
+                    );
+                    ui.horizontal(|ui| {
                         let width = (ui.available_width() - 100.0).clamp(90.0, 355.0);
-                        ui.add(egui::TextEdit::singleline(&mut self.field).desired_width(width));
-                        if ui.button("Add signal").clicked() && !self.field.trim().is_empty() {
+                        dark_text_edit(ui, &mut self.field, "field path", width);
+                        if chip_button(ui, "Add").clicked() && !self.field.trim().is_empty() {
                             if self.signals.len() < 24 {
                                 self.signals.push(signal(
                                     &self.topic,
@@ -340,10 +359,14 @@ impl Panel {
                     let mut remove = None;
                     for (i, s) in self.signals.iter().enumerate() {
                         ui.horizontal(|ui| {
-                            if ui.small_button("×").clicked() {
+                            if chip_button(ui, "Remove").clicked() {
                                 remove = Some(i);
                             }
-                            ui.label(format!("{} : {} {}", s.topic, s.field, s.unit));
+                            ui.label(
+                                RichText::new(format!("{} : {} {}", s.topic, s.field, s.unit))
+                                    .size(12.0)
+                                    .color(theme::TEXT),
+                            );
                         });
                     }
                     if let Some(i) = remove {
@@ -352,8 +375,12 @@ impl Panel {
                     }
                 }
                 if matches!(self.kind, Kind::Plot | Kind::Control | Kind::States) {
-                    ui.horizontal_wrapped(|ui| {
-                        ui.label("Query window (s)");
+                    ui.horizontal(|ui| {
+                        ui.label(
+                            RichText::new("Query window (s)")
+                                .size(11.0)
+                                .color(theme::TEXT_DIM),
+                        );
                         if ui
                             .add(
                                 egui::DragValue::new(&mut self.window_s)
@@ -364,8 +391,12 @@ impl Panel {
                         {
                             self.runtime.key.clear();
                         }
-                        ui.weak("Click chart to seek; drag/scroll to inspect.");
                     });
+                    ui.label(
+                        RichText::new("Click chart to seek · drag/scroll to inspect")
+                            .size(11.0)
+                            .color(theme::TEXT_DIM),
+                    );
                 }
             });
         if matches!(self.kind, Kind::Inspector | Kind::Watch | Kind::States)
@@ -376,10 +407,16 @@ impl Panel {
             self.runtime = Runtime::default();
             self.topic_ui["notice"] = json!(notice);
             if self.topic.trim().is_empty() {
-                ui.weak(&notice);
+                ui.label(
+                    RichText::new(&notice).size(12.0).color(theme::TEXT_DIM),
+                );
             } else {
                 self.runtime.error = Some(notice.clone());
-                ui.colored_label(Color32::LIGHT_RED, &notice);
+                ui.label(
+                    RichText::new(&notice)
+                        .size(12.0)
+                        .color(Color32::from_rgb(0xFE, 0xCA, 0xCA)),
+                );
             }
             return;
         }
@@ -417,7 +454,7 @@ impl Panel {
             self.runtime.pending = None;
             self.runtime.response = None;
             self.runtime.error =
-                Some("Debug query timed out after 50 s; use Refresh to retry".into());
+                Some("Debug query timed out after 50 s".into());
         }
         if matches!(mode, "series" | "states") {
             request["at_ns"] = center.to_string().into();
@@ -440,14 +477,22 @@ impl Panel {
         }
         // Reserve the same status row before/during/after a query. Background
         // refreshes never insert a spinner row or displace the existing chart.
-        self.refresh_status(ui, at, origin);
+        self.refresh_status(ui, at);
         if let Some(error) = &self.runtime.error {
-            ui.colored_label(Color32::LIGHT_RED, error);
+            ui.label(
+                RichText::new(error)
+                    .size(12.0)
+                    .color(Color32::from_rgb(0xFE, 0xCA, 0xCA)),
+            );
         }
         self.runtime.content_top_y = ui.cursor().top();
         if let Some(data) = self.runtime.response.clone() {
             if let Some(notice) = data["notice"].as_str() {
-                ui.colored_label(Color32::YELLOW, notice);
+                ui.label(
+                    RichText::new(notice)
+                        .size(12.0)
+                        .color(Color32::from_rgb(0xFE, 0xF0, 0x8C)),
+                );
             }
             match self.kind {
                 Kind::Inspector | Kind::Watch => self.inspector(ctx, ui, &data),
@@ -458,13 +503,15 @@ impl Panel {
                 Kind::Profile => {
                     let height = (ui.available_height() / 3.0 - 14.0).clamp(90.0, 150.0);
                     for (field, unit) in [("v", "m/s"), ("a", "m/s²"), ("kappa", "1/m")] {
-                        egui_plot::Plot::new((self.id, field))
-                            .height(height)
-                            .x_axis_label("Trajectory relative time (s)")
-                            .y_axis_label(unit)
-                            .show(ui, |plot| {
-                                plot.line(egui_plot::Line::new(field, points(&data[field])));
-                            });
+                        style_plot(
+                            egui_plot::Plot::new((self.id, field))
+                                .height(height)
+                                .x_axis_label("Trajectory relative time (s)")
+                                .y_axis_label(unit),
+                        )
+                        .show(ui, |plot| {
+                            plot.line(egui_plot::Line::new(field, points(&data[field])));
+                        });
                     }
                 }
             }
@@ -476,106 +523,166 @@ impl Panel {
     }
 
     fn topic_selector(&mut self, ui: &mut Ui, topics: &[String]) {
-        ui.label("Topic");
-        let input = ui.add(
-            egui::TextEdit::singleline(&mut self.topic)
-                .hint_text("Select below or paste an exact topic path")
-                .desired_width(ui.available_width()),
+        ui.label(
+            RichText::new("Topic")
+                .size(11.0)
+                .strong()
+                .color(theme::TEXT),
         );
-        self.topic_ui["input"] = json!([input.rect.center().x, input.rect.center().y]);
-        if input.changed() {
-            self.runtime = Runtime::default();
-        }
-        // Give selection its own bounded row, including in narrow docked panels.
-        let picker = egui::ComboBox::from_id_salt((self.id, "topics"))
-            .selected_text(format!("Browse topics ({})", topics.len()))
-            .width(ui.available_width())
-            .height(280.0)
-            .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
-            .show_ui(ui, |ui| {
-                let search = ui.add(
-                    egui::TextEdit::singleline(&mut self.topic_search)
-                        .hint_text("Filter topics…")
-                        .desired_width(ui.available_width()),
-                );
-                self.topic_ui["search"] = json!([search.rect.center().x, search.rect.center().y]);
-                let filter = self.topic_search.trim().to_lowercase();
-                let mut matches = 0;
-                for topic in topics.iter().filter(|t| t.to_lowercase().contains(&filter)) {
-                    matches += 1;
-                    let row = ui.selectable_value(&mut self.topic, topic.clone(), topic);
-                    self.topic_ui["rows"][topic] =
-                        json!([row.rect.center().x, row.rect.center().y]);
-                    if row.changed() {
-                        self.runtime = Runtime::default();
-                    }
-                    if row.clicked() {
-                        ui.close();
-                    }
-                }
-                if topics.is_empty() {
-                    ui.colored_label(Color32::YELLOW, "This recording's topic catalog is empty.");
-                } else if matches == 0 {
-                    ui.weak("No matching topics. Clear the filter to show all topics.");
-                }
-            });
-        self.topic_ui["picker"] = json!([
-            picker.response.rect.center().x,
-            picker.response.rect.center().y
-        ]);
+        ui.add_space(4.0);
+        let browse_label = if self.topic.trim().is_empty() {
+            format!("Browse topics ({})", topics.len())
+        } else if let Some((_, leaf)) = self.topic.rsplit_once('/') {
+            leaf.to_owned()
+        } else {
+            self.topic.clone()
+        };
+        let picker = dropdown_trigger(ui, &browse_label);
+        self.topic_ui["picker"] = json!([picker.rect.center().x, picker.rect.center().y]);
         self.topic_ui["picker_rect"] = json!([
-            picker.response.rect.left(),
-            picker.response.rect.top(),
-            picker.response.rect.right(),
-            picker.response.rect.bottom()
+            picker.rect.left(),
+            picker.rect.top(),
+            picker.rect.right(),
+            picker.rect.bottom()
         ]);
+        egui::Popup::menu(&picker)
+            .id(egui::Id::new((self.id, "topics")))
+            .align(egui::RectAlign::BOTTOM_START)
+            .gap(4.0)
+            .show(|ui| {
+                egui::Frame::new()
+                    .fill(theme::PANEL_BG)
+                    .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.4)))
+                    .corner_radius(8.0)
+                    .inner_margin(egui::Margin::symmetric(8, 8))
+                    .show(ui, |ui| {
+                        ui.set_min_width(picker.rect.width().max(260.0));
+                        ui.set_max_height(280.0);
+                        ui.visuals_mut().override_text_color = Some(theme::TEXT);
+                        ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
+                        ui.visuals_mut().extreme_bg_color = theme::CARD_BG;
+                        let search = dark_text_edit(
+                            ui,
+                            &mut self.topic_search,
+                            "Filter topics…",
+                            ui.available_width(),
+                        );
+                        self.topic_ui["search"] =
+                            json!([search.rect.center().x, search.rect.center().y]);
+                        ui.add_space(4.0);
+                        let filter = self.topic_search.trim().to_lowercase();
+                        let mut matches = 0;
+                        egui::ScrollArea::vertical().show(ui, |ui| {
+                            for topic in topics.iter().filter(|t| t.to_lowercase().contains(&filter))
+                            {
+                                matches += 1;
+                                let on = self.topic == *topic;
+                                let row = menu_row(ui, topic, on);
+                                self.topic_ui["rows"][topic] =
+                                    json!([row.rect.center().x, row.rect.center().y]);
+                                if row.clicked() {
+                                    if self.topic != *topic {
+                                        self.pins.clear();
+                                        self.filter.clear();
+                                    }
+                                    self.topic = topic.clone();
+                                    self.runtime = Runtime::default();
+                                    ui.close();
+                                }
+                            }
+                            if topics.is_empty() {
+                                ui.label(
+                                    RichText::new("This recording's topic catalog is empty.")
+                                        .size(11.0)
+                                        .color(Color32::from_rgb(0xFE, 0xF0, 0x8C)),
+                                );
+                            } else if matches == 0 {
+                                ui.label(
+                                    RichText::new(
+                                        "No matching topics. Clear the filter to show all.",
+                                    )
+                                    .size(11.0)
+                                    .color(theme::TEXT_DIM),
+                                );
+                            }
+                        });
+                    });
+            });
+        ui.add_space(6.0);
+        egui::CollapsingHeader::new(
+            RichText::new("Paste topic path")
+                .size(11.0)
+                .color(theme::TEXT_DIM),
+        )
+        .id_salt((self.id, "paste_topic"))
+        .show(ui, |ui| {
+            let previous = self.topic.clone();
+            let input = dark_text_edit(
+                ui,
+                &mut self.topic,
+                "Exact topic path",
+                ui.available_width(),
+            );
+            self.topic_ui["input"] = json!([input.rect.center().x, input.rect.center().y]);
+            if input.changed() {
+                if self.topic != previous {
+                    self.pins.clear();
+                    self.filter.clear();
+                }
+                self.runtime = Runtime::default();
+            }
+        });
     }
 
-    fn refresh_status(&self, ui: &mut Ui, at: i64, origin: i64) {
+    /// Status only — no playhead / publish_time / window-center clock (timeline shows that).
+    fn refresh_status(&self, ui: &mut Ui, at: i64) {
         ui.allocate_ui_with_layout(
             egui::vec2(ui.available_width(), 20.0),
             egui::Layout::left_to_right(egui::Align::Center),
             |ui| {
                 if self.runtime.initial_loading() {
                     ui.add(egui::Spinner::new().size(14.0));
-                    ui.weak("Loading current data…");
+                    ui.label(
+                        RichText::new("Loading…")
+                            .size(11.0)
+                            .color(theme::TEXT_DIM),
+                    );
                     return;
                 }
                 let Some(data) = &self.runtime.response else {
-                    ui.weak("No query result");
+                    ui.label(
+                        RichText::new("No query result")
+                            .size(11.0)
+                            .color(theme::TEXT_DIM),
+                    );
                     return;
                 };
                 let sample = data["sample_ns"].as_str().and_then(|t| t.parse::<i64>().ok());
-                let queried = data["at_ns"].as_str().and_then(|t| t.parse::<i64>().ok());
-                let mut status = if let Some(sample) = sample {
-                    if sample > at {
-                        format!("Previous sample: {sample} — awaiting seek result")
-                    } else {
-                        // Age is relative to the live cursor, not the old request's cursor.
-                        format!("Sample: {sample}  |  Age: {:.1} ms", (at - sample) as f64 / 1e6)
-                    }
-                } else if let Some(queried) = queried {
-                    let title = if matches!(self.kind, Kind::Plot | Kind::Control | Kind::States) {
-                        "Window center"
-                    } else {
-                        "Queried at"
-                    };
-                    format!("{title}: {:.3} s", (queried - origin) as f64 / 1e9)
+                let delayed = self.runtime.pending.is_some()
+                    && self
+                        .runtime
+                        .requested_at
+                        .is_some_and(|t| t.elapsed().as_millis() >= 750);
+                let awaiting = sample.is_some_and(|t| t > at);
+                let (text, color) = if delayed {
+                    (
+                        "Update delayed — showing previous result",
+                        Color32::from_rgb(0xFE, 0xF0, 0x8C),
+                    )
+                } else if awaiting {
+                    (
+                        "Awaiting seek result",
+                        Color32::from_rgb(0xFE, 0xF0, 0x8C),
+                    )
                 } else {
-                    "Query complete".to_owned()
+                    ("", theme::TEXT_DIM)
                 };
-                let delayed = self.runtime.pending.is_some() && self.runtime.requested_at
-                    .is_some_and(|t| t.elapsed().as_millis() >= 750);
-                if delayed {
-                    status.push_str("  |  Refresh delayed; showing previous result");
+                if !text.is_empty() {
+                    ui.add(egui::Label::new(RichText::new(text).size(11.0).color(color)).truncate())
+                        .on_hover_text(
+                            "Background queries replace the displayed result when complete.",
+                        );
                 }
-                let color = if delayed || sample.is_some_and(|t| t > at) {
-                    Color32::YELLOW
-                } else {
-                    ui.visuals().weak_text_color()
-                };
-                ui.add(egui::Label::new(RichText::new(status).color(color)).truncate())
-                    .on_hover_text("Background queries replace the displayed result when complete. Sample age follows the live cursor; a retained result is not a new sample. Errors are shown explicitly.");
             },
         );
     }
@@ -649,34 +756,40 @@ impl Panel {
             ] {
                 let time = data[key].as_str().and_then(|s| s.parse::<i64>().ok());
                 if ui
-                    .add_enabled(time.is_some(), egui::Button::new(label))
+                    .add_enabled(time.is_some(), chip_button_widget(label))
                     .clicked()
                 {
                     seek(ctx, time.expect("enabled"));
                 }
             }
-            if ui.button("Copy JSON").clicked() {
+            if chip_button(ui, "Copy JSON").clicked() {
                 ui.ctx()
                     .copy_text(serde_json::to_string_pretty(&data["message"]).expect("JSON value"));
             }
         });
-        ui.horizontal(|ui| {
-            ui.label("Filter fields");
-            ui.add(
-                egui::TextEdit::singleline(&mut self.filter).desired_width(ui.available_width()),
-            );
-        });
-        ui.weak(format!(
-            "{}  |  {} messages  |  Pin fields for Value watch",
-            data["type"], data["count"]
-        ));
+        ui.add_space(4.0);
+        ui.label(
+            RichText::new("Filter fields")
+                .size(11.0)
+                .color(theme::TEXT_DIM),
+        );
+        dark_text_edit(ui, &mut self.filter, "path contains…", ui.available_width());
+        ui.label(
+            RichText::new(format!(
+                "{}  ·  {} messages  ·  Pin fields for Value watch",
+                data["type"].as_str().unwrap_or("—"),
+                data["count"]
+            ))
+            .size(11.0)
+            .color(theme::TEXT_DIM),
+        );
         let fields = data["fields"].as_array().map(Vec::as_slice).unwrap_or(&[]);
         ui.horizontal_wrapped(|ui| {
-            if self.kind == Kind::Inspector && ui.button("Watch pinned fields").clicked() {
+            if self.kind == Kind::Inspector && chip_button(ui, "Watch pinned fields").clicked() {
                 self.kind = Kind::Watch;
                 self.filter.clear();
             }
-            if ui.button("Plot pinned numeric fields").clicked() {
+            if chip_button(ui, "Plot pinned numeric fields").clicked() {
                 let signals: Vec<Signal> = fields
                     .iter()
                     .filter(|f| {
@@ -699,6 +812,9 @@ impl Panel {
                     self.runtime.response = None;
                 }
             }
+            if !self.pins.is_empty() && chip_button(ui, "Clear pins").clicked() {
+                self.pins.clear();
+            }
         });
         let shown: Vec<&Value> = fields
             .iter()
@@ -710,7 +826,11 @@ impl Panel {
                         || !self.filter.is_empty())
             })
             .collect();
-        ui.label(format!("{} matching fields", shown.len()));
+        ui.label(
+            RichText::new(format!("{} matching fields", shown.len()))
+                .size(11.0)
+                .color(theme::TEXT_DIM),
+        );
         egui::ScrollArea::both()
             .max_height(450.0)
             .show_rows(ui, 24.0, shown.len(), |ui, range| {
@@ -725,19 +845,39 @@ impl Panel {
                                 self.pins.retain(|p| p != path);
                             }
                         }
-                        ui.monospace(path);
+                        ui.label(
+                            RichText::new(path)
+                                .size(12.0)
+                                .monospace()
+                                .color(theme::TEXT_DIM),
+                        );
                         ui.label(
                             RichText::new(f["value"].to_string())
-                                .color(Color32::from_rgb(110, 220, 200)),
+                                .size(12.0)
+                                .color(theme::TEXT),
                         );
                     });
                 }
             });
         if self.kind == Kind::Watch {
-            for pin in &self.pins {
-                if !fields.iter().any(|f| f["path"] == *pin) {
-                    ui.colored_label(Color32::YELLOW, format!("{pin}: absent in this message"));
-                }
+            let absent: Vec<String> = self
+                .pins
+                .iter()
+                .filter(|pin| !fields.iter().any(|f| f["path"] == **pin))
+                .cloned()
+                .collect();
+            for pin in absent {
+                ui.horizontal(|ui| {
+                    let mut pinned = true;
+                    if ui.checkbox(&mut pinned, "").changed() && !pinned {
+                        self.pins.retain(|p| p != &pin);
+                    }
+                    ui.label(
+                        RichText::new(format!("{pin}: absent in this message"))
+                            .size(12.0)
+                            .color(Color32::from_rgb(0xFE, 0xF0, 0x8C)),
+                    );
+                });
             }
         }
     }
@@ -746,7 +886,11 @@ impl Panel {
         let series = data["series"].as_array().map(Vec::as_slice).unwrap_or(&[]);
         for s in series {
             if let Some(error) = s["error"].as_str() {
-                ui.colored_label(Color32::LIGHT_RED, format!("{}: {error}", s["field"]));
+                ui.label(
+                    RichText::new(format!("{}: {error}", s["field"]))
+                        .size(12.0)
+                        .color(Color32::from_rgb(0xFE, 0xCA, 0xCA)),
+                );
             }
         }
         let groups: Vec<(&str, Vec<usize>)> = if self.kind == Kind::Control {
@@ -768,16 +912,24 @@ impl Panel {
         egui::ScrollArea::vertical()
             .max_height(540.0)
             .show(ui, |ui| {
+                apply_debug_visuals(ui);
                 for (group_id, (title, indices)) in groups.iter().enumerate() {
-                    ui.strong(*title);
-                    let plot = egui_plot::Plot::new((self.id, group_id))
-                        .height(if self.kind == Kind::Control {
-                            165.0
-                        } else {
-                            ui.available_height().clamp(120.0, 290.0)
-                        })
-                        .legend(egui_plot::Legend::default())
-                        .x_axis_label("Seconds from bag start");
+                    ui.label(
+                        RichText::new(*title)
+                            .size(12.0)
+                            .strong()
+                            .color(theme::TEXT),
+                    );
+                    let plot = style_plot(
+                        egui_plot::Plot::new((self.id, group_id))
+                            .height(if self.kind == Kind::Control {
+                                165.0
+                            } else {
+                                ui.available_height().clamp(120.0, 290.0)
+                            })
+                            .legend(egui_plot::Legend::default())
+                            .x_axis_label("Seconds from bag start"),
+                    );
                     let result = plot.show(ui, |plot_ui| {
                         plot_ui.vline(
                             egui_plot::VLine::new("Playhead", (at - origin) as f64 / 1e9)
@@ -807,16 +959,20 @@ impl Panel {
                     }
                     for &i in indices {
                         if let Some(s) = series.get(i) {
-                            ui.small(format!(
-                                "{}  n={}  missing={}  min={}  max={}  mean={}  RMS={}",
-                                s["label"],
-                                s["points"].as_array().map_or(0, Vec::len),
-                                s["missing"],
-                                number(&s["stats"]["min"]),
-                                number(&s["stats"]["max"]),
-                                number(&s["stats"]["mean"]),
-                                number(&s["stats"]["rms"])
-                            ));
+                            ui.label(
+                                RichText::new(format!(
+                                    "{}  n={}  missing={}  min={}  max={}  mean={}  RMS={}",
+                                    s["label"],
+                                    s["points"].as_array().map_or(0, Vec::len),
+                                    s["missing"],
+                                    number(&s["stats"]["min"]),
+                                    number(&s["stats"]["max"]),
+                                    number(&s["stats"]["mean"]),
+                                    number(&s["stats"]["rms"])
+                                ))
+                                .size(11.0)
+                                .color(theme::TEXT_DIM),
+                            );
                         }
                     }
                 }
@@ -829,14 +985,24 @@ impl Panel {
             .show(ui, |ui| {
                 if let Some(series) = data["series"].as_array() {
                     for s in series {
-                        ui.strong(format!("{} : {}", s["topic"], s["field"]));
+                        ui.label(
+                            RichText::new(format!("{} : {}", s["topic"], s["field"]))
+                                .size(12.0)
+                                .strong()
+                                .color(theme::TEXT),
+                        );
                         if let Some(error) = s["error"].as_str() {
-                            ui.colored_label(Color32::LIGHT_RED, error);
+                            ui.label(
+                                RichText::new(error)
+                                    .size(12.0)
+                                    .color(Color32::from_rgb(0xFE, 0xCA, 0xCA)),
+                            );
                         }
                         if let Some(rows) = s["points"].as_array() {
                             for (i, p) in rows.iter().enumerate() {
                                 let t = p[0].as_f64().unwrap_or(0.0);
-                                if ui.button(format!("{t:8.3} s   →   {}", p[1])).clicked() {
+                                if chip_button(ui, &format!("{t:8.3} s   →   {}", p[1])).clicked()
+                                {
                                     let ns = s["times_ns"][i]
                                         .as_str()
                                         .and_then(|t| t.parse().ok())
@@ -852,85 +1018,144 @@ impl Panel {
 
     fn trajectory(&self, ui: &mut Ui, data: &Value) {
         ui.label(
-            data["coordinate_frame"]
-                .as_str()
-                .unwrap_or("Missing frame metadata"),
+            RichText::new(
+                data["coordinate_frame"]
+                    .as_str()
+                    .unwrap_or("Missing frame metadata"),
+            )
+            .size(12.0)
+            .color(theme::TEXT),
         );
-        ui.label(format!(
-            "Plan sample {} | Localization {} | planned {} points, actual {} points",
-            data["sample_ns"],
-            data["localization_ns"],
-            data["planned"].as_array().map_or(0, Vec::len),
-            data["actual"].as_array().map_or(0, Vec::len)
-        ));
-        egui_plot::Plot::new((self.id, "xy"))
-            .height(ui.available_height().clamp(160.0, 470.0))
-            .data_aspect(1.0)
-            .legend(egui_plot::Legend::default())
-            .x_axis_label("Map X (m)")
-            .y_axis_label("Map Y (m)")
-            .show(ui, |p| {
-                p.line(
-                    egui_plot::Line::new("Current planned trajectory", points(&data["planned"]))
-                        .color(Color32::LIGHT_BLUE)
-                        .width(2.0),
-                );
-                let actual = points(&data["actual"]);
-                if let Some(&last) = actual.last() {
-                    p.points(egui_plot::Points::new("Current pose", vec![last]).radius(5.0));
-                }
-                p.line(
-                    egui_plot::Line::new("Localization history", actual)
-                        .color(Color32::LIGHT_GREEN)
-                        .width(2.0),
-                );
-            });
+        ui.label(
+            RichText::new(format!(
+                "Plan sample {} | Localization {} | planned {} points, actual {} points",
+                data["sample_ns"],
+                data["localization_ns"],
+                data["planned"].as_array().map_or(0, Vec::len),
+                data["actual"].as_array().map_or(0, Vec::len)
+            ))
+            .size(11.0)
+            .color(theme::TEXT_DIM),
+        );
+        style_plot(
+            egui_plot::Plot::new((self.id, "xy"))
+                .height(ui.available_height().clamp(160.0, 470.0))
+                .data_aspect(1.0)
+                .legend(egui_plot::Legend::default())
+                .x_axis_label("Map X (m)")
+                .y_axis_label("Map Y (m)"),
+        )
+        .show(ui, |p| {
+            p.line(
+                egui_plot::Line::new("Current planned trajectory", points(&data["planned"]))
+                    .color(Color32::LIGHT_BLUE)
+                    .width(2.0),
+            );
+            let actual = points(&data["actual"]);
+            if let Some(&last) = actual.last() {
+                p.points(egui_plot::Points::new("Current pose", vec![last]).radius(5.0));
+            }
+            p.line(
+                egui_plot::Line::new("Localization history", actual)
+                    .color(Color32::LIGHT_GREEN)
+                    .width(2.0),
+            );
+        });
     }
 
     fn health(&mut self, ui: &mut Ui, data: &Value) {
         if let Some(error) = data["selected_error"].as_str() {
-            ui.colored_label(Color32::LIGHT_RED, error);
+            ui.label(
+                RichText::new(error)
+                    .size(12.0)
+                    .color(Color32::from_rgb(0xFE, 0xCA, 0xCA)),
+            );
         }
         if let Some(selected) = data.get("selected") {
-            ui.label(format!(
-                "{} | n={} | age={} ms",
-                selected["topic"],
-                selected["count"],
-                number(&selected["age_ms"])
-            ));
-            ui.label(format!("Interval min / median / max: {} / {} / {} ms | duplicate times={} | gaps > 2× median={}",
-                number(&selected["period_min_ms"]),number(&selected["period_median_ms"]),number(&selected["period_max_ms"]),
-                selected["duplicates"],selected["gaps_over_2x_median"]));
+            ui.label(
+                RichText::new(format!(
+                    "{} | n={} | age={} ms",
+                    selected["topic"],
+                    selected["count"],
+                    number(&selected["age_ms"])
+                ))
+                .size(12.0)
+                .color(theme::TEXT),
+            );
+            ui.label(
+                RichText::new(format!(
+                    "Interval min / median / max: {} / {} / {} ms | duplicate times={} | gaps > 2× median={}",
+                    number(&selected["period_min_ms"]),
+                    number(&selected["period_median_ms"]),
+                    number(&selected["period_max_ms"]),
+                    selected["duplicates"],
+                    selected["gaps_over_2x_median"]
+                ))
+                .size(11.0)
+                .color(theme::TEXT_DIM),
+            );
         }
-        ui.weak("Bag-average Hz = message count / bag duration; gap counts are observations, not fault verdicts.");
-        ui.horizontal(|ui| {
-            ui.label("Filter topics");
-            ui.text_edit_singleline(&mut self.filter);
-        });
+        ui.label(
+            RichText::new(
+                "Bag-average Hz = message count / bag duration; gap counts are observations, not fault verdicts.",
+            )
+            .size(11.0)
+            .color(theme::TEXT_DIM),
+        );
+        ui.label(
+            RichText::new("Filter topics")
+                .size(11.0)
+                .color(theme::TEXT_DIM),
+        );
+        dark_text_edit(ui, &mut self.filter, "topic contains…", ui.available_width());
         egui::ScrollArea::both().max_height(440.0).show(ui, |ui| {
             if let Some(topics) = data["topics"].as_array() {
                 egui::Grid::new((self.id, "health_table"))
                     .striped(true)
                     .show(ui, |ui| {
-                        ui.strong("Topic");
-                        ui.strong("Messages");
-                        ui.strong("Bag avg Hz");
-                        ui.strong("Type");
+                        for header in ["Topic", "Messages", "Bag avg Hz", "Type"] {
+                            ui.label(
+                                RichText::new(header)
+                                    .size(11.0)
+                                    .strong()
+                                    .color(theme::TEXT),
+                            );
+                        }
                         ui.end_row();
                         for t in topics {
                             if !t["topic"].as_str().unwrap_or("").contains(&self.filter) {
                                 continue;
                             }
                             if ui
-                                .selectable_label(false, t["topic"].as_str().unwrap_or(""))
+                                .add(
+                                    egui::Button::new(
+                                        RichText::new(t["topic"].as_str().unwrap_or(""))
+                                            .size(12.0)
+                                            .color(theme::TEXT),
+                                    )
+                                    .fill(Color32::TRANSPARENT)
+                                    .frame(false),
+                                )
                                 .clicked()
                             {
                                 self.topic = t["topic"].as_str().expect("topic row").into();
                                 self.runtime.key.clear();
                             }
-                            ui.label(t["count"].to_string());
-                            ui.label(number(&t["bag_average_hz"]));
-                            ui.label(t["type"].as_str().unwrap_or(""));
+                            ui.label(
+                                RichText::new(t["count"].to_string())
+                                    .size(12.0)
+                                    .color(theme::TEXT),
+                            );
+                            ui.label(
+                                RichText::new(number(&t["bag_average_hz"]))
+                                    .size(12.0)
+                                    .color(theme::TEXT),
+                            );
+                            ui.label(
+                                RichText::new(t["type"].as_str().unwrap_or(""))
+                                    .size(12.0)
+                                    .color(theme::TEXT_DIM),
+                            );
                             ui.end_row();
                         }
                     });
@@ -1050,4 +1275,125 @@ fn seek(ctx: &AppContext<'_>, ns: i64) {
         TimeControlCommand::Pause,
         TimeControlCommand::SetTime(re_log_types::TimeInt::new_temporal(ns).into()),
     ]);
+}
+
+fn apply_debug_visuals(ui: &mut Ui) {
+    let v = ui.visuals_mut();
+    v.override_text_color = Some(theme::TEXT);
+    v.extreme_bg_color = theme::CARD_BG;
+    v.text_edit_bg_color = Some(theme::CARD_BG);
+    v.faint_bg_color = theme::PANEL_BG;
+    v.panel_fill = theme::PANEL_BG;
+    v.widgets.noninteractive.fg_stroke = Stroke::new(1.0, theme::TEXT);
+    v.widgets.inactive.fg_stroke = Stroke::new(1.0, theme::TEXT);
+    v.widgets.hovered.fg_stroke = Stroke::new(1.0, theme::TEXT);
+    v.widgets.active.fg_stroke = Stroke::new(1.0, Color32::WHITE);
+    v.widgets.inactive.bg_fill = theme::CARD_BG;
+    v.widgets.inactive.weak_bg_fill = theme::CARD_BG;
+    v.widgets.hovered.bg_fill = theme::CARD_BG_HOVER;
+    v.widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
+    v.selection.bg_fill = theme::ACCENT_STRONG.gamma_multiply(0.45);
+    v.selection.stroke = Stroke::new(1.0, theme::ACCENT);
+}
+
+fn chip_button(ui: &mut Ui, label: &str) -> egui::Response {
+    ui.add(chip_button_widget(label))
+}
+
+fn chip_button_widget(label: &str) -> egui::Button<'_> {
+    egui::Button::new(RichText::new(label).size(12.0).color(theme::TEXT))
+        .fill(theme::CARD_BG)
+        .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.28)))
+        .corner_radius(6.0)
+        .min_size(egui::vec2(0.0, 28.0))
+}
+
+fn dark_text_edit(ui: &mut Ui, text: &mut String, hint: &str, width: f32) -> egui::Response {
+    // Do NOT use Frame::NONE: egui skips background_color when a custom frame is set,
+    // which left light glyphs on a light/white slab in the web viewer.
+    ui.scope(|ui| {
+        ui.visuals_mut().override_text_color = Some(theme::TEXT);
+        ui.visuals_mut().text_edit_bg_color = Some(theme::CARD_BG);
+        ui.visuals_mut().extreme_bg_color = theme::CARD_BG;
+        ui.add(
+            egui::TextEdit::singleline(text)
+                .desired_width(width.max(40.0))
+                .background_color(theme::CARD_BG)
+                .text_color(theme::TEXT)
+                .hint_text(RichText::new(hint).color(theme::TEXT_DIM))
+                .margin(egui::Margin::symmetric(8, 5)),
+        )
+    })
+    .inner
+}
+
+fn dropdown_trigger(ui: &mut Ui, label: &str) -> egui::Response {
+    let height = 32.0;
+    let width = ui.available_width();
+    let (rect, response) =
+        ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
+    let fill = if response.hovered() || response.has_focus() {
+        theme::CARD_BG_HOVER
+    } else {
+        theme::CARD_BG
+    };
+    ui.painter().rect(
+        rect,
+        6.0,
+        fill,
+        Stroke::new(
+            1.0,
+            if response.hovered() {
+                theme::ACCENT.gamma_multiply(0.55)
+            } else {
+                theme::ACCENT.gamma_multiply(0.32)
+            },
+        ),
+        StrokeKind::Inside,
+    );
+    let chevron_w = 28.0;
+    let text_rect = egui::Rect::from_min_max(
+        egui::pos2(rect.left() + 10.0, rect.top()),
+        egui::pos2(rect.right() - chevron_w, rect.bottom()),
+    );
+    ui.painter().text(
+        text_rect.left_center(),
+        egui::Align2::LEFT_CENTER,
+        label,
+        egui::FontId::proportional(13.0),
+        theme::TEXT,
+    );
+    let c = egui::pos2(rect.right() - chevron_w * 0.5, rect.center().y + 0.5);
+    let s = 4.5;
+    ui.painter().add(egui::Shape::convex_polygon(
+        vec![
+            egui::pos2(c.x - s, c.y - s * 0.55),
+            egui::pos2(c.x + s, c.y - s * 0.55),
+            egui::pos2(c.x, c.y + s * 0.7),
+        ],
+        theme::TEXT_DIM,
+        Stroke::NONE,
+    ));
+    response
+}
+
+fn menu_row(ui: &mut Ui, label: &str, selected: bool) -> egui::Response {
+    ui.add_sized(
+        [ui.available_width(), 28.0],
+        egui::Button::new(
+            RichText::new(label)
+                .size(12.0)
+                .color(if selected { Color32::WHITE } else { theme::TEXT }),
+        )
+        .fill(if selected {
+            theme::ACCENT_STRONG.gamma_multiply(0.7)
+        } else {
+            Color32::TRANSPARENT
+        })
+        .corner_radius(4.0),
+    )
+}
+
+fn style_plot(plot: egui_plot::Plot<'_>) -> egui_plot::Plot<'_> {
+    plot.show_background(true)
 }

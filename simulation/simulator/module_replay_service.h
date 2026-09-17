@@ -8,9 +8,9 @@
 #include <string>
 #include <vector>
 
-#include "simulation/simulator/computational_graph.h"
-#include "simulation/simulator/message_buffer.h"
-#include "simulation/simulator/proto/module_trigger.pb.h"
+#include "modules/simulation/simulator/computational_graph.h"
+#include "modules/simulation/simulator/message_buffer.h"
+#include "modules/simulation/simulator/proto/module_trigger.pb.h"
 
 namespace apollo {
 namespace simulation {

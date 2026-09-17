@@ -176,10 +176,10 @@
 
 ```bash
 docker exec -u wangsheng apollo_neo_dev_wangsheng python3 \
-  /apollo_workspace/simulation/web_monitor/scripts/test_paused_playback_browser.py \
+  /apollo_workspace/modules/simulation/web_monitor/scripts/test_paused_playback_browser.py \
   --record /home/wangsheng/code/apollo/data/bag/20260514114049.record.00000.20260514114049 \
   --mcap /apollo_workspace/data/bag/.wm_mcap_cache/2b0b1ee6de553d65.mcap \
-  --out /apollo_workspace/simulation/web_monitor/test-artifacts/paused-seek-20260912/recheck
+  --out /apollo_workspace/modules/simulation/web_monitor/test-artifacts/paused-seek-20260912/recheck
 ```
 
 设计参考：[Foxglove 的 log-time、lookback 和缓冲行为](https://docs.foxglove.dev/docs/visualization/playback)。

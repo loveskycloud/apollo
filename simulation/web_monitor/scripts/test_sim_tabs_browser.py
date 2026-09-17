@@ -104,8 +104,11 @@ async def main():
                 assert all(j['stage'] in TERMINAL for j in current), 'Do not interfere with an existing active simulation'
                 template=next(j for j in current if j['id']==args.template_job)['config']
                 await sim_click(page,template['kind'])
-                for key,field in [('Scenario','source'),('Map','map'),('Vehicle config','vehicle'),('Profile','profile')]:
+                for key,field in [('Scenario','source'),('Map','map')]:
                     await fill(key,template[field])
+                vehicle = template.get('profile') or template['vehicle'].removesuffix(
+                    '/modules/common/data/vehicle_param.pb.txt')
+                await fill('Vehicle', vehicle)
                 for module in ['PREDICTION','PLANNING','CONTROL','ROUTING']:
                     selected=(await sim_state(page))['draft_config']['modules']
                     if (module in selected)!=(module in template['modules']):

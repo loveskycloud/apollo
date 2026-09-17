@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/task_queues.h"
+#include "modules/simulation/simulator/task_queues.h"
 
 #include <string>
 #include <utility>

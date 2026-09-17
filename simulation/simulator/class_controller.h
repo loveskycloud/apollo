@@ -10,8 +10,8 @@
 #include <vector>
 
 #include "cyber/proto/dag_conf.pb.h"
-#include "simulation/simulator/module_instance.h"
-#include "simulation/simulator/sim_class_loader.h"
+#include "modules/simulation/simulator/module_instance.h"
+#include "modules/simulation/simulator/sim_class_loader.h"
 
 namespace apollo {
 namespace simulation {

@@ -1,4 +1,4 @@
-#include "simulation/worldsim/world_message_source.h"
+#include "modules/simulation/worldsim/world_message_source.h"
 
 #include <algorithm>
 #include <cmath>
@@ -12,8 +12,8 @@
 #include "modules/common_msgs/perception_msgs/perception_obstacle.pb.h"
 #include "modules/common_msgs/planning_msgs/planning_command.pb.h"
 #include "modules/common_msgs/routing_msgs/routing.pb.h"
-#include "simulation/simulator/message_consumer.h"
-#include "simulation/worldsim/core/scenario_loader.h"
+#include "modules/simulation/simulator/message_consumer.h"
+#include "modules/simulation/worldsim/core/scenario_loader.h"
 
 namespace apollo {
 namespace simulation {
@@ -76,6 +76,8 @@ bool WorldMessageSource::Open(const SourceConfig& cfg) {
   }
   speed_ = acceleration_ = steering_ = 0;
   route_ready_ = callback_failed_ = control_ready_ = false;
+  handled_mission_seq_ = 0;
+  pending_mission_end_ = ending_on_mission_ = parking_brake_ = false;
   planning_.reset(); control_.reset(); readers_.clear();
   node_ = cyber::CreateNode("world_input");
   if (!node_) { return false; }
@@ -95,6 +97,9 @@ bool WorldMessageSource::Open(const SourceConfig& cfg) {
       }));
   for (const auto& reader : readers_) { if (!reader) { return false; } }
   world_.set_running(true);
+  AINFO << "WorldMessageSource open ok, duration_s="
+        << static_cast<double>(duration_ns) / 1e9
+        << " (scenario/timeout max)";
   return true;
 }
 
@@ -201,10 +206,102 @@ bool WorldMessageSource::AdvanceEgo(uint64_t now) {
   return std::isfinite(x_) && std::isfinite(y_) && std::isfinite(heading_) && std::isfinite(speed_);
 }
 
+bool WorldMessageSource::IsMissionComplete() const {
+  if (!planning_ || !planning_->has_decision() ||
+      !planning_->decision().has_main_decision() ||
+      !planning_->decision().main_decision().has_mission_complete()) {
+    return false;
+  }
+  const uint32_t seq = planning_->header().sequence_num();
+  return seq != handled_mission_seq_;
+}
+
+void WorldMessageSource::SyncParkingBrakeFromControl() {
+  // Chassis EPB follows the control channel when the controller publishes it.
+  if (control_ && control_->has_parking_brake()) {
+    parking_brake_ = control_->parking_brake();
+  }
+}
+
+bool WorldMessageSource::HandleMissionComplete(uint64_t now) {
+  handled_mission_seq_ = planning_->header().sequence_num();
+  const std::string finished = world_.ego()->active_route_id();
+  if (world_.ego()->SwitchToNextRoute()) {
+    AINFO << "mission_complete on route " << finished
+          << "; switching to next routing " << world_.ego()->active_route_id();
+    planning_.reset();
+    route_ready_ = false;
+    pending_mission_end_ = false;
+    if (!SendRoute(now)) {
+      AERROR << "Failed to send next routing after mission_complete";
+      return false;
+    }
+    return true;
+  }
+  pending_mission_end_ = true;
+  AINFO << "mission_complete on route " << finished
+        << "; waiting for chassis parking_brake before ending world sim (t="
+        << static_cast<double>(now - begin_ns_) / 1e9 << "s)";
+  return true;
+}
+
+bool WorldMessageSource::TryFinishMissionStop(uint64_t now) {
+  if (!pending_mission_end_ || ending_on_mission_) {
+    return true;
+  }
+  // Still require an active mission_complete decision on /apollo/planning.
+  if (!planning_ || !planning_->has_decision() ||
+      !planning_->decision().has_main_decision() ||
+      !planning_->decision().main_decision().has_mission_complete()) {
+    return true;
+  }
+  constexpr double kStopSpeedMps = 0.1;
+  // Simulated chassis: once ego is stopped after mission_complete, engage EPB
+  // if control has not already requested parking_brake.
+  if (speed_ <= kStopSpeedMps) {
+    parking_brake_ = true;
+  }
+  // End only when planning says done AND chassis parking_brake is latched while stopped.
+  if (!parking_brake_ || speed_ > kStopSpeedMps) {
+    return true;
+  }
+  AWARN << "mission_complete + chassis.parking_brake — ending world sim at t="
+        << static_cast<double>(now - begin_ns_) / 1e9 << "s";
+  ending_on_mission_ = true;
+  end_ns_ = now;
+  speed_ = 0;
+  acceleration_ = 0;
+  return true;
+}
+
 bool WorldMessageSource::Step(uint64_t now) {
   const double previous_heading = heading_;
   const double dt = static_cast<double>(now - last_ns_) / 1e9;
-  if (callback_failed_ || !AdvanceEgo(now)) { return false; }
+  SyncParkingBrakeFromControl();
+  if (IsMissionComplete() && !HandleMissionComplete(now)) {
+    return false;
+  }
+  if (callback_failed_) { return false; }
+  // Hold pose when finishing on mission_complete (trajectory often expired).
+  if (!ending_on_mission_) {
+    const bool advanced = AdvanceEgo(now);
+    if (!advanced) {
+      // After mission_complete, tolerate a dead control while we coast/stop and
+      // wait for parking_brake; hard-fail only if still moving.
+      constexpr double kStopSpeedMps = 0.1;
+      if (!(pending_mission_end_ && speed_ <= kStopSpeedMps)) {
+        return false;
+      }
+      last_ns_ = now;
+      speed_ = 0;
+      acceleration_ = 0;
+    }
+  } else {
+    last_ns_ = now;
+  }
+  if (!TryFinishMissionStop(now)) {
+    return false;
+  }
   const double yaw_rate = dt > 0 ? Angle(heading_ - previous_heading) / dt : 0;
   if (config_.ego_model == "perfect_planning" && speed_ > 1e-4) {
     const auto& vehicle = common::VehicleConfigHelper::GetConfig().vehicle_param();
@@ -225,8 +322,9 @@ bool WorldMessageSource::Step(uint64_t now) {
   Header(&chassis, now, sequence);
   chassis.set_engine_started(true); chassis.set_speed_mps(speed_);
   chassis.set_driving_mode(canbus::Chassis::COMPLETE_AUTO_DRIVE);
-  chassis.set_gear_location(canbus::Chassis::GEAR_DRIVE);
-  chassis.set_parking_brake(false);
+  chassis.set_gear_location(
+      parking_brake_ ? canbus::Chassis::GEAR_PARKING : canbus::Chassis::GEAR_DRIVE);
+  chassis.set_parking_brake(parking_brake_);
   chassis.set_steering_percentage(steering_);
   localization::LocalizationEstimate localization;
   Header(&localization, now, sequence);

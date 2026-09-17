@@ -9,7 +9,7 @@
 #include <string>
 
 #include "cyber/component/component_base.h"
-#include "simulation/simulator/proto/scenario.pb.h"
+#include "modules/simulation/simulator/proto/scenario.pb.h"
 
 namespace apollo {
 namespace simulation {

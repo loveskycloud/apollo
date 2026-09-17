@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/output_channel_recorder.h"
+#include "modules/simulation/simulator/output_channel_recorder.h"
 
 #include <utility>
 

@@ -1536,6 +1536,9 @@ fn serve_web(
             mgr.status_json(job_id)
         }));
     }
+    web_server.set_upload_recording_handler(std::sync::Arc::new(|filename: &str, bytes: &[u8]| {
+        save_uploaded_recording(filename, bytes)
+    }));
     {
         let topic_cache = std::sync::Arc::clone(&mcap_topic_cache);
         web_server.set_mcap_topics_handler(std::sync::Arc::new(
@@ -1602,7 +1605,16 @@ fn serve_web(
             let mut worker = sim_worker.lock();
             if worker.is_none() {
                 let script = std::env::var("WEB_MONITOR_SIM_SERVICE").unwrap_or_else(|_| {
-                    "/apollo_workspace/simulation/simulator/task_service.py".into()
+                    const CANDIDATES: &[&str] = &[
+                        "/apollo_workspace/modules/simulation/simulator/task_service.py",
+                        "/apollo_workspace/simulation/simulator/task_service.py",
+                    ];
+                    CANDIDATES
+                        .iter()
+                        .find(|p| std::path::Path::new(p).is_file())
+                        .copied()
+                        .unwrap_or(CANDIDATES[0])
+                        .into()
                 });
                 *worker = Some(super::debug_query::DebugWorker::start_script(&script)?);
             }
@@ -1829,7 +1841,7 @@ fn topic_debug_json(mcap: &str, topic: &str, at_ns: Option<i64>) -> Result<Strin
     let script = if let Ok(p) = std::env::var("WEB_MONITOR_TOPIC_DEBUG") {
         std::path::PathBuf::from(p)
     } else {
-        std::path::PathBuf::from("/apollo_workspace/tools/apollo_record_tools/mcap_topic_debug.py")
+        convert_record::apollo_record_tools_dir().join("mcap_topic_debug.py")
     };
     if !script.is_file() {
         return Err(format!(
@@ -2116,8 +2128,9 @@ fn playback_window_into_receive_set(
 
         let path_owned = pb.display().to_string();
         let source_descriptor = playback_source_descriptor(&pb, topics)?;
+        let plan_script = convert_record::apollo_record_tools_dir().join("mcap_playback_plan.py");
         let plan_output = std::process::Command::new("python3")
-            .arg("/apollo_workspace/tools/apollo_record_tools/mcap_playback_plan.py")
+            .arg(&plan_script)
             .arg(&pb)
             .arg(begin_ns.to_string())
             .arg(end_ns.to_string())
@@ -2540,10 +2553,91 @@ fn open_local_roots() -> Vec<std::path::PathBuf> {
     }
     vec![
         PathBuf::from("/apollo_workspace/data/bag"),
+        PathBuf::from("/apollo_workspace/data/bag/.wm_uploads"),
         PathBuf::from("/apollo_workspace/data"),
         PathBuf::from("/data/bag"),
         PathBuf::from("/home/wangsheng/code/apollo/data/bag"),
     ]
+}
+
+#[cfg(all(feature = "server", feature = "web_viewer"))]
+fn upload_recording_dir() -> std::path::PathBuf {
+    if let Ok(dir) = std::env::var("WEB_MONITOR_UPLOAD_DIR") {
+        if !dir.is_empty() {
+            return std::path::PathBuf::from(dir);
+        }
+    }
+    std::path::PathBuf::from("/apollo_workspace/data/bag/.wm_uploads")
+}
+
+#[cfg(all(feature = "server", feature = "web_viewer"))]
+fn save_uploaded_recording(filename: &str, bytes: &[u8]) -> Result<String, String> {
+    use std::io::Write as _;
+
+    if bytes.is_empty() {
+        return Err("empty upload".into());
+    }
+    // Soft cap: browser→host uploads of multi-GB bags are supported but unusual.
+    const MAX_BYTES: usize = 8 * 1024 * 1024 * 1024;
+    if bytes.len() > MAX_BYTES {
+        return Err(format!(
+            "upload too large ({} MiB); max is {} MiB",
+            bytes.len() / (1024 * 1024),
+            MAX_BYTES / (1024 * 1024)
+        ));
+    }
+    let base = std::path::Path::new(filename)
+        .file_name()
+        .and_then(|s| s.to_str())
+        .ok_or("invalid filename")?;
+    let safe: String = base
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_' | '+') {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    if safe.is_empty() || safe == "." || safe == ".." {
+        return Err("invalid filename".into());
+    }
+    let lower = safe.to_ascii_lowercase();
+    let is_record =
+        lower.contains(".record") && !lower.ends_with(".rrd") && !lower.ends_with(".rbl");
+    if !(is_record
+        || lower.ends_with(".rrd")
+        || lower.ends_with(".rbl")
+        || lower.ends_with(".mcap"))
+    {
+        return Err("unsupported type (use .record / .rrd / .rbl / .mcap)".into());
+    }
+
+    let dir = upload_recording_dir();
+    std::fs::create_dir_all(&dir).map_err(|e| format!("create upload dir: {e}"))?;
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
+    let dest = dir.join(format!("{stamp}_{safe}"));
+    {
+        let mut file = std::fs::File::create(&dest).map_err(|e| format!("create upload: {e}"))?;
+        file.write_all(bytes)
+            .map_err(|e| format!("write upload: {e}"))?;
+        file.sync_all().map_err(|e| format!("sync upload: {e}"))?;
+    }
+    let path = dest
+        .canonicalize()
+        .unwrap_or(dest)
+        .display()
+        .to_string();
+    re_log::info!(
+        "web_monitor upload_recording: saved {} ({} MiB)",
+        path,
+        bytes.len() / (1024 * 1024)
+    );
+    Ok(serde_json::json!({"status":"ok","path":path,"bytes":bytes.len()}).to_string())
 }
 
 #[cfg(all(feature = "server", feature = "web_viewer"))]

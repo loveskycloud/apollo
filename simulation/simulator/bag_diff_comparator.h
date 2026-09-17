@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-#include "simulation/simulator/result_sink.h"
+#include "modules/simulation/simulator/result_sink.h"
 
 namespace apollo {
 namespace simulation {

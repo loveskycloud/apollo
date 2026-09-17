@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/module_catalog.h"
+#include "modules/simulation/simulator/module_catalog.h"
 
 #include "cyber/common/log.h"
 
@@ -97,7 +97,10 @@ std::string ModuleCatalog::ModuleTypeName(simulator::ModuleType type) {
 
 simulator::ModuleType ModuleCatalog::ParseModuleType(
     const std::string& name) {
-  if (name == "PREDICTION" || name == "prediction") {
+  if (name == "PREDICTION" || name == "prediction" ||
+      name == "fake_prediction" || name == "FAKE_PREDICTION") {
+    // fake_prediction reuses the PREDICTION slot; dag_path override selects
+    // modules/fake_prediction/dag/fake_prediction.dag.
     return simulator::PREDICTION;
   }
   if (name == "PLANNING" || name == "planning") {

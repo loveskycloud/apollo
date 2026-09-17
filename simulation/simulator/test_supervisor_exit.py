@@ -14,11 +14,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--state-dir", required=True)
 args = parser.parse_args()
 root = Path(args.state_dir).resolve()
-worker = subprocess.Popen([sys.executable, str(ROOT / "simulation/simulator/task_service.py"),
+worker = subprocess.Popen([sys.executable, str(ROOT / "modules/simulation/simulator/task_service.py"),
                            "--state-dir", str(root)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
 child_pid = None
 try:
-    config = {"kind":"bag", "source":str(ROOT / "simulation/web_monitor/test-artifacts/simulation-20260912/input.record"),
+    config = {"kind":"bag", "source":str(ROOT / "modules/simulation/web_monitor/test-artifacts/simulation-20260912/input.record"),
               "map":str(ROOT / "data/bag/data_with_map/extracted/od_hq_map"),
               "vehicle":str(ROOT / "data/bag/data_with_map/extracted/Jiyu_01/modules/common/data/vehicle_param.pb.txt"),
               "modules":["PREDICTION","PLANNING","CONTROL"], "repeat":2}

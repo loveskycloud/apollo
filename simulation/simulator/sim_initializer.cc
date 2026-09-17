@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/sim_initializer.h"
+#include "modules/simulation/simulator/sim_initializer.h"
 
 #include <chrono>
 #include <cstdlib>
@@ -22,8 +22,8 @@
 #include "cyber/time/clock.h"
 #include "google/protobuf/text_format.h"
 
-#include "simulation/logsim/record_file_source.h"
-#include "simulation/simulator/message_source_factory.h"
+#include "modules/simulation/logsim/record_file_source.h"
+#include "modules/simulation/simulator/message_source_factory.h"
 
 namespace apollo {
 namespace simulation {
@@ -71,7 +71,7 @@ bool SimInitializer::LoadTask(const std::string& task_dir,
 bool SimInitializer::SetupCyber(const logsim::SimulationTask& task) {
   // Cyber loads: $CYBER_PATH/conf/cyber.pb.conf
   // Install cyber_sim.pb.conf into a dedicated work root under task_dir.
-  std::string conf_src = "simulation/simulator/conf/cyber_sim.pb.conf";
+  std::string conf_src = "modules/simulation/simulator/conf/cyber_sim.pb.conf";
   if (!task.cyber_conf_path().empty()) {
     // Accept either a file path or a directory containing cyber_sim.pb.conf /
     // cyber.pb.conf.

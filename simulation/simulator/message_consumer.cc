@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/message_consumer.h"
+#include "modules/simulation/simulator/message_consumer.h"
 
 #include <memory>
 #include <string>

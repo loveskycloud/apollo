@@ -10,7 +10,7 @@
 #include <queue>
 #include <vector>
 
-#include "simulation/simulator/sim_event.h"
+#include "modules/simulation/simulator/sim_event.h"
 
 namespace apollo {
 namespace simulation {

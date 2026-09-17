@@ -19,14 +19,14 @@
 #include "cyber/timer/sim_timer_registry.h"
 #include "google/protobuf/text_format.h"
 
-#include "simulation/logsim/proto/simulation_task.pb.h"
-#include "simulation/simulator/dag_controller.h"
-#include "simulation/simulator/ego_car.h"
-#include "simulation/simulator/module_catalog.h"
-#include "simulation/simulator/proto/scenario.pb.h"
-#include "simulation/simulator/scenario_util.h"
-#include "simulation/simulator/sim_initializer.h"
-#include "simulation/simulator/sim_runner.h"
+#include "modules/simulation/logsim/proto/simulation_task.pb.h"
+#include "modules/simulation/simulator/dag_controller.h"
+#include "modules/simulation/simulator/ego_car.h"
+#include "modules/simulation/simulator/module_catalog.h"
+#include "modules/simulation/simulator/proto/scenario.pb.h"
+#include "modules/simulation/simulator/scenario_util.h"
+#include "modules/simulation/simulator/sim_initializer.h"
+#include "modules/simulation/simulator/sim_runner.h"
 
 DEFINE_string(task_dir, "", "Simulation task directory");
 DEFINE_bool(skip_modules, false,

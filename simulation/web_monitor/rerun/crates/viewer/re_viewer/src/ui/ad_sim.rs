@@ -1,11 +1,16 @@
 //! Docked configuration and persistent FIFO tasks. Painting never runs a job.
 use super::ad_shell::theme;
-use re_ui::UiExt as _;
 use re_viewer_context::AppContext;
 use serde_json::{Value, json};
 
 type Reply = std::sync::Arc<parking_lot::Mutex<Option<Result<Value, String>>>>;
-const MODULES: [&str; 4] = ["PREDICTION", "PLANNING", "CONTROL", "ROUTING"];
+const MODULES: [&str; 5] = [
+    "PREDICTION",
+    "fake_prediction",
+    "PLANNING",
+    "CONTROL",
+    "ROUTING",
+];
 
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 enum Tab {
@@ -55,10 +60,11 @@ struct State {
     kind: String,
     source: String,
     map: String,
+    /// Selected vehicle identity (profile/pack directory). Backend derives
+    /// vehicle_param + applies the profile overlay, like Dreamview CHANGE_VEHICLE.
     vehicle: String,
-    profile: String,
     model: String,
-    modules: [bool; 4],
+    modules: [bool; 5],
     repeat: u32,
     seed: u32,
     step: u32,
@@ -88,9 +94,8 @@ impl Default for State {
             source: String::new(),
             map: String::new(),
             vehicle: String::new(),
-            profile: String::new(),
             model: "perfect_planning".into(),
-            modules: [true, true, true, false],
+            modules: [true, false, true, true, false],
             repeat: 2,
             seed: 1,
             step: 10,
@@ -119,7 +124,7 @@ impl State {
         let mut config = self.config_extra.clone();
         let edited = json!({
             "kind":self.kind,"source":self.source,"map":self.map,"vehicle":self.vehicle,
-            "profile":self.profile,"model":self.model,"seed":self.seed,"repeat":self.repeat,
+            "model":self.model,"seed":self.seed,"repeat":self.repeat,
             "step_ms":self.step,"modules":MODULES.iter().enumerate().filter(|(i,_)|self.modules[*i]).map(|(_,m)|*m).collect::<Vec<_>>()
         });
         config.extend(
@@ -195,6 +200,7 @@ impl State {
             source: String,
             map: String,
             vehicle: String,
+            #[serde(default)]
             profile: String,
             model: String,
             modules: Vec<String>,
@@ -220,8 +226,15 @@ impl State {
         self.kind = c.kind;
         self.source = c.source;
         self.map = c.map;
-        self.vehicle = c.vehicle;
-        self.profile = c.profile;
+        // Prefer profile dir (dreamview vehicle identity); fall back from vehicle_param path.
+        self.vehicle = if !c.profile.is_empty() {
+            c.profile
+        } else {
+            c.vehicle
+                .strip_suffix("/modules/common/data/vehicle_param.pb.txt")
+                .unwrap_or(&c.vehicle)
+                .to_owned()
+        };
         self.model = c.model;
         self.modules = MODULES.map(|m| c.modules.iter().any(|selected| selected == m));
         self.repeat = c.repeat;
@@ -296,17 +309,25 @@ pub(super) fn show(
                 for tab in [Tab::Config, Tab::Tasks] {
                     let active = state.tab == tab;
                     let r = ui.add_sized(
-                        [width, 34.0],
+                        [width, 36.0],
                         egui::Button::new(
                             egui::RichText::new(tab.label())
                                 .size(12.0)
+                                .strong()
                                 .color(if active { theme::TEXT } else { theme::TEXT_DIM }),
                         )
-                        .frame(false),
+                        .fill(if active {
+                            theme::CARD_BG
+                        } else {
+                            egui::Color32::TRANSPARENT
+                        })
+                        .corner_radius(8.0)
+                        .frame(true),
                     );
                     if active {
-                        ui.painter().line_segment(
-                            [r.rect.left_bottom(), r.rect.right_bottom()],
+                        ui.painter().hline(
+                            r.rect.x_range(),
+                            r.rect.bottom() - 1.0,
                             egui::Stroke::new(2.0, theme::ACCENT),
                         );
                     }
@@ -345,12 +366,28 @@ pub(super) fn show(
                         .inspected
                         .clone()
                         .expect("detail branch has a selected task");
-                    ui.strong("Simulation detail");
-                    let r = ui.button("Back to tasks");
-                    point(&mut diagnostic, "back_to_tasks", &r);
-                    if r.clicked() {
-                        state.inspected = None;
-                    }
+                    ui.horizontal(|ui| {
+                        let back = ui.add(
+                            egui::Button::new(
+                                egui::RichText::new("← Tasks")
+                                    .size(12.0)
+                                    .color(theme::TEXT),
+                            )
+                            .fill(theme::CARD_BG)
+                            .corner_radius(6.0),
+                        );
+                        point(&mut diagnostic, "back_to_tasks", &back);
+                        if back.clicked() {
+                            state.inspected = None;
+                        }
+                        ui.label(
+                            egui::RichText::new("Task detail")
+                                .size(13.0)
+                                .strong()
+                                .color(theme::TEXT),
+                        );
+                    });
+                    ui.add_space(8.0);
                     egui::ScrollArea::vertical()
                         .id_salt(("sim_detail_scroll", job["id"].as_str()))
                         .auto_shrink([false, false])
@@ -367,53 +404,7 @@ pub(super) fn show(
                         });
                 }
                 Tab::Tasks => {
-                    ui.weak("FIFO · one active task · closing this panel does not stop jobs");
-                    let r = ui.add(
-                        egui::TextEdit::singleline(&mut state.filter)
-                            .desired_width(ui.available_width())
-                            .hint_text("Filter by task ID, source or status"),
-                    );
-                    point(&mut diagnostic, "filter", &r);
-                    egui::ScrollArea::vertical()
-                        .id_salt("sim_tasks_scroll")
-                        .auto_shrink([false, false])
-                        .show(ui, |ui| {
-                            let jobs = state.jobs.clone();
-                            for group in [Group::Running, Group::Queued, Group::Finished] {
-                                let matching = grouped_jobs(&jobs, group, &state.filter);
-                                diagnostic["groups"][group.key()] =
-                                    json!(matching.iter().map(|j| &j["id"]).collect::<Vec<_>>());
-                                ui.add_space(8.0);
-                                let heading = ui.label(
-                                    egui::RichText::new(format!(
-                                        "{} ({})",
-                                        group.label(),
-                                        matching.len()
-                                    ))
-                                    .strong(),
-                                );
-                                diagnostic["group_y"][group.key()] = json!(heading.rect.top());
-                                if matching.is_empty() {
-                                    ui.weak(if state.filter.is_empty() {
-                                        "No tasks"
-                                    } else {
-                                        "No matching tasks"
-                                    });
-                                }
-                                for job in matching {
-                                    task_card(
-                                        ui,
-                                        job,
-                                        &mut state,
-                                        &mut diagnostic,
-                                        &mut action,
-                                        &mut replay,
-                                        false,
-                                    );
-                                }
-                                ui.separator();
-                            }
-                        });
+                    tasks_list(ui, &mut state, &mut diagnostic, &mut action, &mut replay);
                 }
             }
         });
@@ -488,89 +479,208 @@ fn config_editor(
     action: &mut Option<Value>,
 ) {
     let catalog = state.catalog.clone();
-    if let Some(id) = &state.config_from {
-        ui.weak(format!("Based on task {id} · starts a new task"));
-    } else {
-        ui.weak("New task · one virtual clock · isolated configuration");
-    }
-    ui.horizontal(|ui| {
-        for (kind, label) in [("bag", "LogSim / bag"), ("world", "WorldSim / JSON")] {
-            let r = ui.selectable_value(&mut state.kind, kind.into(), label);
-            point(diagnostic, kind, &r);
-        }
-    });
-    diagnostic["Scenario"] = picker(
-        ui,
-        "Scenario",
-        &mut state.source,
-        &catalog[if state.kind == "bag" {
-            "bags"
+    ui.add_space(4.0);
+    ui.label(
+        egui::RichText::new(if let Some(id) = &state.config_from {
+            format!("Based on task {id}")
         } else {
-            "worlds"
-        }],
-        false,
+            "New closed-loop task".into()
+        })
+        .size(13.0)
+        .strong()
+        .color(theme::TEXT),
     );
-    diagnostic["Map"] = picker(ui, "Map", &mut state.map, &catalog["maps"], false);
-    diagnostic["Vehicle config"] = picker(
-        ui,
-        "Vehicle config",
-        &mut state.vehicle,
-        &catalog["vehicles"],
-        false,
+    ui.label(
+        egui::RichText::new("One virtual clock · frozen map / vehicle for this run")
+            .size(11.0)
+            .color(theme::TEXT_DIM),
     );
-    diagnostic["Profile"] = picker(
-        ui,
-        "Profile",
-        &mut state.profile,
-        &catalog["profiles"],
-        true,
-    );
-    ui.label("Algorithm modules");
-    ui.horizontal_wrapped(|ui| {
-        for (index, module) in MODULES.iter().enumerate() {
-            let r = ui.re_checkbox(&mut state.modules[index], *module);
-            point(diagnostic, module, &r);
-        }
+    ui.add_space(12.0);
+
+    section_card(ui, "Input", |ui| {
+        ui.label(
+            egui::RichText::new("Mode")
+                .size(11.0)
+                .color(theme::TEXT_DIM),
+        );
+        ui.add_space(6.0);
+        ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = 8.0;
+            let half = ((ui.available_width() - 8.0) / 2.0).max(110.0);
+            for (kind, title, hint) in [
+                ("bag", "LogSim", "Replay a Cyber record"),
+                ("world", "WorldSim", "Closed-loop scenario JSON"),
+            ] {
+                let selected = state.kind == kind;
+                let fill = if selected {
+                    theme::ACCENT_STRONG
+                } else {
+                    theme::CARD_BG
+                };
+                let text = if selected {
+                    egui::Color32::WHITE
+                } else {
+                    theme::TEXT
+                };
+                let r = ui
+                    .add_sized(
+                        [half, 40.0],
+                        egui::Button::new(
+                            egui::RichText::new(format!("{title}\n{hint}"))
+                                .size(11.0)
+                                .color(text),
+                        )
+                        .fill(fill)
+                        .corner_radius(8.0)
+                        .stroke(egui::Stroke::new(
+                            1.0,
+                            if selected {
+                                theme::ACCENT
+                            } else {
+                                theme::ACCENT.gamma_multiply(0.25)
+                            },
+                        )),
+                    )
+                    .on_hover_text(hint);
+                point(diagnostic, kind, &r);
+                if r.clicked() {
+                    state.kind = kind.into();
+                }
+            }
+        });
+        ui.add_space(10.0);
+        diagnostic["Scenario"] = picker(
+            ui,
+            if state.kind == "bag" {
+                "Record"
+            } else {
+                "Scenario"
+            },
+            &mut state.source,
+            &catalog[if state.kind == "bag" {
+                "bags"
+            } else {
+                "worlds"
+            }],
+            false,
+        );
     });
-    if state.kind == "world" {
-        ui.weak("World closed loop requires Routing + Prediction + Planning.");
-        egui::ComboBox::from_label("Ego model")
-            .selected_text(&state.model)
-            .show_ui(ui, |ui| {
-                ui.selectable_value(
-                    &mut state.model,
+
+    ui.add_space(10.0);
+    section_card(ui, "Environment", |ui| {
+        diagnostic["Map"] = picker(ui, "Map", &mut state.map, &catalog["maps"], false);
+        ui.add_space(8.0);
+        diagnostic["Vehicle"] = picker(
+            ui,
+            "Vehicle",
+            &mut state.vehicle,
+            &catalog["vehicles"],
+            false,
+        );
+    });
+
+    ui.add_space(10.0);
+    section_card(ui, "Stack", |ui| {
+        ui.label(
+            egui::RichText::new("Modules")
+                .size(11.0)
+                .color(theme::TEXT_DIM),
+        );
+        ui.add_space(6.0);
+        ui.horizontal_wrapped(|ui| {
+            ui.spacing_mut().item_spacing = egui::vec2(6.0, 6.0);
+            for (index, module) in MODULES.iter().enumerate() {
+                let on = state.modules[index];
+                let r = module_chip(ui, module_label(module), on);
+                point(diagnostic, module, &r);
+                if r.clicked() {
+                    state.modules[index] = !on;
+                }
+            }
+        });
+        if state.kind == "world" {
+            ui.add_space(8.0);
+            ui.label(
+                egui::RichText::new(
+                    "World closed loop needs Routing + Planning + Prediction or Fake prediction.",
+                )
+                .size(11.0)
+                .color(theme::TEXT_DIM),
+            );
+            ui.add_space(8.0);
+            field_label(ui, "Ego model");
+            let mut ego = state.model.clone();
+            let ego_button = match ego.as_str() {
+                "perfect_planning" => "Perfect planning".to_owned(),
+                "kinematic_control" => "Kinematic control".to_owned(),
+                other => other.to_owned(),
+            };
+            themed_combo(ui, "ego_model", &ego_button, &mut ego, |ui, selected| {
+                menu_option(
+                    ui,
+                    selected,
                     "perfect_planning".into(),
                     "Perfect planning trajectory",
                 );
-                ui.selectable_value(
-                    &mut state.model,
+                menu_option(
+                    ui,
+                    selected,
                     "kinematic_control".into(),
-                    "Kinematic control (acceleration + steering)",
+                    "Kinematic control",
                 );
             });
-        egui::ComboBox::from_label("Step / ms")
-            .selected_text(state.step.to_string())
-            .show_ui(ui, |ui| {
-                for step in [1, 2, 5, 10] {
-                    ui.selectable_value(&mut state.step, step, step.to_string());
-                }
+            state.model = ego;
+            ui.add_space(8.0);
+            field_label(ui, "Step");
+            let mut step_key = state.step.to_string();
+            themed_combo(
+                ui,
+                "step_ms",
+                &format!("{} ms", state.step),
+                &mut step_key,
+                |ui, selected| {
+                    for ms in [1_u32, 2, 5, 10] {
+                        menu_option(ui, selected, ms.to_string(), &format!("{ms} ms"));
+                    }
+                },
+            );
+            if let Ok(ms) = step_key.parse::<u32>() {
+                state.step = ms;
+            }
+        }
+        ui.add_space(10.0);
+        ui.horizontal(|ui| {
+            ui.vertical(|ui| {
+                field_label(ui, "Seed");
+                themed_drag(ui, &mut state.seed, None, "seed", diagnostic);
             });
-    }
-    ui.horizontal(|ui| {
-        ui.label("Seed");
-        let r = ui.add(egui::DragValue::new(&mut state.seed));
-        point(diagnostic, "seed", &r);
-        ui.label("Runs");
-        let r = ui.add(egui::DragValue::new(&mut state.repeat).range(1..=3));
-        point(diagnostic, "runs", &r);
+            ui.add_space(12.0);
+            ui.vertical(|ui| {
+                field_label(ui, "Runs");
+                themed_drag(ui, &mut state.repeat, Some(1..=3), "runs", diagnostic);
+            });
+        });
+        ui.add_space(6.0);
+        ui.label(
+            egui::RichText::new(
+                "2+ runs compare message order, timestamps and exact algorithm values.",
+            )
+            .size(11.0)
+            .color(theme::TEXT_DIM),
+        );
     });
-    ui.weak("2+ runs compare message order, timestamps and exact algorithm values. Wall-time profiling is excluded; raw differences remain in analysis.json.");
+
     if !state.config_extra.is_empty() {
-        egui::CollapsingHeader::new("Additional configuration").show(ui, |ui| {
+        ui.add_space(10.0);
+        section_card(ui, "Advanced", |ui| {
             for (key, value) in &mut state.config_extra {
                 if ["begin_s", "end_s", "timeout_s"].contains(&key.as_str()) {
                     ui.horizontal(|ui| {
-                        ui.label(key);
+                        ui.label(
+                            egui::RichText::new(key.as_str())
+                                .size(11.0)
+                                .color(theme::TEXT),
+                        );
                         if key == "timeout_s" {
                             if let Some(mut seconds) = value.as_u64() {
                                 if ui
@@ -594,21 +704,345 @@ fn config_editor(
                         }
                     });
                 } else {
-                    ui.add(egui::Label::new(format!("{key}: {value} (preserved)")).wrap());
+                    ui.add(
+                        egui::Label::new(
+                            egui::RichText::new(format!("{key}: {value} (preserved)"))
+                                .color(theme::TEXT_DIM)
+                                .size(11.0),
+                        )
+                        .wrap(),
+                    );
                 }
             }
         });
     }
+
+    ui.add_space(14.0);
     let r = ui.add_enabled(
         state.pending.is_none(),
-        egui::Button::new("Start simulation")
-            .fill(theme::ACCENT_STRONG)
-            .min_size(egui::vec2(ui.available_width(), 32.0)),
+        egui::Button::new(
+            egui::RichText::new(if state.pending.is_some() {
+                "Starting…"
+            } else {
+                "Start simulation"
+            })
+            .size(14.0)
+            .strong()
+            .color(egui::Color32::WHITE),
+        )
+        .fill(theme::ACCENT_STRONG)
+        .corner_radius(10.0)
+        .min_size(egui::vec2(ui.available_width(), 40.0)),
     );
     point(diagnostic, "enqueue", &r);
     if r.clicked() {
         *action = Some(json!({"action":"enqueue","config":state.config()}));
     }
+    ui.add_space(8.0);
+}
+
+fn module_label(module: &str) -> &'static str {
+    match module {
+        "PREDICTION" => "Prediction",
+        "fake_prediction" => "Fake prediction",
+        "PLANNING" => "Planning",
+        "CONTROL" => "Control",
+        "ROUTING" => "Routing",
+        _ => "Module",
+    }
+}
+
+fn section_card(ui: &mut egui::Ui, title: &str, add_contents: impl FnOnce(&mut egui::Ui)) {
+    egui::Frame::new()
+        .fill(theme::RAIL_BG)
+        .stroke(egui::Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.16)))
+        .corner_radius(10.0)
+        .inner_margin(egui::Margin::symmetric(12, 12))
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.label(
+                egui::RichText::new(title.to_ascii_uppercase())
+                    .size(10.0)
+                    .strong()
+                    .color(theme::ACCENT),
+            );
+            ui.add_space(8.0);
+            add_contents(ui);
+        });
+}
+
+fn field_label(ui: &mut egui::Ui, text: &str) {
+    ui.label(
+        egui::RichText::new(text)
+            .size(11.0)
+            .color(theme::TEXT)
+            .strong(),
+    );
+    ui.add_space(4.0);
+}
+
+fn module_chip(ui: &mut egui::Ui, label: &str, on: bool) -> egui::Response {
+    let fill = if on {
+        theme::ACCENT_STRONG.gamma_multiply(0.85)
+    } else {
+        theme::CARD_BG
+    };
+    let text = if on {
+        egui::Color32::WHITE
+    } else {
+        theme::TEXT
+    };
+    ui.add(
+        egui::Button::new(egui::RichText::new(label).size(12.0).color(text))
+            .fill(fill)
+            .corner_radius(0.0)
+            .stroke(egui::Stroke::new(
+                1.0,
+                if on {
+                    theme::ACCENT
+                } else {
+                    theme::ACCENT.gamma_multiply(0.28)
+                },
+            ))
+            .min_size(egui::vec2(0.0, 28.0)),
+    )
+}
+
+fn dropdown_trigger(ui: &mut egui::Ui, text: &str) -> egui::Response {
+    let height = 34.0;
+    let width = ui.available_width();
+    let (rect, response) =
+        ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
+
+    let fill = if response.hovered() || response.has_focus() {
+        theme::CARD_BG_HOVER
+    } else {
+        theme::CARD_BG
+    };
+    let stroke = egui::Stroke::new(
+        1.0,
+        if response.hovered() {
+            theme::ACCENT.gamma_multiply(0.55)
+        } else {
+            theme::ACCENT.gamma_multiply(0.35)
+        },
+    );
+    ui.painter().rect(
+        rect,
+        8.0,
+        fill,
+        stroke,
+        egui::StrokeKind::Inside,
+    );
+
+    // Right chevron well — makes this read as a select, not a label.
+    let chevron_w = 28.0;
+    let split_x = rect.right() - chevron_w;
+    ui.painter().vline(
+        split_x,
+        rect.y_range().shrink(7.0),
+        egui::Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.28)),
+    );
+
+    let text_rect = egui::Rect::from_min_max(
+        egui::pos2(rect.left() + 12.0, rect.top()),
+        egui::pos2(split_x - 6.0, rect.bottom()),
+    );
+    ui.painter().text(
+        text_rect.left_center(),
+        egui::Align2::LEFT_CENTER,
+        text,
+        egui::FontId::proportional(13.0),
+        theme::TEXT,
+    );
+
+    // Drawn triangle (no Unicode glyph — web fonts often miss ▾ and show □).
+    let c = egui::pos2(rect.right() - chevron_w * 0.5, rect.center().y + 0.5);
+    let s = 4.5;
+    ui.painter().add(egui::Shape::convex_polygon(
+        vec![
+            egui::pos2(c.x - s, c.y - s * 0.55),
+            egui::pos2(c.x + s, c.y - s * 0.55),
+            egui::pos2(c.x, c.y + s * 0.7),
+        ],
+        theme::TEXT_DIM,
+        egui::Stroke::NONE,
+    ));
+
+    response.on_hover_cursor(egui::CursorIcon::PointingHand)
+}
+
+fn themed_combo(
+    ui: &mut egui::Ui,
+    id: &str,
+    button_text: &str,
+    selected: &mut String,
+    add_contents: impl FnOnce(&mut egui::Ui, &mut String),
+) {
+    let response = dropdown_trigger(ui, button_text);
+    egui::Popup::menu(&response)
+        .id(egui::Id::new(("themed_combo", id)))
+        .align(egui::RectAlign::BOTTOM_START)
+        .gap(4.0)
+        .show(|ui| {
+            dark_menu_frame(ui, |ui| {
+                ui.set_min_width(response.rect.width().max(220.0));
+                add_contents(ui, selected);
+            });
+        });
+}
+
+fn themed_drag(
+    ui: &mut egui::Ui,
+    value: &mut u32,
+    range: Option<std::ops::RangeInclusive<u32>>,
+    id: &str,
+    diagnostic: &mut Value,
+) {
+    ui.scope(|ui| {
+        ui.visuals_mut().extreme_bg_color = theme::CARD_BG;
+        ui.visuals_mut().override_text_color = Some(theme::TEXT);
+        ui.visuals_mut().widgets.inactive.bg_fill = theme::CARD_BG;
+        ui.visuals_mut().widgets.inactive.weak_bg_fill = theme::CARD_BG;
+        let mut drag = egui::DragValue::new(value);
+        if let Some(range) = range {
+            drag = drag.range(range);
+        }
+        let r = ui.add(drag);
+        point(diagnostic, id, &r);
+    });
+}
+
+fn dark_menu_frame(ui: &mut egui::Ui, add_contents: impl FnOnce(&mut egui::Ui)) {
+    egui::Frame::new()
+        .fill(theme::PANEL_BG)
+        .stroke(egui::Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.4)))
+        .corner_radius(8.0)
+        .inner_margin(egui::Margin::symmetric(8, 8))
+        .show(ui, |ui| {
+            ui.visuals_mut().override_text_color = Some(theme::TEXT);
+            ui.visuals_mut().widgets.inactive.fg_stroke =
+                egui::Stroke::new(1.0, theme::TEXT);
+            ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
+            ui.visuals_mut().selection.bg_fill = theme::ACCENT_STRONG.gamma_multiply(0.45);
+            add_contents(ui);
+        });
+}
+
+fn menu_option(ui: &mut egui::Ui, selected: &mut String, value: String, label: &str) -> bool {
+    let on = *selected == value;
+    let text = egui::RichText::new(label).size(12.0).color(if on {
+        egui::Color32::WHITE
+    } else {
+        theme::TEXT
+    });
+    let response = ui
+        .add_sized(
+            [ui.available_width(), 28.0],
+            egui::Button::new(text)
+                .fill(if on {
+                    theme::ACCENT_STRONG.gamma_multiply(0.7)
+                } else {
+                    egui::Color32::TRANSPARENT
+                })
+                .corner_radius(6.0),
+        )
+        .on_hover_text(&value);
+    if response.clicked() {
+        *selected = value;
+        true
+    } else {
+        false
+    }
+}
+
+fn picker(
+    ui: &mut egui::Ui,
+    label: &str,
+    selected: &mut String,
+    values: &Value,
+    optional: bool,
+) -> Value {
+    field_label(ui, label);
+    let short = if selected.is_empty() {
+        if optional {
+            "Workspace defaults".to_owned()
+        } else {
+            "Choose…".to_owned()
+        }
+    } else if let Some((_, name)) = selected.rsplit_once('/') {
+        name.to_owned()
+    } else {
+        selected.clone()
+    };
+
+    let response = dropdown_trigger(ui, &short);
+
+    egui::Popup::menu(&response)
+        .id(egui::Id::new(("path_picker", label)))
+        .align(egui::RectAlign::BOTTOM_START)
+        .gap(4.0)
+        .show(|ui| {
+            dark_menu_frame(ui, |ui| {
+                ui.set_min_width(response.rect.width().max(260.0));
+                ui.set_max_height(280.0);
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    if optional {
+                        menu_option(ui, selected, String::new(), "Workspace defaults");
+                    }
+                    if let Some(values) = values.as_array() {
+                        for item in values {
+                            if let Some(path) = item.as_str() {
+                                let leaf = path.rsplit('/').next().unwrap_or(path);
+                                menu_option(ui, selected, path.to_owned(), leaf);
+                            }
+                        }
+                    } else if !optional {
+                        ui.label(
+                            egui::RichText::new("No catalog entries yet")
+                                .size(11.0)
+                                .color(theme::TEXT_DIM),
+                        );
+                    }
+                });
+            });
+        });
+
+    ui.add_space(2.0);
+    let mut path_open = !selected.is_empty()
+        && values
+            .as_array()
+            .is_none_or(|items| !items.iter().any(|v| v.as_str() == Some(selected.as_str())));
+    egui::CollapsingHeader::new(
+        egui::RichText::new("Paste server path")
+            .size(11.0)
+            .color(theme::TEXT_DIM),
+    )
+    .id_salt(("paste_path", label))
+    .default_open(path_open)
+    .show(ui, |ui| {
+        ui.scope(|ui| {
+            ui.visuals_mut().extreme_bg_color = theme::CARD_BG;
+            ui.visuals_mut().text_edit_bg_color = Some(theme::CARD_BG);
+            ui.visuals_mut().override_text_color = Some(theme::TEXT);
+            ui.visuals_mut().widgets.inactive.bg_fill = theme::CARD_BG;
+            ui.visuals_mut().widgets.inactive.weak_bg_fill = theme::CARD_BG;
+            let r = ui.add(
+                egui::TextEdit::singleline(selected)
+                    .desired_width(ui.available_width())
+                    .background_color(theme::CARD_BG)
+                    .hint_text(
+                        egui::RichText::new("/apollo_workspace/...").color(theme::TEXT_DIM),
+                    )
+                    .text_color(theme::TEXT)
+                    .margin(egui::Margin::symmetric(10, 8)),
+            );
+            path_open = r.has_focus();
+            let _ = path_open;
+        });
+    });
+
+    json!([response.rect.center().x, response.rect.center().y])
 }
 fn config_snapshot(ui: &mut egui::Ui, config: &Value) {
     let Some(fields) = config.as_object() else {
@@ -624,14 +1058,14 @@ fn config_snapshot(ui: &mut egui::Ui, config: &Value) {
             "kind" => "Input type",
             "source" => "Scenario",
             "map" => "Map",
-            "vehicle" => "Vehicle config",
-            "profile" => "Profile",
+            "vehicle" => "Vehicle",
+            "profile" => "Profile (applied)",
             "modules" => "Algorithm modules",
             "model" => "Ego model",
             "repeat" => "Runs",
             "seed" => "Seed",
             "step_ms" => "Step / ms",
-            "timeout_s" => "Timeout / s",
+            "timeout_s" => "Max duration / s",
             "begin_s" => "Bag start / s",
             "end_s" => "Bag end / s (0 = full range)",
             other => other,
@@ -648,6 +1082,127 @@ fn config_snapshot(ui: &mut egui::Ui, config: &Value) {
         ui.add_space(6.0);
     }
 }
+fn tasks_list(
+    ui: &mut egui::Ui,
+    state: &mut State,
+    diagnostic: &mut Value,
+    action: &mut Option<Value>,
+    replay: &mut Option<(String, bool)>,
+) {
+    ui.label(
+        egui::RichText::new("Queue")
+            .size(13.0)
+            .strong()
+            .color(theme::TEXT),
+    );
+    ui.label(
+        egui::RichText::new("FIFO · one active job · closing this panel does not stop work")
+            .size(11.0)
+            .color(theme::TEXT_DIM),
+    );
+    ui.add_space(8.0);
+    egui::Frame::new()
+        .fill(theme::CARD_BG)
+        .stroke(egui::Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.28)))
+        .corner_radius(8.0)
+        .inner_margin(egui::Margin::symmetric(10, 6))
+        .show(ui, |ui| {
+            ui.visuals_mut().override_text_color = Some(theme::TEXT);
+            let r = ui.add(
+                egui::TextEdit::singleline(&mut state.filter)
+                    .desired_width(ui.available_width())
+                    .frame(egui::Frame::NONE)
+                    .hint_text(
+                        egui::RichText::new("Filter by ID, source, or status")
+                            .color(theme::TEXT_DIM),
+                    )
+                    .text_color(theme::TEXT),
+            );
+            point(diagnostic, "filter", &r);
+        });
+    ui.add_space(10.0);
+
+    egui::ScrollArea::vertical()
+        .id_salt("sim_tasks_scroll")
+        .auto_shrink([false, true])
+        .show(ui, |ui| {
+            let jobs = state.jobs.clone();
+            for group in [Group::Running, Group::Queued, Group::Finished] {
+                let matching = grouped_jobs(&jobs, group, &state.filter);
+                diagnostic["groups"][group.key()] =
+                    json!(matching.iter().map(|j| &j["id"]).collect::<Vec<_>>());
+
+                let (dot, label_color) = match group {
+                    Group::Running => (egui::Color32::from_rgb(0x60, 0xA5, 0xFA), theme::TEXT),
+                    Group::Queued => (theme::ACCENT, theme::TEXT),
+                    Group::Finished => (theme::TEXT_DIM, theme::TEXT),
+                };
+                ui.horizontal(|ui| {
+                    let (rect, _) =
+                        ui.allocate_exact_size(egui::vec2(8.0, 8.0), egui::Sense::hover());
+                    ui.painter().circle_filled(rect.center(), 3.5, dot);
+                    let heading = ui.label(
+                        egui::RichText::new(format!("{}  {}", group.label(), matching.len()))
+                            .size(12.0)
+                            .strong()
+                            .color(label_color),
+                    );
+                    diagnostic["group_y"][group.key()] = json!(heading.rect.top());
+                });
+                ui.add_space(4.0);
+
+                if matching.is_empty() {
+                    ui.label(
+                        egui::RichText::new(if state.filter.is_empty() {
+                            "No tasks"
+                        } else {
+                            "No matching tasks"
+                        })
+                        .size(11.0)
+                        .color(theme::TEXT_DIM),
+                    );
+                } else {
+                    for job in matching {
+                        task_card(ui, job, state, diagnostic, action, replay, false);
+                    }
+                }
+                ui.add_space(10.0);
+            }
+        });
+}
+
+fn stage_style(stage: &str) -> (egui::Color32, egui::Color32, &'static str) {
+    // (accent / badge text, badge fill, label)
+    match stage {
+        "completed" => (
+            egui::Color32::from_rgb(0x34, 0xD3, 0x99),
+            egui::Color32::from_rgb(0x06, 0x4E, 0x3B),
+            "completed",
+        ),
+        "failed" => (
+            egui::Color32::from_rgb(0xF8, 0x71, 0x71),
+            egui::Color32::from_rgb(0x7F, 0x1D, 0x1D),
+            "failed",
+        ),
+        "cancelled" => (
+            egui::Color32::from_rgb(0xFB, 0xBF, 0x24),
+            egui::Color32::from_rgb(0x78, 0x35, 0x0F),
+            "cancelled",
+        ),
+        "interrupted" => (
+            egui::Color32::from_rgb(0xFB, 0xBF, 0x24),
+            egui::Color32::from_rgb(0x78, 0x35, 0x0F),
+            "interrupted",
+        ),
+        "queued" => (theme::ACCENT, theme::PANEL_BG, "queued"),
+        _ => (
+            egui::Color32::from_rgb(0x60, 0xA5, 0xFA),
+            theme::PANEL_BG,
+            "running",
+        ),
+    }
+}
+
 fn task_card(
     ui: &mut egui::Ui,
     job: &Value,
@@ -658,136 +1213,303 @@ fn task_card(
     detail: bool,
 ) {
     let job_id = job["id"].as_str().unwrap_or("Unknown task");
+    let stage = job["stage"].as_str().unwrap_or("unknown");
+    let (accent, badge_bg, stage_label) = stage_style(stage);
+    let kind = job["config"]["kind"].as_str().unwrap_or("?");
+    let source = job["config"]["source"].as_str().unwrap_or("");
+    let source_leaf = source.rsplit('/').next().unwrap_or(source);
+    let title = if source_leaf.is_empty() {
+        format!("{kind} · {job_id}")
+    } else {
+        source_leaf.to_owned()
+    };
+    let id_short = &job_id[..job_id.len().min(8)];
+
     ui.push_id(job_id, |ui| {
-        ui.group(|ui| {
-            ui.set_width(ui.available_width());
-            let r = ui.add_sized(
-                [ui.available_width(), 24.0],
-                egui::Button::new(format!(
-                    "{} · {}",
-                    job["config"]["kind"].as_str().unwrap_or("?"),
-                    job_id
-                ))
-                .frame(false),
-            );
-            point(diagnostic, &format!("inspect_{job_id}"), &r);
-            if r.on_hover_text("View simulation detail").clicked() {
-                state.inspect(job);
-            }
-            let r = ui.button("View config").on_hover_text(
-                "Open this configuration in the editor; starting creates a new task",
-            );
-            point(diagnostic, &format!("view_config_{job_id}"), &r);
-            if r.clicked()
-                && let Err(error) = state.edit_config(job)
-            {
-                state.error = Some(error);
-            }
-            if let Some(source) = job["config"]["source"].as_str() {
-                ui.add(egui::Label::new(source.rsplit('/').next().unwrap_or(source)).truncate())
-                    .on_hover_text(source);
-            }
-            let stage = job["stage"].as_str().unwrap_or("Unknown stage");
-            let color = match stage {
-                "completed" => egui::Color32::LIGHT_GREEN,
-                "failed" => egui::Color32::LIGHT_RED,
-                "cancelled" | "interrupted" => egui::Color32::YELLOW,
-                _ => theme::TEXT_DIM,
-            };
-            ui.colored_label(color, stage);
-            if let Some(run) = job["run"].as_u64() {
-                ui.weak(format!("Run {run} / {}", job["config"]["repeat"]));
-            }
-            if let Some(progress) = job["progress"].as_f64() {
-                ui.add(egui::ProgressBar::new(progress as f32 / 100.0).show_percentage());
-            }
-            if let Some(error) = job["error"].as_str() {
-                ui.add(
-                    egui::Label::new(
-                        egui::RichText::new(error.lines().next().unwrap_or(error))
-                            .color(egui::Color32::LIGHT_RED),
-                    )
-                    .wrap(),
+        let frame = egui::Frame::new()
+            .fill(theme::RAIL_BG)
+            .stroke(egui::Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.18)))
+            .corner_radius(10.0)
+            .inner_margin(egui::Margin {
+                left: 14,
+                right: 10,
+                top: 10,
+                bottom: 10,
+            })
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+
+                // Fixed-height row: bare with_layout would expand to the full
+                // ScrollArea height and leave a giant empty card.
+                ui.allocate_ui_with_layout(
+                    egui::vec2(ui.available_width(), 22.0),
+                    egui::Layout::right_to_left(egui::Align::Center),
+                    |ui| {
+                        egui::Frame::new()
+                            .fill(badge_bg)
+                            .corner_radius(4.0)
+                            .inner_margin(egui::Margin::symmetric(6, 2))
+                            .show(ui, |ui| {
+                                ui.label(
+                                    egui::RichText::new(stage_label)
+                                        .size(10.0)
+                                        .strong()
+                                        .color(accent),
+                                );
+                            });
+                        let title_r = ui.add(
+                            egui::Label::new(
+                                egui::RichText::new(&title)
+                                    .size(13.0)
+                                    .strong()
+                                    .color(theme::TEXT),
+                            )
+                            .truncate()
+                            .sense(egui::Sense::click()),
+                        );
+                        point(diagnostic, &format!("inspect_{job_id}"), &title_r);
+                        if title_r.on_hover_text(format!("{source}\n{job_id}")).clicked() {
+                            state.inspect(job);
+                        }
+                    },
                 );
-            }
-            if detail
-                && Group::for_stage(stage) == Group::Finished
-                && job["outputs"].as_array().is_some_and(|v| v.len() >= 2)
-            {
-                difference_inspector(ui, job, state, diagnostic);
-            }
-            egui::CollapsingHeader::new("Stages / analysis")
-                .id_salt(("stages", detail))
-                .default_open(detail)
-                .show(ui, |ui| {
-                    if let Some(error) = job["error"].as_str() {
-                        ui.add(egui::Label::new(error).wrap());
+
+                ui.add_space(3.0);
+                ui.horizontal(|ui| {
+                    ui.label(
+                        egui::RichText::new(format!("{kind}  ·  {id_short}"))
+                            .size(11.0)
+                            .color(theme::TEXT_DIM),
+                    );
+                    if let Some(run) = job["run"].as_u64() {
+                        ui.label(
+                            egui::RichText::new(format!("·  run {run}/{}", job["config"]["repeat"]))
+                                .size(11.0)
+                                .color(theme::TEXT_DIM),
+                        );
                     }
-                    if let Some(history) = job["history"].as_array() {
-                        for entry in history {
-                            ui.label(entry["stage"].as_str().unwrap_or("Unknown stage"));
+                });
+
+                if let Some(progress) = job["progress"].as_f64() {
+                    ui.add_space(6.0);
+                    ui.add(
+                        egui::ProgressBar::new((progress as f32 / 100.0).clamp(0.0, 1.0))
+                            .desired_width(ui.available_width())
+                            .fill(accent.gamma_multiply(0.85))
+                            .show_percentage(),
+                    );
+                }
+
+                if let Some(error) = job["error"].as_str() {
+                    ui.add_space(6.0);
+                    ui.add(
+                        egui::Label::new(
+                            egui::RichText::new(error.lines().next().unwrap_or(error))
+                                .size(11.0)
+                                .color(egui::Color32::from_rgb(0xFE, 0xCA, 0xCA)),
+                        )
+                        .wrap(),
+                    );
+                }
+
+                ui.add_space(8.0);
+                ui.horizontal_wrapped(|ui| {
+                    ui.spacing_mut().item_spacing.x = 6.0;
+                    ui.spacing_mut().item_spacing.y = 4.0;
+                    let open = ui.add(
+                        egui::Button::new(
+                            egui::RichText::new("Open").size(11.0).color(theme::TEXT),
+                        )
+                        .fill(theme::CARD_BG)
+                        .corner_radius(6.0)
+                        .min_size(egui::vec2(0.0, 26.0)),
+                    );
+                    if open.clicked() {
+                        state.inspect(job);
+                    }
+                    let reuse = ui
+                        .add(
+                            egui::Button::new(
+                                egui::RichText::new("Reuse config")
+                                    .size(11.0)
+                                    .color(theme::TEXT),
+                            )
+                            .fill(theme::CARD_BG)
+                            .corner_radius(6.0)
+                            .min_size(egui::vec2(0.0, 26.0)),
+                        )
+                        .on_hover_text(
+                            "Load into Config editor; starting creates a new task",
+                        );
+                    point(diagnostic, &format!("view_config_{job_id}"), &reuse);
+                    if reuse.clicked()
+                        && let Err(error) = state.edit_config(job)
+                    {
+                        state.error = Some(error);
+                    }
+                    if Group::for_stage(stage) != Group::Finished {
+                        let cancel = ui.add_enabled(
+                            state.pending.is_none(),
+                            egui::Button::new(
+                                egui::RichText::new("Cancel")
+                                    .size(11.0)
+                                    .color(theme::TEXT),
+                            )
+                            .fill(theme::CARD_BG)
+                            .corner_radius(6.0)
+                            .min_size(egui::vec2(0.0, 26.0)),
+                        );
+                        point(diagnostic, &format!("cancel_{job_id}"), &cancel);
+                        if cancel.clicked() {
+                            *action = Some(json!({"action":"cancel","id":job_id}));
                         }
                     }
-                    if !job["analysis"].is_null() {
-                        ui.label(format!("Determinism: {}", job["analysis"]["determinism"]));
-                        ui.add(
-                            egui::Label::new(job["analysis"]["topic_message_counts"].to_string())
-                                .wrap(),
-                        );
+                    if Group::for_stage(stage) == Group::Finished
+                        && let Some(outputs) = job["outputs"].as_array()
+                    {
+                        for (index, path) in outputs.iter().enumerate() {
+                            if let Some(path) = path.as_str() {
+                                let r = ui.add(
+                                    egui::Button::new(
+                                        egui::RichText::new(format!("Replay {}", index + 1))
+                                            .size(11.0)
+                                            .color(egui::Color32::WHITE),
+                                    )
+                                    .fill(theme::ACCENT_STRONG.gamma_multiply(0.85))
+                                    .corner_radius(6.0)
+                                    .min_size(egui::vec2(0.0, 26.0)),
+                                );
+                                point(diagnostic, &format!("replay_{job_id}_{index}"), &r);
+                                if r.clicked() {
+                                    *replay = Some((
+                                        path.into(),
+                                        job["config"]["modules"].as_array().is_some_and(|m| {
+                                            m.iter().any(|m| m == "CONTROL")
+                                        }),
+                                    ));
+                                }
+                            }
+                        }
                     }
-                    if let Some(path) = job["log_path"].as_str() {
-                        ui.add(egui::Label::new(format!("Log: {path}")).wrap());
+                });
+
+                if detail {
+                    ui.add_space(8.0);
+                    ui.separator();
+                    ui.add_space(6.0);
+                    if Group::for_stage(stage) == Group::Finished
+                        && job["outputs"].as_array().is_some_and(|v| v.len() >= 2)
+                    {
+                        difference_inspector(ui, job, state, diagnostic);
                     }
-                    if detail && !job["simulation"].is_null() {
-                        ui.add(
-                            egui::Label::new(format!("Simulation: {}", job["simulation"])).wrap(),
-                        );
-                    }
-                    if detail && !job["analysis"].is_null() {
-                        egui::CollapsingHeader::new("Full result analysis").show(ui, |ui| {
+                    egui::CollapsingHeader::new(
+                        egui::RichText::new("Stages / analysis")
+                            .color(theme::TEXT)
+                            .size(12.0),
+                    )
+                    .id_salt(("stages", detail))
+                    .default_open(true)
+                    .show(ui, |ui| {
+                        if let Some(error) = job["error"].as_str() {
                             ui.add(
                                 egui::Label::new(
-                                    serde_json::to_string_pretty(&job["analysis"])
-                                        .expect("JSON values are serializable"),
+                                    egui::RichText::new(error).color(theme::TEXT),
                                 )
                                 .wrap(),
                             );
-                        });
-                    }
-                });
-            if detail {
-                egui::CollapsingHeader::new("Submitted configuration snapshot").show(ui, |ui| {
-                    config_snapshot(ui, &job["config"]);
-                });
-            }
-            if Group::for_stage(stage) != Group::Finished {
-                let r = ui.add_enabled(state.pending.is_none(), egui::Button::new("Cancel task"));
-                point(diagnostic, &format!("cancel_{job_id}"), &r);
-                if r.clicked() {
-                    *action = Some(json!({"action":"cancel","id":job_id}));
-                }
-            }
-            // An output still being written is not a completed replay artifact.
-            if Group::for_stage(stage) == Group::Finished
-                && let Some(outputs) = job["outputs"].as_array()
-            {
-                for (index, path) in outputs.iter().enumerate() {
-                    if let Some(path) = path.as_str() {
-                        let r = ui.button(format!("Replay bag / run {}", index + 1));
-                        point(diagnostic, &format!("replay_{job_id}_{index}"), &r);
-                        if r.clicked() {
-                            *replay = Some((
-                                path.into(),
-                                job["config"]["modules"]
-                                    .as_array()
-                                    .is_some_and(|m| m.iter().any(|m| m == "CONTROL")),
-                            ));
                         }
-                    }
+                        if let Some(history) = job["history"].as_array() {
+                            for entry in history {
+                                ui.label(
+                                    egui::RichText::new(
+                                        entry["stage"].as_str().unwrap_or("Unknown stage"),
+                                    )
+                                    .color(theme::TEXT_DIM)
+                                    .size(11.0),
+                                );
+                            }
+                        }
+                        if !job["analysis"].is_null() {
+                            ui.label(
+                                egui::RichText::new(format!(
+                                    "Determinism: {}",
+                                    job["analysis"]["determinism"]
+                                ))
+                                .color(theme::TEXT),
+                            );
+                            ui.add(
+                                egui::Label::new(
+                                    egui::RichText::new(
+                                        job["analysis"]["topic_message_counts"].to_string(),
+                                    )
+                                    .color(theme::TEXT_DIM)
+                                    .size(11.0),
+                                )
+                                .wrap(),
+                            );
+                        }
+                        if let Some(path) = job["log_path"].as_str() {
+                            ui.add(
+                                egui::Label::new(
+                                    egui::RichText::new(format!("Log: {path}"))
+                                        .color(theme::TEXT_DIM)
+                                        .size(11.0),
+                                )
+                                .wrap(),
+                            );
+                        }
+                        if !job["simulation"].is_null() {
+                            ui.add(
+                                egui::Label::new(
+                                    egui::RichText::new(format!(
+                                        "Simulation: {}",
+                                        job["simulation"]
+                                    ))
+                                    .color(theme::TEXT_DIM)
+                                    .size(11.0),
+                                )
+                                .wrap(),
+                            );
+                        }
+                        if !job["analysis"].is_null() {
+                            egui::CollapsingHeader::new("Full result analysis").show(ui, |ui| {
+                                ui.add(
+                                    egui::Label::new(
+                                        serde_json::to_string_pretty(&job["analysis"])
+                                            .expect("JSON values are serializable"),
+                                    )
+                                    .wrap(),
+                                );
+                            });
+                        }
+                    });
+                    egui::CollapsingHeader::new(
+                        egui::RichText::new("Submitted configuration")
+                            .color(theme::TEXT)
+                            .size(12.0),
+                    )
+                    .show(ui, |ui| {
+                        config_snapshot(ui, &job["config"]);
+                    });
                 }
-            }
-        });
-        ui.add_space(6.0);
+            });
+
+        let full = frame.response.rect;
+        let strip = egui::Rect::from_min_max(
+            egui::pos2(full.left(), full.top()),
+            egui::pos2(full.left() + 4.0, full.bottom()),
+        );
+        ui.painter().rect_filled(
+            strip,
+            egui::CornerRadius {
+                nw: 10,
+                sw: 10,
+                ne: 0,
+                se: 0,
+            },
+            accent,
+        );
+        ui.add_space(8.0);
     });
 }
 fn difference_inspector(ui: &mut egui::Ui, job: &Value, state: &mut State, diagnostic: &mut Value) {
@@ -903,50 +1625,6 @@ fn difference_inspector(ui: &mut egui::Ui, job: &Value, state: &mut State, diagn
                 }
             });
     }
-}
-fn picker(
-    ui: &mut egui::Ui,
-    label: &str,
-    selected: &mut String,
-    values: &Value,
-    optional: bool,
-) -> Value {
-    ui.label(label);
-    egui::ComboBox::from_id_salt(label)
-        .width(ui.available_width())
-        .selected_text(if selected.is_empty() {
-            if optional {
-                "Workspace defaults"
-            } else {
-                "Choose…"
-            }
-        } else {
-            selected.rsplit('/').next().unwrap_or(selected)
-        })
-        .show_ui(ui, |ui| {
-            ui.set_max_width(560.0);
-            if optional {
-                ui.selectable_value(selected, String::new(), "Workspace defaults");
-            }
-            if let Some(values) = values.as_array() {
-                for item in values {
-                    if let Some(path) = item.as_str() {
-                        ui.selectable_value(
-                            selected,
-                            path.to_owned(),
-                            path.rsplit('/').next().unwrap_or(path),
-                        )
-                        .on_hover_text(path);
-                    }
-                }
-            }
-        });
-    let r = ui.add(
-        egui::TextEdit::singleline(selected)
-            .desired_width(ui.available_width())
-            .hint_text("Or enter a server path"),
-    );
-    json!([r.rect.center().x, r.rect.center().y])
 }
 #[cfg(target_arch = "wasm32")]
 fn fetch(ctx: &AppContext<'_>, state: &mut State, request: Value) {

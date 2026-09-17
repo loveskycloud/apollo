@@ -166,6 +166,7 @@ interface ScenarioStore {
     position: Vec3,
   ) => void;
   deleteWaypoint: (agentId: string, routeId: string, waypointId: string) => void;
+  /** 选中 Route 进入编辑；不改写仿真初始 activeRouteId */
   setActiveRoute: (agentId: string, routeId: string) => void;
   /** 校验并沿车道展开当前 Route；返回路径长度（米），失败返回 null */
   showRoute: (agentId: string, routeId: string) => number | null;
@@ -924,9 +925,15 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => ({
                 }
               : { x: a.position.x, y: a.position.y, z: 0 };
           const pathType = a.type === 'pedestrian' ? 'bezier' : 'polyline';
+          // activeRouteId = 仿真初始路径（按添加顺序默认第一条）。
+          // 追加 Route 只选中新路径用于编辑，不得改写初始 activeRouteId。
+          const keepInitial =
+            a.activeRouteId && a.routes.some((r) => r.id === a.activeRouteId)
+              ? a.activeRouteId
+              : a.routes[0]?.id;
           return {
             ...a,
-            activeRouteId: routeId,
+            activeRouteId: keepInitial ?? routeId,
             routes: [
               ...a.routes,
               {
@@ -1144,17 +1151,12 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => ({
     }));
   },
 
+  /** 选中 Route 进入编辑（不改变仿真初始 activeRouteId）。 */
   setActiveRoute: (agentId, routeId) => {
-    set((state) => ({
-      scenario: {
-        ...state.scenario,
-        agents: state.scenario.agents.map((a) =>
-          a.id === agentId ? { ...a, activeRouteId: routeId } : a,
-        ),
-      },
+    set({
       selected: { kind: 'route', agentId, routeId },
       selectedIds: [agentId],
-    }));
+    });
   },
 
   showRoute: (agentId, routeId) => {
@@ -1187,16 +1189,10 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => ({
     for (let i = 1; i < path.length; i += 1) {
       len += Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
     }
-    // 确保选中以便视口绘制多 Route 丝带 + 终点旗
+    // 仅进入编辑选中；Show route 不得改写仿真初始路径
     set({
       selected: { kind: 'route', agentId, routeId },
       selectedIds: [agentId],
-      scenario: {
-        ...scenario,
-        agents: scenario.agents.map((a) =>
-          a.id === agentId ? { ...a, activeRouteId: routeId } : a,
-        ),
-      },
     });
     return len;
   },
@@ -1230,7 +1226,6 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => ({
           a.id === agentId
             ? {
                 ...a,
-                activeRouteId: routeId,
                 routes: a.routes.map((r) =>
                   r.id === routeId ? { ...r, waypoints: nextWaypoints } : r,
                 ),
@@ -1268,26 +1263,30 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => ({
     set((state) => ({
       scenario: {
         ...state.scenario,
-        agents: state.scenario.agents.map((a) =>
-          a.id === agentId
-            ? {
-                ...a,
-                activeRouteId: routeId,
-                routes: [
-                  ...a.routes,
-                  {
-                    id: routeId,
-                    name: `routing ${a.routes.length + 1}`,
-                    waypoints: result.waypoints.map((p) => ({
-                      id: uuid(),
-                      position: fromRenderCoords(p, map),
-                      heading: segHeading,
-                    })),
-                  },
-                ],
-              }
-            : a,
-        ),
+        agents: state.scenario.agents.map((a) => {
+          if (a.id !== agentId) return a;
+          const keepInitial =
+            a.activeRouteId && a.routes.some((r) => r.id === a.activeRouteId)
+              ? a.activeRouteId
+              : a.routes[0]?.id;
+          return {
+            ...a,
+            // 追加 routing 只用于编辑选中；仿真初始路径保持第一条
+            activeRouteId: keepInitial ?? routeId,
+            routes: [
+              ...a.routes,
+              {
+                id: routeId,
+                name: `routing ${a.routes.length + 1}`,
+                waypoints: result.waypoints.map((p) => ({
+                  id: uuid(),
+                  position: fromRenderCoords(p, map),
+                  heading: segHeading,
+                })),
+              },
+            ],
+          };
+        }),
       },
       routingStart: null,
       toolMode: 'select',

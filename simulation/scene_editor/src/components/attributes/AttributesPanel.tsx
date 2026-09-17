@@ -38,6 +38,11 @@ export function AttributesPanel() {
     const agentId = selected.kind === 'agent' ? selected.id : selected.agentId;
     const agent = scenario.agents.find((a) => a.id === agentId);
     if (!agent) return null;
+    // 编辑选中 ≠ 仿真初始：activeRouteId 按添加顺序默认第一条；列表高亮/删改针对 editingRouteId
+    const editingRouteId =
+      selected.kind === 'route' && selected.agentId === agent.id
+        ? selected.routeId
+        : agent.activeRouteId ?? agent.routes[0]?.id;
 
     return (
       <div style={{ paddingTop: 8 }}>
@@ -217,10 +222,10 @@ export function AttributesPanel() {
                 <Button
                   size="small"
                   danger
-                  disabled={!agent.activeRouteId}
+                  disabled={!editingRouteId}
                   onClick={() => {
-                    if (!agent.activeRouteId) return;
-                    deleteRoute(agent.id, agent.activeRouteId);
+                    if (!editingRouteId) return;
+                    deleteRoute(agent.id, editingRouteId);
                     message.success('已删除 Route');
                   }}
                 >
@@ -230,18 +235,32 @@ export function AttributesPanel() {
             </div>
 
             <div className="route-list">
-              {agent.routes.map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  className={
-                    r.id === agent.activeRouteId ? 'route-list-item active' : 'route-list-item'
-                  }
-                  onClick={() => setActiveRoute(agent.id, r.id)}
-                >
-                  {r.name}
-                </button>
-              ))}
+              {agent.routes.map((r) => {
+                const isEditing = r.id === editingRouteId;
+                const isInitial = r.id === agent.activeRouteId;
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    className={[
+                      'route-list-item',
+                      isEditing ? 'active' : '',
+                      isInitial ? 'initial' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    onClick={() => setActiveRoute(agent.id, r.id)}
+                    title={
+                      isInitial
+                        ? '仿真初始路径（activeRouteId）'
+                        : '点击选中以编辑'
+                    }
+                  >
+                    {r.name}
+                    {isInitial ? ' · 初始' : ''}
+                  </button>
+                );
+              })}
               {agent.routes.length === 0 && (
                 <div className="route-list-empty">尚无 Route，点击 Add route</div>
               )}
@@ -249,7 +268,7 @@ export function AttributesPanel() {
 
             {(() => {
               const route =
-                agent.routes.find((r) => r.id === agent.activeRouteId) ?? agent.routes[0];
+                agent.routes.find((r) => r.id === editingRouteId) ?? agent.routes[0];
               if (!route) return null;
               return (
                 <>

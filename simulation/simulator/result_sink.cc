@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/result_sink.h"
+#include "modules/simulation/simulator/result_sink.h"
 
 #include <memory>
 
@@ -20,6 +20,9 @@ bool ResultSink::Open(const std::string& output_path,
   healthy_ = true;
   records_.clear();
   writer_ = std::make_unique<cyber::record::RecordWriter>();
+  // Do not split simulation output by time/size (Cyber default is 60s / 2GB).
+  writer_->SetIntervalOfFileSegmentation(0);
+  writer_->SetSizeOfFileSegmentation(0);
   if (!writer_->Open(output_path)) {
     AERROR << "Failed to open output record: " << output_path;
     opened_ = false;

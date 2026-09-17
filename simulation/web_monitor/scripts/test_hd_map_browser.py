@@ -10,7 +10,7 @@ from pathlib import Path
 from playwright.async_api import async_playwright
 from PIL import Image
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "tools/apollo_record_tools"))
 sys.path.insert(0, "/opt/apollo/neo/python")
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"

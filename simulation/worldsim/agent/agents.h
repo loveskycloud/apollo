@@ -6,8 +6,8 @@
 #include <memory>
 #include <vector>
 
-#include "simulation/worldsim/agent/agent_base.h"
-#include "simulation/worldsim/agent/bezier_path.h"
+#include "modules/simulation/worldsim/agent/agent_base.h"
+#include "modules/simulation/worldsim/agent/bezier_path.h"
 
 namespace apollo {
 namespace simulation {

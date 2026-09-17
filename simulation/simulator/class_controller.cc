@@ -2,7 +2,7 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/class_controller.h"
+#include "modules/simulation/simulator/class_controller.h"
 
 #include <utility>
 

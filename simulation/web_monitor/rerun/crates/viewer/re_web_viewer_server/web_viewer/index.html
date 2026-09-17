@@ -49,10 +49,22 @@
         height: 100%;
       }
 
-      /* eframe's transparent IME proxy follows the text caret. It must remain
-         keyboard-focusable without intercepting clicks intended for egui. */
-      #the_canvas_id + input[type="text"][autocapitalize="off"] {
-        pointer-events: none;
+      /* eframe's transparent IME proxy follows the text caret. Force invisible
+         styling with a broad selector — a default white OS <input> must never
+         cover AD TextEdit / timeline fields. */
+      #the_canvas_id + input[type="text"],
+      #the_canvas_id ~ input[type="text"][autocapitalize="off"],
+      input[type="text"][autocapitalize="off"] {
+        pointer-events: none !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        color: transparent !important;
+        caret-color: transparent !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        opacity: 0.01 !important;
+        -webkit-text-fill-color: transparent !important;
       }
 
       /* Unused legacy header styles kept inert (AD full-bleed). */

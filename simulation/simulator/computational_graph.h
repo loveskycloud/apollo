@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#include "simulation/simulator/proto/module_trigger.pb.h"
+#include "modules/simulation/simulator/proto/module_trigger.pb.h"
 
 namespace apollo {
 namespace simulation {

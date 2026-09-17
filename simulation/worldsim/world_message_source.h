@@ -7,8 +7,8 @@
 #include "cyber/node/node.h"
 #include "modules/common_msgs/control_msgs/control_cmd.pb.h"
 #include "modules/common_msgs/planning_msgs/planning.pb.h"
-#include "simulation/simulator/i_message_source.h"
-#include "simulation/worldsim/core/world.h"
+#include "modules/simulation/simulator/i_message_source.h"
+#include "modules/simulation/worldsim/core/world.h"
 
 namespace apollo {
 namespace simulation {
@@ -23,12 +23,18 @@ class WorldMessageSource final : public IMessageSource {
   bool Next(SimEvent* out) override;
   uint64_t begin_ns() const override { return begin_ns_; }
   uint64_t end_ns() const override { return end_ns_; }
-  uint64_t total_messages() const override { return (end_ns_ - begin_ns_) / step_ns_ + 1; }
+  uint64_t total_messages() const override {
+    return (end_ns_ - begin_ns_) / step_ns_ + 1;
+  }
 
  private:
   bool Step(uint64_t now_ns);
   bool AdvanceEgo(uint64_t now_ns);
   bool SendRoute(uint64_t now_ns);
+  bool IsMissionComplete() const;
+  bool HandleMissionComplete(uint64_t now_ns);
+  void SyncParkingBrakeFromControl();
+  bool TryFinishMissionStop(uint64_t now_ns);
 
   SourceConfig config_;
   worldsim::World world_;
@@ -43,6 +49,13 @@ class WorldMessageSource final : public IMessageSource {
   bool route_ready_ = false;
   bool callback_failed_ = false;
   bool control_ready_ = false;
+  /** Sequence of last seen mission_complete (avoid re-triggering route switch). */
+  uint32_t handled_mission_seq_ = 0;
+  /** mission_complete with no next route; wait for chassis parking_brake. */
+  bool pending_mission_end_ = false;
+  bool ending_on_mission_ = false;
+  /** Published on /apollo/canbus/chassis; mirrored from control, or engaged after stop. */
+  bool parking_brake_ = false;
 };
 
 }  // namespace simulation

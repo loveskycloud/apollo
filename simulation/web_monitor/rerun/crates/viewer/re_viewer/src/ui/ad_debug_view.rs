@@ -1,5 +1,7 @@
 //! Docked algorithm tools. Configuration belongs to the blueprint, not a floating window.
 use super::ad_debug_panels::{Kind, Panel};
+use super::ad_shell::theme;
+use egui::{Color32, RichText, Stroke, StrokeKind};
 use re_viewer_context::{BlueprintContext as _, ViewClass, ViewState, ViewStateExt as _};
 
 #[derive(Clone, Default)]
@@ -90,9 +92,10 @@ impl ViewClass for AdDebugView {
                         state.saved = saved;
                     }
                     Err(err) => {
-                        ui.colored_label(
-                            egui::Color32::LIGHT_RED,
-                            format!("Invalid saved panel: {err}"),
+                        ui.label(
+                            RichText::new(format!("Invalid saved panel: {err}"))
+                                .size(12.0)
+                                .color(Color32::from_rgb(0xFE, 0xCA, 0xCA)),
                         );
                         return Ok(Default::default());
                     }
@@ -110,17 +113,55 @@ impl ViewClass for AdDebugView {
             .data(|d| d.get_temp::<Source>(egui::Id::new("ad_debug_source")))
             .unwrap_or_default();
         let panel = state.panel.as_mut().expect("initialized above");
-        ui.horizontal_wrapped(|ui| {
-            egui::ComboBox::from_id_salt("debug_tool_kind")
-                .selected_text("Change tool…")
-                .show_ui(ui, |ui| {
-                    for kind in Kind::ALL {
-                        if ui.selectable_label(false, kind.title()).clicked() {
-                            *panel = Panel::new(kind, egui::Id::new(query.view_id).value());
+
+        ui.visuals_mut().override_text_color = Some(theme::TEXT);
+        ui.visuals_mut().extreme_bg_color = theme::CARD_BG;
+
+        let current = panel.kind_title();
+        let trigger = tool_change_trigger(ui, current);
+        egui::Popup::menu(&trigger)
+            .id(egui::Id::new(("debug_tool_kind", query.view_id)))
+            .align(egui::RectAlign::BOTTOM_START)
+            .gap(4.0)
+            .show(|ui| {
+                egui::Frame::new()
+                    .fill(theme::PANEL_BG)
+                    .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.4)))
+                    .corner_radius(8.0)
+                    .inner_margin(egui::Margin::symmetric(8, 8))
+                    .show(ui, |ui| {
+                        ui.set_min_width(trigger.rect.width().max(220.0));
+                        ui.visuals_mut().override_text_color = Some(theme::TEXT);
+                        ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
+                        for kind in Kind::ALL {
+                            let on = panel.kind_title() == kind.title();
+                            let row = ui.add_sized(
+                                [ui.available_width(), 28.0],
+                                egui::Button::new(
+                                    RichText::new(kind.title())
+                                        .size(12.0)
+                                        .color(if on {
+                                            Color32::WHITE
+                                        } else {
+                                            theme::TEXT
+                                        }),
+                                )
+                                .fill(if on {
+                                    theme::ACCENT_STRONG.gamma_multiply(0.7)
+                                } else {
+                                    Color32::TRANSPARENT
+                                })
+                                .corner_radius(4.0),
+                            );
+                            if row.clicked() {
+                                *panel = Panel::new(kind, egui::Id::new(query.view_id).value());
+                                ui.close();
+                            }
                         }
-                    }
-                });
-        });
+                    });
+            });
+        ui.add_space(6.0);
+
         panel.show(
             &ctx.app_ctx,
             ui,
@@ -140,4 +181,54 @@ impl ViewClass for AdDebugView {
         }
         Ok(Default::default())
     }
+}
+
+fn tool_change_trigger(ui: &mut egui::Ui, current: &str) -> egui::Response {
+    let height = 30.0;
+    let width = ui.available_width().min(280.0);
+    let (rect, response) =
+        ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
+    let fill = if response.hovered() || response.has_focus() {
+        theme::CARD_BG_HOVER
+    } else {
+        theme::CARD_BG
+    };
+    ui.painter().rect(
+        rect,
+        6.0,
+        fill,
+        Stroke::new(
+            1.0,
+            if response.hovered() {
+                theme::ACCENT.gamma_multiply(0.55)
+            } else {
+                theme::ACCENT.gamma_multiply(0.32)
+            },
+        ),
+        StrokeKind::Inside,
+    );
+    let chevron_w = 28.0;
+    let text_rect = egui::Rect::from_min_max(
+        egui::pos2(rect.left() + 10.0, rect.top()),
+        egui::pos2(rect.right() - chevron_w, rect.bottom()),
+    );
+    ui.painter().text(
+        text_rect.left_center(),
+        egui::Align2::LEFT_CENTER,
+        current,
+        egui::FontId::proportional(12.0),
+        theme::TEXT,
+    );
+    let c = egui::pos2(rect.right() - chevron_w * 0.5, rect.center().y + 0.5);
+    let s = 4.5;
+    ui.painter().add(egui::Shape::convex_polygon(
+        vec![
+            egui::pos2(c.x - s, c.y - s * 0.55),
+            egui::pos2(c.x + s, c.y - s * 0.55),
+            egui::pos2(c.x, c.y + s * 0.7),
+        ],
+        theme::TEXT_DIM,
+        Stroke::NONE,
+    ));
+    response
 }

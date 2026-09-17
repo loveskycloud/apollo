@@ -3,7 +3,7 @@
  *
  * Keep algorithm in sync with scene_editor/src/core/bezierPath.ts
  *****************************************************************************/
-#include "simulation/worldsim/agent/bezier_path.h"
+#include "modules/simulation/worldsim/agent/bezier_path.h"
 
 #include <algorithm>
 #include <cmath>

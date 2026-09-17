@@ -2,10 +2,10 @@
  * Copyright 2026 The Apollo Authors. All Rights Reserved.
  *****************************************************************************/
 
-#include "simulation/simulator/scenario_util.h"
+#include "modules/simulation/simulator/scenario_util.h"
 
 #include "cyber/common/log.h"
-#include "simulation/simulator/module_catalog.h"
+#include "modules/simulation/simulator/module_catalog.h"
 
 namespace apollo {
 namespace simulation {
