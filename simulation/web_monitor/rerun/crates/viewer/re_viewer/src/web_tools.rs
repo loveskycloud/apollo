@@ -338,15 +338,68 @@ pub fn take_playback_window_json() -> Option<String> {
 }
 
 /// Host replay stream, independent of the currently selected recording.
+///
+/// Loopback hosts in a stale `__web_monitor_proxy_url` are rewritten to the
+/// page hostname so remote browsers do not fetch the client's localhost.
 pub fn playback_proxy_url() -> Result<String, String> {
     let window = web_sys::window().ok_or("Browser window unavailable")?;
-    js_sys::Reflect::get(&window, &"__web_monitor_proxy_url".into())
+    let configured = js_sys::Reflect::get(&window, &"__web_monitor_proxy_url".into())
         .ok()
         .and_then(|value| value.as_string())
         .filter(|value| !value.is_empty())
         .ok_or_else(|| {
-            "Playback connection configuration is missing. Reload the viewer page.".into()
-        })
+            "Playback connection configuration is missing. Reload the viewer page.".to_owned()
+        })?;
+    let hostname = window
+        .location()
+        .hostname()
+        .map_err(|_| "Browser location unavailable".to_owned())?;
+    Ok(rewrite_loopback_proxy_host(&configured, &hostname))
+}
+
+fn rewrite_loopback_proxy_host(url: &str, page_host: &str) -> String {
+    const PREFIXES: [&str; 2] = ["rerun+http://", "rerun+https://"];
+    for prefix in PREFIXES {
+        for loopback in ["localhost", "127.0.0.1"] {
+            let needle = format!("{prefix}{loopback}");
+            if let Some(rest) = url.strip_prefix(&needle) {
+                if rest.starts_with(':') && rest.contains("/proxy") {
+                    return format!("{prefix}{page_host}{rest}");
+                }
+            }
+        }
+    }
+    url.to_owned()
+}
+
+#[cfg(test)]
+mod playback_proxy_tests {
+    use super::rewrite_loopback_proxy_host;
+
+    #[test]
+    fn rewrites_localhost_proxy_to_page_host() {
+        assert_eq!(
+            rewrite_loopback_proxy_host(
+                "rerun+http://localhost:9876/proxy",
+                "192.168.1.10"
+            ),
+            "rerun+http://192.168.1.10:9876/proxy"
+        );
+        assert_eq!(
+            rewrite_loopback_proxy_host(
+                "rerun+http://127.0.0.1:9876/proxy",
+                "192.168.1.10"
+            ),
+            "rerun+http://192.168.1.10:9876/proxy"
+        );
+        assert_eq!(
+            rewrite_loopback_proxy_host(
+                "rerun+http://192.168.1.10:9876/proxy",
+                "192.168.1.10"
+            ),
+            "rerun+http://192.168.1.10:9876/proxy"
+        );
+    }
 }
 
 /// Ask host for MCAP summary channel topics (`POST /api/mcap_topics`).

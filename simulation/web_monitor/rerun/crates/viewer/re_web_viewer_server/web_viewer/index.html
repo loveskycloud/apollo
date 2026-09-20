@@ -452,19 +452,33 @@
         // override it for unusual topologies.
         // History/bookmarks can contain ?url=. An empty source must not disable
         // the host data connection while the HTTP replay APIs keep working.
-        const user_urls = query.getAll("url").map(url => url.trim()).filter(Boolean);
+        const page_host = query.get("grpc_host") || window.location.hostname;
+        // Port resolution: ?grpc_port= > default 9876.
+        // NOTE: do NOT fall back to window.location.port — that is the HTTP
+        // web-viewer port (9090), not the gRPC proxy port.
+        let grpc_port = query.get("grpc_port");
+        if (grpc_port === null || grpc_port === "") {
+          grpc_port = "9876";
+        }
+
+        // Old bookmarks / server open-browser links may bake in localhost or
+        // 127.0.0.1. Rewrite those to the page host so a remote browser does not
+        // try to fetch the proxy on the client machine.
+        function rewrite_loopback_proxy(url) {
+          return url.replace(
+            /^(rerun\+https?:\/\/)(localhost|127\.0\.0\.1)(:\d+\/proxy\/?)$/i,
+            "$1" + page_host + "$3",
+          );
+        }
+
+        const user_urls = query
+          .getAll("url")
+          .map(url => rewrite_loopback_proxy(url.trim()))
+          .filter(Boolean);
         let effective_urls = user_urls;
         if (effective_urls.length === 0) {
-          const grpc_host = query.get("grpc_host") || window.location.hostname;
-          // Port resolution: ?grpc_port= > default 9876.
-          // NOTE: do NOT fall back to window.location.port — that is the HTTP
-          // web-viewer port (9090), not the gRPC proxy port.
-          let grpc_port = query.get("grpc_port");
-          if (grpc_port === null || grpc_port === "") {
-            grpc_port = "9876";
-          }
           effective_urls = [
-            "rerun+http://" + grpc_host + ":" + grpc_port + "/proxy",
+            "rerun+http://" + page_host + ":" + grpc_port + "/proxy",
           ];
           console.debug(
             "[web_monitor] default url = " + effective_urls[0] +
@@ -475,12 +489,12 @@
         // Local replay must be able to restore its subscription after a source
         // is closed or the server restarts. Keep the configured proxy separate
         // from the recording selected by browser history.
-        const configured_proxy = effective_urls.find(url => /^rerun\+https?:\/\/.+\/proxy\/?$/.test(url));
-        const proxy_host = query.get("grpc_host") || window.location.hostname;
-        const proxy_port = query.get("grpc_port") || "9876";
+        const configured_proxy = effective_urls
+          .map(rewrite_loopback_proxy)
+          .find(url => /^rerun\+https?:\/\/.+\/proxy\/?$/.test(url));
         window.__web_monitor_proxy_url = configured_proxy ||
-          "rerun+http://" + proxy_host + ":" + proxy_port + "/proxy";
-
+          "rerun+http://" + page_host + ":" + grpc_port + "/proxy";
+        console.debug("[web_monitor] proxy url = " + window.__web_monitor_proxy_url);
         const options = {
           url: effective_urls,
           manifest_url: query.get("manifest_url"),

@@ -1,5 +1,6 @@
 //! Read-only algorithm debug tools sharing the AD playback clock.
 use egui::{Color32, RichText, Stroke, StrokeKind, Ui};
+use egui_plot::HoverPosition;
 use re_viewer_context::{AppContext, TimeControlCommand};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -904,22 +905,21 @@ impl Panel {
                 ("Runtime (ms)", vec![11]),
             ]
         } else {
-            vec![(
-                "Selected numeric fields (native units)",
-                (0..series.len()).collect(),
-            )]
+            vec![("", (0..series.len()).collect())]
         };
         egui::ScrollArea::vertical()
             .max_height(540.0)
             .show(ui, |ui| {
                 apply_debug_visuals(ui);
                 for (group_id, (title, indices)) in groups.iter().enumerate() {
-                    ui.label(
-                        RichText::new(*title)
-                            .size(12.0)
-                            .strong()
-                            .color(theme::TEXT),
-                    );
+                    if !title.is_empty() {
+                        ui.label(
+                            RichText::new(*title)
+                                .size(12.0)
+                                .strong()
+                                .color(theme::TEXT),
+                        );
+                    }
                     let plot = style_plot(
                         egui_plot::Plot::new((self.id, group_id))
                             .height(if self.kind == Kind::Control {
@@ -928,7 +928,20 @@ impl Panel {
                                 ui.available_height().clamp(120.0, 290.0)
                             })
                             .legend(egui_plot::Legend::default())
-                            .x_axis_label("Seconds from bag start"),
+                            .label_formatter(|hover| match hover {
+                                HoverPosition::NearDataPoint {
+                                    plot_name,
+                                    position,
+                                    ..
+                                } => Some(format!(
+                                    "{plot_name}\nt={:.3} s\ny={:.4}",
+                                    position.x, position.y
+                                )),
+                                HoverPosition::Elsewhere { position } => Some(format!(
+                                    "t={:.3} s\ny={:.4}",
+                                    position.x, position.y
+                                )),
+                            }),
                     );
                     let result = plot.show(ui, |plot_ui| {
                         plot_ui.vline(

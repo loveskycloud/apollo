@@ -1444,19 +1444,19 @@ fn serve_web(
         std::sync::Arc::clone(&receive_set),
     );
 
-    // Add the proxy URL to the url parameters.
-    let proxy_url = if server_addr.ip().is_unspecified() || server_addr.ip().is_loopback() {
-        format!("rerun+http://localhost:{}/proxy", server_addr.port())
-    } else {
-        format!("rerun+http://{server_addr}/proxy")
-    };
-
-    re_log::debug_assert!(
-        proxy_url.parse::<re_uri::RedapUri>().is_ok(),
-        "Expected a proper proxy URI, but got {proxy_url:?}"
-    );
-
-    urls_to_pass_on_to_viewer.push(proxy_url);
+    // Add the proxy URL for the web viewer only when we have a concrete public
+    // bind address. For 0.0.0.0 / loopback, omit it so index.html fills
+    // `rerun+http://<page-hostname>:port/proxy` from location.hostname — required
+    // when a remote browser opens http://LAN-IP:9090/ (localhost would point at
+    // the client machine, not the host that has the data).
+    if !(server_addr.ip().is_unspecified() || server_addr.ip().is_loopback()) {
+        let proxy_url = format!("rerun+http://{server_addr}/proxy");
+        re_log::debug_assert!(
+            proxy_url.parse::<re_uri::RedapUri>().is_ok(),
+            "Expected a proper proxy URI, but got {proxy_url:?}"
+        );
+        urls_to_pass_on_to_viewer.push(proxy_url);
+    }
 
     let mcap_topic_cache = std::sync::Arc::new(parking_lot::Mutex::new(McapTopicCache::default()));
     let open_local_dedup = std::sync::Arc::new(parking_lot::Mutex::new(OpenLocalDedup::default()));
