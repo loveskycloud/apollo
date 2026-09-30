@@ -8,6 +8,7 @@ import numpy as np
 DT, OBS_DIM, ACT_DIM = .1, 16, 2
 MAX_SPEED = 1.0
 NEAR_MISS_MARGIN = .25
+STATIC_CLEARANCE = .05
 PASS_REAR_MARGIN = .5
 
 
@@ -144,6 +145,32 @@ class VectorEnv:
         self.extra_ovl[lead_group] = 0
         self.extra_length[lead_group] = .6
         self.extra_width[lead_group] = .32
+        if self.stage == "roadside":
+            # Fine-tuning retains mixed traffic, adding passable roadside
+            # encroachment and successive stationary objects on both sides.
+            roadside = selected & (self.rng.random(self.n) < .75)
+            m = np.count_nonzero(roadside)
+            sides = self.rng.choice([-1., 1.], m)
+            self.half_width[roadside] = self.rng.uniform(.40, .65, m)
+            self.width[roadside] = self.rng.uniform(.10, .28, m)
+            intrusion = self.rng.uniform(.08, .20, m)
+            self.oy[roadside] = sides*(self.half_width[roadside]-intrusion+self.width[roadside]/2)
+            self.length[roadside] = self.rng.uniform(.2, .7, m)
+            self.ox[roadside] = self.rng.uniform(1.2, 4., m)
+            self.goal[roadside] = self.rng.uniform(18., 25., m)
+            self.curvature[roadside] = self.rng.uniform(-.25, .25, m)
+            self.y[roadside] = 0
+            self.yaw[roadside] = 0
+            self.ovs[roadside] = self.ovl[roadside] = 0
+            self.walk_velocity[roadside] = 0
+            self.wandering[roadside] = self.pausing[roadside] = False
+            self.mask[roadside] = self.active[roadside] = True
+            self.extra_mask[roadside] = self.rng.random((m, 3)) < .8
+            self.extra_ox[roadside] = self.ox[roadside,None] + np.arange(1,4)*4
+            self.extra_oy[roadside] = self.oy[roadside,None]*self.rng.choice([-1.,1.],(m,3))
+            self.extra_ovs[roadside] = self.extra_ovl[roadside] = 0
+            self.extra_width[roadside] = self.width[roadside,None]
+            self.extra_length[roadside] = self.length[roadside,None]
         return self.obs()
 
     def road_curvature(self, x):
@@ -196,7 +223,10 @@ class VectorEnv:
         extra_gap, extra_hit, _ = body_clearance(self.x[:,None],self.y[:,None],self.yaw[:,None],
             self.extra_ox,self.extra_oy,self.extra_length,self.extra_width,np.arctan2(self.extra_ovl,self.extra_ovs))
         collision |= (extra_present & extra_hit).any(axis=1)
-        near_miss = present & (gap < NEAR_MISS_MARGIN) & ~collision
+        static = np.hypot(self.ovs,self.ovl) < .01
+        margin = np.where(static, STATIC_CLEARANCE, NEAR_MISS_MARGIN)
+        extra_margin = np.where(np.hypot(self.extra_ovs,self.extra_ovl)<.01, STATIC_CLEARANCE, NEAR_MISS_MARGIN)
+        near_miss = present & (gap < margin) & ~collision
         future_gap, _, _ = body_clearance(self.x+self.speed*np.cos(self.yaw),self.y+self.speed*np.sin(self.yaw),self.yaw,
             self.ox+self.ovs,self.oy+self.ovl,self.length,self.width,obstacle_yaw)
         offroad = abs(self.y)+lat_extent+.03 > self.half_width
@@ -233,9 +263,14 @@ class VectorEnv:
         reward += crossing * .08 * (self.speed < .15)
         reward -= crossing * .5 * self.speed**2
         # Continuous distance cost catches close passes even without collision.
-        reward -= present * 4*np.clip((NEAR_MISS_MARGIN-gap)/NEAR_MISS_MARGIN,0,1)**2
-        reward -= (extra_present*8*np.clip((NEAR_MISS_MARGIN-extra_gap)/NEAR_MISS_MARGIN,0,1)**2).sum(axis=1)
-        reward -= present * 2*np.clip((NEAR_MISS_MARGIN-future_gap)/NEAR_MISS_MARGIN,0,1)**2
+        reward -= present * 4*np.clip((margin-gap)/margin,0,1)**2
+        reward -= (extra_present*8*np.clip((extra_margin-extra_gap)/extra_margin,0,1)**2).sum(axis=1)
+        reward -= present * 2*np.clip((margin-future_gap)/margin,0,1)**2
+        nudge = present & static & (rear_gap < .05) & (dx-long_extent-self.length/2 < 1.5)
+        nudge |= (extra_present & (np.hypot(self.extra_ovs,self.extra_ovl)<.01) &
+                  (self.extra_ox+self.extra_length/2>self.x[:,None]-.15) &
+                  (self.extra_ox-self.extra_length/2<self.x[:,None]+2.12)).any(axis=1)
+        reward -= nudge * 4*np.maximum(0,self.speed-.25)**2
         # Do not trade a completed pass for an early centering reward. The ego
         # REAR must clear the other vehicle's FRONT, including a safety margin.
         alongside = present & (self.ovs>.05) & (abs(self.ovl)<.1) & (dx<2) & (rear_gap<PASS_REAR_MARGIN)

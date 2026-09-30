@@ -14,6 +14,9 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
+mod simulation_events;
+pub use simulation_events::SimulationEvents;
+
 pub const DEFAULT_WEB_VIEWER_SERVER_PORT: u16 = 9090;
 
 // See `Cargo.toml` for docs about the `disable_web_viewer_server` and `trailing_web_viewer` cfgs:
@@ -455,6 +458,7 @@ struct WebViewerServerInner {
     topic_debug: parking_lot::Mutex<Option<TopicDebugHandler>>,
     debug_query: parking_lot::Mutex<Option<DebugQueryHandler>>,
     simulation: parking_lot::Mutex<Option<DebugQueryHandler>>,
+    simulation_events: Arc<SimulationEvents>,
     /// Optional windowed MCAP playback (time range + topic subset).
     playback_window: parking_lot::Mutex<Option<PlaybackWindowHandler>>,
 }
@@ -536,6 +540,7 @@ impl WebViewerServer {
             topic_debug: parking_lot::Mutex::new(None),
             debug_query: parking_lot::Mutex::new(None),
             simulation: parking_lot::Mutex::new(None),
+            simulation_events: Arc::default(),
             playback_window: parking_lot::Mutex::new(None),
         });
 
@@ -612,6 +617,11 @@ impl WebViewerServer {
 
     pub fn set_simulation_handler(&self, handler: DebugQueryHandler) {
         *self.inner.simulation.lock() = Some(handler);
+    }
+
+    /// Task events are independent from command request/response state.
+    pub fn simulation_events(&self) -> Arc<SimulationEvents> {
+        self.inner.simulation_events.clone()
     }
 
     /// Install handler for `POST /api/playback_window` (time-range + topic-subset MCAP stream).
@@ -1356,6 +1366,52 @@ impl WebViewerServerInner {
         let url = request.url();
         let path = url.split('?').next().unwrap_or(url);
 
+        if path == "/api/sim/events" {
+            let host = request
+                .headers()
+                .iter()
+                .find(|h| h.field.equiv("Host"))
+                .map(|h| h.value.as_str());
+            if request.headers().iter().any(|h| {
+                (h.field.equiv("Sec-Fetch-Site") && h.value.as_str() == "cross-site")
+                    || (h.field.equiv("Origin")
+                        && !host.is_some_and(|host| {
+                            h.value.as_str() == format!("http://{host}")
+                                || h.value.as_str() == format!("https://{host}")
+                        }))
+            }) {
+                return request.respond(tiny_http::Response::empty(403));
+            }
+            if request.method() != &tiny_http::Method::Get {
+                return request.respond(tiny_http::Response::empty(405));
+            }
+            let handler = self.simulation.lock().clone();
+            let events = self.simulation_events.clone();
+            std::thread::Builder::new()
+                .name("simulation-sse".into())
+                .spawn(move || {
+                    let result = handler
+                        .ok_or_else(|| "Simulation handler unavailable".to_owned())
+                        .and_then(|handler| handler(r#"{"action":"subscribe"}"#))
+                        .and_then(|reply| {
+                            let reply: serde_json::Value =
+                                serde_json::from_str(&reply).map_err(|e| e.to_string())?;
+                            if reply["status"] == "ok" {
+                                Ok(())
+                            } else {
+                                Err(reply["message"].to_string())
+                            }
+                        });
+                    if let Err(error) = result {
+                        events.publish(Err(error));
+                    }
+                    if let Err(error) = events.serve(request) {
+                        re_log::debug!("Simulation subscriber disconnected: {error}");
+                    }
+                })?;
+            return Ok(());
+        }
+
         // Apollo web_monitor: host-side open (native read + stream via gRPC proxy).
         if path == "/api/open_local" {
             return self.handle_open_local(request);
@@ -1430,6 +1486,53 @@ impl WebViewerServerInner {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[cfg(not(disable_web_viewer_server))]
+    fn simulation_stream_delivers_small_events_without_blocking_commands() {
+        use std::io::{BufRead as _, Write as _};
+        let server = WebViewerServer::new("127.0.0.1", WebViewerServerPort::AUTO).unwrap();
+        server.set_simulation_handler(Arc::new(|_| Ok(r#"{"status":"ok"}"#.into())));
+        let events = server.simulation_events();
+        events.publish(Ok(r#"{"snapshot":true,"jobs":[]}"#.into()));
+        let address = server.inner.server.server_addr().to_ip().unwrap();
+        let mut socket = std::net::TcpStream::connect(address).unwrap();
+        socket
+            .set_read_timeout(Some(std::time::Duration::from_secs(3)))
+            .unwrap();
+        write!(
+            socket,
+            "GET /api/sim/events HTTP/1.1\r\nHost: {address}\r\n\r\n"
+        )
+        .unwrap();
+        let mut stream = std::io::BufReader::new(socket);
+        let mut read_event = || {
+            loop {
+                let mut line = String::new();
+                assert!(stream.read_line(&mut line).unwrap() > 0);
+                if let Some(data) = line.strip_prefix("data: ") {
+                    return serde_json::from_str::<serde_json::Value>(data).unwrap();
+                }
+            }
+        };
+        assert_eq!(read_event()["snapshot"], true);
+        let mut command = std::net::TcpStream::connect(address).unwrap();
+        command
+            .set_read_timeout(Some(std::time::Duration::from_secs(3)))
+            .unwrap();
+        write!(command, "POST /api/sim HTTP/1.1\r\nHost: {address}\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{{}}").unwrap();
+        let mut status = String::new();
+        std::io::BufReader::new(command)
+            .read_line(&mut status)
+            .unwrap();
+        assert!(status.contains("200"), "{status}");
+        events.publish(Ok(
+            r#"{"snapshot":false,"jobs":[{"id":"a","stage":"completed"}]}"#.into(),
+        ));
+        assert_eq!(read_event()["jobs"][0]["stage"], "completed");
+        events.publish(Err("test shutdown".into()));
+        assert_eq!(read_event()["status"], "error");
+    }
 
     #[test]
     fn unspecified_bind_address_has_distinct_bound_and_connect_urls() {

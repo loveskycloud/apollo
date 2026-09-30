@@ -4,6 +4,11 @@ use re_viewer_context::AppContext;
 use serde_json::{Value, json};
 
 type Reply = std::sync::Arc<parking_lot::Mutex<Option<Result<Value, String>>>>;
+#[cfg(target_arch = "wasm32")]
+#[path = "ad_sim_events.rs"]
+mod events;
+#[path = "ad_sim_tasks.rs"]
+mod tasks;
 const MODULES: [&str; 6] = [
     "PREDICTION",
     "fake_prediction",
@@ -26,6 +31,12 @@ impl Tab {
             Self::Tasks => "Simulation Tasks",
         }
     }
+    fn display_label(self) -> &'static str {
+        match self {
+            Self::Config => "仿真配置",
+            Self::Tasks => "仿真任务",
+        }
+    }
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Group {
@@ -39,13 +50,6 @@ impl Group {
             Self::Running => "running",
             Self::Queued => "queued",
             Self::Finished => "finished",
-        }
-    }
-    fn label(self) -> &'static str {
-        match self {
-            Self::Running => "Running",
-            Self::Queued => "Queued",
-            Self::Finished => "Finished",
         }
     }
     fn for_stage(stage: &str) -> Self {
@@ -77,8 +81,10 @@ struct State {
     catalog: Value,
     jobs: Vec<Value>,
     pending: Option<Reply>,
+    pending_action: Option<String>,
     requested: Option<web_time::Instant>,
     error: Option<String>,
+    stream_error: Option<String>,
     last_enqueued: Option<String>,
     tab: Tab,
     /// Live task detail is independent from the editable configuration.
@@ -90,6 +96,10 @@ struct State {
     difference_offset: u64,
     queued_difference: Option<Value>,
     filter: String,
+    task_status: tasks::Status,
+    task_source: tasks::Source,
+    task_page: usize,
+    collapsed_suites: std::collections::HashSet<String>,
 }
 impl Default for State {
     fn default() -> Self {
@@ -111,8 +121,10 @@ impl Default for State {
             catalog: Value::Null,
             jobs: Vec::new(),
             pending: None,
+            pending_action: None,
             requested: None,
             error: None,
+            stream_error: None,
             last_enqueued: None,
             tab: Tab::Config,
             inspected: None,
@@ -123,10 +135,59 @@ impl Default for State {
             difference_offset: 0,
             queued_difference: None,
             filter: String::new(),
+            task_status: tasks::Status::All,
+            task_source: tasks::Source::All,
+            task_page: 0,
+            collapsed_suites: Default::default(),
         }
     }
 }
 impl State {
+    fn new_task(&mut self) {
+        self.edit_config(&json!({"id":"", "config":Self::default().config()}))
+            .expect("default configuration is valid");
+        self.config_from = None;
+        self.error = None;
+    }
+
+    fn starting(&self) -> bool {
+        matches!(
+            self.pending_action.as_deref(),
+            Some("enqueue" | "enqueue_suite")
+        )
+    }
+
+    fn start_label(&self) -> &'static str {
+        if self.starting() {
+            "Starting…"
+        } else if self.kind == "world" && self.use_suite {
+            "Run scenario suite"
+        } else {
+            "Start simulation"
+        }
+    }
+
+    fn apply_jobs(&mut self, jobs: &[Value], snapshot: bool) {
+        if snapshot {
+            self.jobs = jobs.to_vec();
+        } else {
+            for job in jobs {
+                if let Some(existing) = self.jobs.iter_mut().find(|j| j["id"] == job["id"]) {
+                    *existing = job.clone();
+                } else {
+                    self.jobs.push(job.clone());
+                }
+            }
+        }
+        if let Some(selected) = &self.inspected {
+            self.inspected = self
+                .jobs
+                .iter()
+                .find(|j| j["id"] == selected["id"])
+                .cloned();
+        }
+    }
+
     fn config(&self) -> Value {
         let mut config = self.config_extra.clone();
         let edited = json!({
@@ -148,6 +209,7 @@ impl State {
     }
     fn receive(&mut self, reply: Result<Value, String>) {
         self.pending = None;
+        self.pending_action = None;
         match reply {
             Ok(reply) if reply["status"] == "ok" => {
                 self.error = None;
@@ -155,12 +217,7 @@ impl State {
                     self.catalog = reply["catalog"].clone();
                 }
                 if let Some(jobs) = reply["jobs"].as_array() {
-                    self.jobs = jobs.clone();
-                    if let Some(selected) = &self.inspected
-                        && let Some(updated) = jobs.iter().find(|j| j["id"] == selected["id"])
-                    {
-                        self.inspected = Some(updated.clone());
-                    }
+                    self.apply_jobs(jobs, true);
                 }
                 let page = &reply["differences"];
                 if let Some(selected) = &self.inspected
@@ -179,7 +236,10 @@ impl State {
                     self.tab = Tab::Tasks;
                     self.inspected = None;
                     self.filter.clear();
-                    self.requested = None;
+                    self.task_status = tasks::Status::All;
+                    self.task_source = tasks::Source::All;
+                    self.task_page = 0;
+                    self.collapsed_suites.clear();
                 }
             }
             Ok(reply) => {
@@ -274,6 +334,8 @@ pub(super) fn show(
     ui: &mut egui::Ui,
     open: &mut bool,
 ) -> Option<(String, bool)> {
+    #[cfg(target_arch = "wasm32")]
+    events::set_open(&ctx.egui_ctx, *open);
     if !*open {
         ctx.egui_ctx.data_mut(|d| {
             let key = egui::Id::new("ad_sim_diagnostic");
@@ -294,149 +356,200 @@ pub(super) fn show(
         state.receive(reply);
     }
     if state.pending.is_some() && state.requested.is_some_and(|t| t.elapsed().as_secs() > 50) {
-        state.pending = None;
-        state.error = Some("Simulation service timed out; check the server log".into());
+        state.receive(Err(
+            "Simulation service timed out; check the server log".into()
+        ));
     }
     let mut action = None;
     let mut replay = None;
     let mut diagnostic = json!({"open":true});
-    egui::Panel::left("ad_sim_secondary")
-        .resizable(true)
-        .drag_to_open(false)
-        .default_size(410.0)
-        .min_size(350.0)
-        .frame(egui::Frame {
-            fill: theme::PANEL_BG,
-            inner_margin: egui::Margin::same(12),
-            stroke: egui::Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.2)),
-            ..Default::default()
-        })
-        .show_collapsible(ui, open, |ui| {
-            let panel = ui.max_rect();
-            diagnostic["panel_rect"] =
-                json!([panel.left(), panel.top(), panel.right(), panel.bottom()]);
-            // scene_editor structure: fixed tabs above one shared, scrolling content area.
-            ui.horizontal(|ui| {
-                let width = (ui.available_width() - ui.spacing().item_spacing.x) / 2.0;
-                for tab in [Tab::Config, Tab::Tasks] {
-                    let active = state.tab == tab;
-                    let r = ui.add_sized(
-                        [width, 36.0],
-                        egui::Button::new(
-                            egui::RichText::new(tab.label())
-                                .size(12.0)
-                                .strong()
-                                .color(if active { theme::TEXT } else { theme::TEXT_DIM }),
-                        )
-                        .fill(if active {
-                            theme::CARD_BG
-                        } else {
-                            egui::Color32::TRANSPARENT
-                        })
-                        .corner_radius(8.0)
-                        .frame(true),
+    let task_tab = state.tab == Tab::Tasks;
+    let max_width = (ui.available_width() - 220.0).max(350.0);
+    egui::Panel::left(if task_tab {
+        "ad_sim_tasks_secondary"
+    } else {
+        "ad_sim_secondary"
+    })
+    .resizable(true)
+    .drag_to_open(false)
+    .default_size(if task_tab {
+        900.0_f32.min(max_width)
+    } else {
+        410.0
+    })
+    .min_size(350.0)
+    .max_size(max_width)
+    .frame(egui::Frame {
+        fill: if task_tab {
+            theme::APP_BG
+        } else {
+            theme::PANEL_BG
+        },
+        inner_margin: egui::Margin::same(if task_tab { 18 } else { 12 }),
+        stroke: egui::Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.2)),
+        ..Default::default()
+    })
+    .show_collapsible(ui, open, |ui| {
+        let panel = ui.max_rect();
+        diagnostic["panel_rect"] =
+            json!([panel.left(), panel.top(), panel.right(), panel.bottom()]);
+        // scene_editor structure: fixed tabs above one shared, scrolling content area.
+        ui.horizontal(|ui| {
+            let width = if task_tab {
+                ((ui.available_width() - 134.0) / 2.0).min(190.0)
+            } else {
+                (ui.available_width() - ui.spacing().item_spacing.x) / 2.0
+            };
+            for tab in [Tab::Config, Tab::Tasks] {
+                let active = state.tab == tab;
+                let r = ui.add_sized(
+                    [width, 40.0],
+                    egui::Button::new(
+                        egui::RichText::new(tab.display_label())
+                            .size(15.0)
+                            .strong()
+                            .color(if active { theme::TEXT } else { theme::TEXT_DIM }),
+                    )
+                    .fill(if active {
+                        theme::CARD_BG
+                    } else {
+                        egui::Color32::TRANSPARENT
+                    })
+                    .corner_radius(8.0)
+                    .frame(true),
+                );
+                if active {
+                    ui.painter().hline(
+                        r.rect.x_range(),
+                        r.rect.bottom() - 1.0,
+                        egui::Stroke::new(2.0, theme::ACCENT),
                     );
-                    if active {
-                        ui.painter().hline(
-                            r.rect.x_range(),
-                            r.rect.bottom() - 1.0,
-                            egui::Stroke::new(2.0, theme::ACCENT),
-                        );
-                    }
-                    point(
-                        &mut diagnostic,
-                        if tab == Tab::Config {
-                            "config_tab"
-                        } else {
-                            "tasks_tab"
-                        },
-                        &r,
-                    );
-                    if r.clicked() {
-                        state.tab = tab;
-                        if tab == Tab::Tasks {
-                            state.inspected = None;
-                        }
+                }
+                point(
+                    &mut diagnostic,
+                    if tab == Tab::Config {
+                        "config_tab"
+                    } else {
+                        "tasks_tab"
+                    },
+                    &r,
+                );
+                if r.clicked() {
+                    state.tab = tab;
+                    if tab == Tab::Tasks {
+                        state.inspected = None;
                     }
                 }
-            });
-            ui.separator();
-            if let Some(error) = &state.error {
-                ui.colored_label(egui::Color32::LIGHT_RED, error);
             }
-            match state.tab {
-                Tab::Config => {
-                    egui::ScrollArea::vertical()
-                        .id_salt("sim_config_scroll")
-                        .auto_shrink([false, false])
-                        .show(ui, |ui| {
-                            config_editor(ui, &mut state, &mut diagnostic, &mut action);
-                        });
-                }
-                Tab::Tasks if state.inspected.is_some() => {
-                    let job = state
-                        .inspected
-                        .clone()
-                        .expect("detail branch has a selected task");
-                    ui.horizontal(|ui| {
-                        let back = ui.add(
+            if task_tab {
+                ui.allocate_ui_with_layout(
+                    egui::vec2(ui.available_width(), 40.0),
+                    egui::Layout::right_to_left(egui::Align::Center),
+                    |ui| {
+                        let r = ui.add_enabled(
+                            state.pending.is_none(),
                             egui::Button::new(
-                                egui::RichText::new("← Tasks").size(12.0).color(theme::TEXT),
+                                egui::RichText::new("＋ 新建任务")
+                                    .size(14.0)
+                                    .strong()
+                                    .color(egui::Color32::WHITE),
                             )
-                            .fill(theme::CARD_BG)
-                            .corner_radius(6.0),
+                            .fill(theme::ACCENT_STRONG)
+                            .corner_radius(8.0)
+                            .min_size(egui::vec2(116.0, 38.0)),
                         );
-                        point(&mut diagnostic, "back_to_tasks", &back);
-                        if back.clicked() {
-                            state.inspected = None;
+                        point(&mut diagnostic, "new_task", &r);
+                        if r.clicked() {
+                            state.new_task();
                         }
-                        ui.label(
-                            egui::RichText::new("Task detail")
-                                .size(13.0)
-                                .strong()
-                                .color(theme::TEXT),
-                        );
-                    });
-                    ui.add_space(8.0);
-                    egui::ScrollArea::vertical()
-                        .id_salt(("sim_detail_scroll", job["id"].as_str()))
-                        .auto_shrink([false, false])
-                        .show(ui, |ui| {
-                            task_card(
-                                ui,
-                                &job,
-                                &mut state,
-                                &mut diagnostic,
-                                &mut action,
-                                &mut replay,
-                                true,
-                            );
-                        });
-                }
-                Tab::Tasks => {
-                    tasks_list(ui, &mut state, &mut diagnostic, &mut action, &mut replay);
-                }
+                    },
+                );
             }
         });
+        ui.separator();
+        if let Some(error) = &state.error {
+            ui.colored_label(egui::Color32::LIGHT_RED, error);
+            if state.catalog.is_null()
+                && state.pending.is_none()
+                && ui.button("Retry configuration loading").clicked()
+            {
+                action = Some(json!({"action":"catalog"}));
+            }
+        }
+        if let Some(error) = &state.stream_error {
+            ui.colored_label(egui::Color32::LIGHT_RED, error);
+        }
+        match state.tab {
+            Tab::Config => {
+                egui::ScrollArea::vertical()
+                    .id_salt("sim_config_scroll")
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
+                        config_editor(ui, &mut state, &mut diagnostic, &mut action);
+                    });
+            }
+            Tab::Tasks if state.inspected.is_some() => {
+                let job = state
+                    .inspected
+                    .clone()
+                    .expect("detail branch has a selected task");
+                ui.horizontal(|ui| {
+                    let back = ui.add(
+                        egui::Button::new(
+                            egui::RichText::new("← 返回列表")
+                                .size(13.0)
+                                .color(theme::TEXT),
+                        )
+                        .fill(theme::CARD_BG)
+                        .corner_radius(6.0),
+                    );
+                    point(&mut diagnostic, "back_to_tasks", &back);
+                    if back.clicked() {
+                        state.inspected = None;
+                    }
+                    ui.label(
+                        egui::RichText::new("任务详情")
+                            .size(16.0)
+                            .strong()
+                            .color(theme::TEXT),
+                    );
+                });
+                ui.add_space(8.0);
+                egui::ScrollArea::vertical()
+                    .id_salt(("sim_detail_scroll", job["id"].as_str()))
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
+                        task_card(
+                            ui,
+                            &job,
+                            &mut state,
+                            &mut diagnostic,
+                            &mut action,
+                            &mut replay,
+                            true,
+                        );
+                    });
+            }
+            Tab::Tasks => {
+                tasks::show(ui, &mut state, &mut diagnostic, &mut action, &mut replay);
+            }
+        }
+    });
     if state.pending.is_none() {
         if let Some(action) = action.or_else(|| state.queued_difference.take()) {
             fetch(ctx, &mut state, action);
-        } else if state
-            .requested
-            .is_none_or(|t| t.elapsed().as_millis() >= 1000)
-        {
-            let action = if state.catalog.is_null() {
-                "catalog"
-            } else {
-                "list"
-            };
-            fetch(ctx, &mut state, json!({"action":action}));
+        } else if state.catalog.is_null() && state.requested.is_none() {
+            fetch(ctx, &mut state, json!({"action":"catalog"}));
         }
     }
     diagnostic["jobs"] = json!(state.jobs);
     diagnostic["error"] = json!(state.error);
     diagnostic["catalog_ready"] = json!(!state.catalog.is_null());
     diagnostic["pending"] = json!(state.pending.is_some());
+    diagnostic["starting"] = json!(state.starting());
+    diagnostic["start_label"] = json!(state.start_label());
+    diagnostic["start_enabled"] = json!(state.pending.is_none());
+    diagnostic["stream_error"] = json!(state.stream_error);
     diagnostic["last_enqueued"] = json!(state.last_enqueued);
     diagnostic["kind"] = json!(state.kind);
     diagnostic["tab"] = json!(state.tab.label());
@@ -453,12 +566,14 @@ pub(super) fn show(
         "tasks"
     });
     diagnostic["config_from"] = json!(state.config_from);
+    if state.pending.is_some() {
+        ctx.egui_ctx
+            .request_repaint_after(std::time::Duration::from_millis(250));
+    }
     ctx.egui_ctx.data_mut(|d| {
         d.insert_temp(egui::Id::new("ad_sim_diagnostic"), diagnostic);
         d.insert_temp(id, state);
     });
-    ctx.egui_ctx
-        .request_repaint_after(std::time::Duration::from_millis(250));
     replay
 }
 fn grouped_jobs<'a>(jobs: &'a [Value], group: Group, filter: &str) -> Vec<&'a Value> {
@@ -824,16 +939,10 @@ fn config_editor(
     let r = ui.add_enabled(
         state.pending.is_none(),
         egui::Button::new(
-            egui::RichText::new(if state.pending.is_some() {
-                "Starting…"
-            } else if state.kind == "world" && state.use_suite {
-                "Run scenario suite"
-            } else {
-                "Start simulation"
-            })
-            .size(14.0)
-            .strong()
-            .color(egui::Color32::WHITE),
+            egui::RichText::new(state.start_label())
+                .size(14.0)
+                .strong()
+                .color(egui::Color32::WHITE),
         )
         .fill(theme::ACCENT_STRONG)
         .corner_radius(10.0)
@@ -1181,96 +1290,6 @@ fn config_snapshot(ui: &mut egui::Ui, config: &Value) {
         ui.add(egui::Label::new(text).wrap());
         ui.add_space(6.0);
     }
-}
-fn tasks_list(
-    ui: &mut egui::Ui,
-    state: &mut State,
-    diagnostic: &mut Value,
-    action: &mut Option<Value>,
-    replay: &mut Option<(String, bool)>,
-) {
-    ui.label(
-        egui::RichText::new("Queue")
-            .size(13.0)
-            .strong()
-            .color(theme::TEXT),
-    );
-    ui.label(
-        egui::RichText::new(
-            "Up to 10 concurrent scenarios · closing this panel does not stop work",
-        )
-        .size(11.0)
-        .color(theme::TEXT_DIM),
-    );
-    ui.add_space(8.0);
-    egui::Frame::new()
-        .fill(theme::CARD_BG)
-        .stroke(egui::Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.28)))
-        .corner_radius(8.0)
-        .inner_margin(egui::Margin::symmetric(10, 6))
-        .show(ui, |ui| {
-            ui.visuals_mut().override_text_color = Some(theme::TEXT);
-            let r = ui.add(
-                egui::TextEdit::singleline(&mut state.filter)
-                    .desired_width(ui.available_width())
-                    .frame(egui::Frame::NONE)
-                    .hint_text(
-                        egui::RichText::new("Filter by ID, source, or status")
-                            .color(theme::TEXT_DIM),
-                    )
-                    .text_color(theme::TEXT),
-            );
-            point(diagnostic, "filter", &r);
-        });
-    ui.add_space(10.0);
-
-    egui::ScrollArea::vertical()
-        .id_salt("sim_tasks_scroll")
-        .auto_shrink([false, true])
-        .show(ui, |ui| {
-            let jobs = state.jobs.clone();
-            for group in [Group::Running, Group::Queued, Group::Finished] {
-                let matching = grouped_jobs(&jobs, group, &state.filter);
-                diagnostic["groups"][group.key()] =
-                    json!(matching.iter().map(|j| &j["id"]).collect::<Vec<_>>());
-
-                let (dot, label_color) = match group {
-                    Group::Running => (egui::Color32::from_rgb(0x60, 0xA5, 0xFA), theme::TEXT),
-                    Group::Queued => (theme::ACCENT, theme::TEXT),
-                    Group::Finished => (theme::TEXT_DIM, theme::TEXT),
-                };
-                ui.horizontal(|ui| {
-                    let (rect, _) =
-                        ui.allocate_exact_size(egui::vec2(8.0, 8.0), egui::Sense::hover());
-                    ui.painter().circle_filled(rect.center(), 3.5, dot);
-                    let heading = ui.label(
-                        egui::RichText::new(format!("{}  {}", group.label(), matching.len()))
-                            .size(12.0)
-                            .strong()
-                            .color(label_color),
-                    );
-                    diagnostic["group_y"][group.key()] = json!(heading.rect.top());
-                });
-                ui.add_space(4.0);
-
-                if matching.is_empty() {
-                    ui.label(
-                        egui::RichText::new(if state.filter.is_empty() {
-                            "No tasks"
-                        } else {
-                            "No matching tasks"
-                        })
-                        .size(11.0)
-                        .color(theme::TEXT_DIM),
-                    );
-                } else {
-                    for job in matching {
-                        task_card(ui, job, state, diagnostic, action, replay, false);
-                    }
-                }
-                ui.add_space(10.0);
-            }
-        });
 }
 
 fn stage_style(stage: &str) -> (egui::Color32, egui::Color32, &'static str) {
@@ -1821,6 +1840,7 @@ fn fetch(ctx: &AppContext<'_>, state: &mut State, request: Value) {
     };
     let reply = Reply::default();
     state.pending = Some(reply.clone());
+    state.pending_action = request["action"].as_str().map(str::to_owned);
     state.requested = Some(web_time::Instant::now());
     let egui = ctx.egui_ctx.clone();
     let mut request = ehttp::Request::post(
@@ -1851,6 +1871,41 @@ fn fetch(_: &AppContext<'_>, state: &mut State, _: Value) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn pushed_jobs_preserve_submission_draft_and_selection() {
+        let mut state = State::default();
+        state.source = "draft.record".into();
+        state.apply_jobs(
+            &[
+                json!({"id":"a","stage":"queued"}),
+                json!({"id":"b","stage":"queued"}),
+            ],
+            true,
+        );
+        let selected = state.jobs[0].clone();
+        state.inspect(&selected);
+        state.filter = "a".into();
+        let draft = state.config();
+        state.pending = Some(Reply::default());
+        state.pending_action = Some("enqueue".into());
+        state.apply_jobs(&[json!({"id":"a","stage":"completed"})], false);
+        assert_eq!(state.jobs.len(), 2);
+        assert_eq!(state.inspected.as_ref().unwrap()["stage"], "completed");
+        assert_eq!(state.filter, "a");
+        assert_eq!(state.config(), draft);
+        assert!(state.pending.is_some());
+        assert_eq!(state.start_label(), "Starting…");
+        state.receive(Err("Invalid map".into()));
+        assert_eq!(state.start_label(), "Start simulation");
+        state.apply_jobs(&[json!({"id":"b","stage":"failed"})], false);
+        assert_eq!(state.error.as_deref(), Some("Invalid map"));
+        assert_eq!(state.start_label(), "Start simulation");
+        state.pending_action = Some("catalog".into());
+        assert_eq!(state.start_label(), "Start simulation");
+        state.pending_action = Some("enqueue_suite".into());
+        assert_eq!(state.start_label(), "Starting…");
+    }
+
     #[test]
     fn difference_reply_does_not_enqueue_or_replace_the_draft() {
         let mut state = State::default();

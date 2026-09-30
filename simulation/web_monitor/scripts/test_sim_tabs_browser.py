@@ -94,8 +94,10 @@ async def main():
             await open_sim_tasks(page)
             await page.wait_for_function('()=>window._handle.get_simulation_state().jobs.length>0')
             s=await capture('three-task-sections')
-            y=s['group_y']
-            assert y['running']<y['queued']<y['finished']
+            assert s['task_counts']['all']==len(s['jobs'])
+            assert s['task_counts']['running']==len(s['groups']['running'])
+            assert s['task_counts']['queued']==len(s['groups']['queued'])
+            assert len(s['task_rows'])<=s['task_pagination']['page_size']
             assert set(s['groups']['finished'])=={j['id'] for j in s['jobs'] if j['stage'] in TERMINAL}
             await inspect(args.template_job)
             replay_id=args.template_job

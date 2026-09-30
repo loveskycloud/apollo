@@ -1,1 +1,2 @@
 model_version: "v4"
+static_obstacle_clearance_m: 0.05

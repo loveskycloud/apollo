@@ -27,7 +27,13 @@ def prepare(run, kind, offset, assets, model, scene=None):
     weights.parent.mkdir(parents=True)
     weights.write_bytes(model.read_bytes())
     (run / "conf").mkdir()
-    (run / "conf/ml_planning.pb.txt").write_text('model_version: "v0-candidate"\n')
+    # Freeze the same planner settings used by queued simulation and the car;
+    # only the experiment's versioned weight location differs.
+    from google.protobuf import text_format
+    from modules.simulation.ml_planning.proto.ml_planning_config_pb2 import MLPlanningConfig
+    config = text_format.Parse((HERE / "conf/ml_planning.pb.txt").read_text(), MLPlanningConfig())
+    config.model_version = "v0-candidate"
+    (run / "conf/ml_planning.pb.txt").write_text(text_format.MessageToString(config))
     routing_config = "/opt/apollo/neo/share/modules/routing/conf/routing_config.pb.txt"
     (run / "routing.flags").write_text("--use_road_id=true\n--enable_change_lane_in_result=true\n"
                                       + "--routing_conf_file=" + routing_config + "\n")

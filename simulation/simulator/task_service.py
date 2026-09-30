@@ -449,9 +449,12 @@ class TaskService:
             raise
         self.lock = threading.RLock()
         self.condition = threading.Condition(self.lock)
+        self.events_condition = threading.Condition(self.lock)
         self.pending_ids = []
         self.running_counts = {}
         self.jobs = {}
+        self.revision = 0
+        self.job_revisions = {}
         self.cancelled = set()
         self.children = {}
         self.limits = {"single": 1}
@@ -481,12 +484,33 @@ class TaskService:
             if "stage" in fields:
                 job["history"].append({"stage": fields["stage"], "wall_time": time.time()})
             job.update(fields)
+            self.notify_jobs([job_id])
             if fields.get("stage") not in TERMINAL and time.monotonic()-self.last_progress_save < 1:
                 return  # Live state stays current; terminal states always persist immediately.
             self.save()
 
+    def notify_jobs(self, ids):
+        """Called under the queue lock; readers receive only changed jobs."""
+        self.revision += 1
+        for job_id in ids:
+            self.job_revisions[job_id] = self.revision
+        self.events_condition.notify_all()
+
+    def events(self, after=None, timeout=None):
+        with self.events_condition:
+            if after is not None:
+                self.events_condition.wait_for(lambda: self.stopping or self.revision > after, timeout)
+                if self.stopping or self.revision == after:
+                    return None
+            jobs = [job for key, job in self.jobs.items()
+                    if after is None or self.job_revisions.get(key, 0) > after]
+            return {"event": "simulation_jobs", "snapshot": after is None,
+                    "revision": self.revision, "jobs": copy.deepcopy(jobs)}
+
     def request(self, request):
         action = request.get("action")
+        if action == "subscribe":
+            return {"status": "ok"}
         if action == "catalog":
             value = catalog()
             value["max_concurrency"] = self.worker_count
@@ -563,6 +587,7 @@ class TaskService:
                                                 suite_index=index + 1, suite_size=len(configs),
                                                 concurrency=concurrency)
                 self.save()
+                self.notify_jobs(ids)
                 self.pending_ids.extend(ids)
                 self.condition.notify_all()
             return {"status": "ok", "id": ids[0], "ids": ids, "suite_id": suite_id}
@@ -993,6 +1018,7 @@ class TaskService:
                     self.update(job_id, stage="cancelled", error="Simulation service stopped")
             self.pending_ids.clear()
             self.condition.notify_all()
+            self.events_condition.notify_all()
         for thread in self.threads:
             thread.join(timeout=10)
         if not any(thread.is_alive() for thread in self.threads):
@@ -1002,8 +1028,30 @@ class TaskService:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--state-dir", default=os.environ.get("SIM_TASK_ROOT", str(ROOT / "data/simulation/jobs")))
+    parser.add_argument("--events", action="store_true")
     args = parser.parse_args()
     service = TaskService(args.state_dir, workers=30)
+    output_lock = threading.Lock()
+    def emit(value):
+        with output_lock:
+            print(json.dumps(value, ensure_ascii=False, allow_nan=False), flush=True)
+    def publish():
+        revision = None
+        try:
+            while True:
+                event = service.events(revision)
+                if event is None:
+                    return
+                emit(event)
+                revision = event["revision"]
+                # Coalesce bursts from concurrent workers, without polling jobs.
+                time.sleep(0.1)
+        except Exception as error:
+            emit({"event": "simulation_jobs", "error": str(error)})
+    publisher = None
+    if args.events:
+        publisher = threading.Thread(target=publish, name="simulation-events", daemon=True)
+        publisher.start()
     def shutdown(signum, frame):
         raise SystemExit(128 + signum)
     signal.signal(signal.SIGTERM, shutdown)
@@ -1014,9 +1062,11 @@ def main():
                 result = service.request(json.loads(line))
             except Exception as error:
                 result = {"status": "error", "message": str(error)}
-            print(json.dumps(result, ensure_ascii=False), flush=True)
+            emit(result)
     finally:
         service.close()
+        if publisher is not None:
+            publisher.join()
 
 
 if __name__ == "__main__":

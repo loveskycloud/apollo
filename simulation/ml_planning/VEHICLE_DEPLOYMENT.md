@@ -10,6 +10,8 @@ buildtool build -p modules/simulation/ml_planning --cpu -j 4
 
 默认配置为 `model_version: "v4"`，加载 `models/v4/unified.weights`（round4）。V3、V4 权重随 BUILD 安装，不再设置模型环境变量，不使用 `current/latest` 软链接。DAG 读取模型配置和 `modules/common/data/global_flagfile.txt`，后者沿用 `em map use beijing_zongyuan_1haolou` 设置的地图和已有车辆 profile。
 
+静态路边障碍修复增加 `static_obstacle_clearance_m: 0.05`；静止且分类为 `UNKNOWN_UNMOVABLE` 的物体采用 5 cm 安全余量，其他类型保留 12 cm。低速 nudge 目标为 0.20 m/s。涉及 proto 和 C++ 修改，需要重新编译，单改配置不能更新旧二进制。新增训练候选没有替换 V4 权重。源码同步不解除底盘 EMERGENCY_MODE，不发送 START/RESET。
+
 本次只同步源码，不替换小车已安装的二进制，不自动编译或启动。请先在小车 Apollo 容器的 `/apollo_workspace` 执行上述构建，再使用：
 
 ```sh

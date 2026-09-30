@@ -194,6 +194,8 @@ web-sys = { workspace = true, features = [
   "Document",
   "Element",
   "Event",
+  "EventSource",
+  "MessageEvent",
   "File",
   "FileList",
   "FilePropertyBag",

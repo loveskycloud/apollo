@@ -1,6 +1,8 @@
 //! Persistent, bounded protobuf debug worker. No repeated full-file subprocess per frame.
 use std::io::{BufRead as _, Write as _};
 
+type EventHandler = std::sync::Arc<dyn Fn(Result<String, String>) + Send + Sync>;
+
 pub(super) struct DebugWorker {
     child: std::process::Child,
     input: std::process::ChildStdin,
@@ -44,9 +46,19 @@ impl DebugWorker {
     }
 
     pub fn start_script(script: &str) -> Result<Self, String> {
-        let mut child = std::process::Command::new("python3")
-            .arg("-u")
-            .arg(script)
+        Self::start_script_with_events(script, None)
+    }
+
+    pub fn start_script_with_events(
+        script: &str,
+        events: Option<EventHandler>,
+    ) -> Result<Self, String> {
+        let mut command = std::process::Command::new("python3");
+        command.arg("-u").arg(script);
+        if events.is_some() {
+            command.arg("--events");
+        }
+        let mut child = command
             .env("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python")
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
@@ -60,9 +72,19 @@ impl DebugWorker {
             .name("ad_debug_worker_stdout".into())
             .spawn(move || {
                 for line in std::io::BufReader::new(output).lines() {
+                    if let (Some(events), Ok(line)) = (&events, &line)
+                        && serde_json::from_str::<serde_json::Value>(line)
+                            .is_ok_and(|value| value["event"] == "simulation_jobs")
+                    {
+                        events(Ok(line.clone()));
+                        continue;
+                    }
                     if tx.send(line.map_err(|e| e.to_string())).is_err() {
                         break;
                     }
+                }
+                if let Some(events) = events {
+                    events(Err("Simulation event service disconnected".into()));
                 }
             })
             .map_err(|e| format!("Cannot start debug worker reader: {e}"))?;

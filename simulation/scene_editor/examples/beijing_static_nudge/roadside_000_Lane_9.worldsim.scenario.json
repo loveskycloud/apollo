@@ -1,0 +1,57 @@
+{
+  "id": "roadside_000_Lane_9",
+  "name": "静态低速 nudge 000 · Lane_9",
+  "mapId": "beijing_zongyuan_1haolou_car_20260930",
+  "duration": 90,
+  "description": "实际 0.5m 车宽，静态障碍略微侵入道路；要求到达终点、持续有效轨迹、零碰撞。",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 10002.780421147789,
+      "y": 9000005.15831037,
+      "z": 0
+    },
+    "heading": 3.106573295856742,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "route",
+    "routes": [
+      {
+        "id": "route",
+        "waypoints": [
+          {
+            "position": {
+              "x": 9990.787778528538,
+              "y": 9000005.578456782,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "agents": [
+    {
+      "id": "static-0",
+      "name": "路边静态障碍 0",
+      "type": "AGENT_TYPE_STATIC",
+      "position": {
+        "x": 9997.235627225498,
+        "y": 9000004.547256969,
+        "z": 0
+      },
+      "heading": 3.1065732939952384,
+      "size": {
+        "x": 0.23,
+        "y": 0.1,
+        "z": 0.6
+      },
+      "speed": 0,
+      "enabled": true
+    }
+  ],
+  "triggers": []
+}

@@ -26,7 +26,8 @@ class SafetyRewardTest(unittest.TestCase):
         env.mask[:] = True; env.active[:] = True
         env.length[:] = 1; env.width[:] = .4; env.half_width[:] = 1
         env.goal[:] = 30
-        env.ox[:] = [.62+.5+.3, .62+.5+.2, .62+.5+.1, .62+.5-.05]
+        env.extra_mask[:] = False
+        env.ox[:] = [.62+.5+.08, .62+.5+.04, .62+.5+.02, .62+.5-.05]
         _, reward, done, info = env.step(np.zeros((4, 2)))
         self.assertGreater(reward[0], reward[1])
         self.assertGreater(reward[1], reward[2])

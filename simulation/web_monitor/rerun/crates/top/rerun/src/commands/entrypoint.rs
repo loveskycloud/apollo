@@ -1611,6 +1611,7 @@ fn serve_web(
     }
     {
         let sim_worker = parking_lot::Mutex::new(None::<super::debug_query::DebugWorker>);
+        let sim_events = web_server.simulation_events();
         web_server.set_simulation_handler(std::sync::Arc::new(move |body: &str| {
             let request: serde_json::Value = serde_json::from_str(body)
                 .map_err(|e| format!("Invalid simulation request: {e}"))?;
@@ -1628,7 +1629,11 @@ fn serve_web(
                         .unwrap_or(CANDIDATES[0])
                         .into()
                 });
-                *worker = Some(super::debug_query::DebugWorker::start_script(&script)?);
+                let events = sim_events.clone();
+                *worker = Some(super::debug_query::DebugWorker::start_script_with_events(
+                    &script,
+                    Some(std::sync::Arc::new(move |event| events.publish(event))),
+                )?);
             }
             let result = worker
                 .as_mut()

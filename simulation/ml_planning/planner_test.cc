@@ -2,6 +2,22 @@
 #include "modules/simulation/ml_planning/reference_line.h"
 #include "gtest/gtest.h"
 namespace apollo::simulation::ml {
+TEST(MLPlanning, FiveCentimeterMarginKeepsPhysicalBoxesAndRejectsContact) {
+  EXPECT_NEAR(BoxSeparation(0,0,0,.36,.25,0,.38,0,.2,.05),.08,1e-12);
+  EXPECT_GT(BoxSeparation(0,0,0,.36,.25,0,.38,0,.2,.05),.05);
+  EXPECT_LT(BoxSeparation(0,0,0,.36,.25,0,.38,0,.2,.05),.12);
+  EXPECT_LE(BoxSeparation(0,0,0,.36,.25,0,.29,0,.2,.05),0);
+  EXPECT_LT(BoxSeparation(0,0,0,.36,.25,0,.34,0,.2,.05),.05);
+}
+TEST(MLPlanning, StaticNudgeRemainsSlowUntilRearClearsRotatedObject) {
+  const Obstacle object{0,.35,0,0,.6,.2,.7};
+  for(double s:{-.6,0.,.3}) {
+    const auto action=Approach({s,0,0,.25},{object},.5,{0,8});
+    EXPECT_LE(.5*(1+std::tanh(action[1])),.25000001);
+  }
+  const auto clear=Approach({1,0,0,.25},{object},.5,{0,8});
+  EXPECT_GT(.5*(1+std::tanh(clear[1])),.25);
+}
 TEST(MLPlanning, CommandSpeedLimitBoundsAllFutureSteps) {
   State p{0,0,0,0};
   for(int i=0;i<80;++i) {

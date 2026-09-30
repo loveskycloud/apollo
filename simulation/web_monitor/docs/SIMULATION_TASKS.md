@@ -5,17 +5,33 @@
 Web Monitor → **Sim**: choose LogSim/bag or WorldSim/JSON, matching map, vehicle
 configuration, optional profile, and algorithm modules. The Sim entry opens a
 resizable **docked sidebar**, not a floating window. Like scene_editor, one content
-area is switched by fixed **Simulation Config / Simulation Tasks** tabs.
+area is switched by fixed **仿真配置 / 仿真任务** tabs.
 WorldSim additionally
 selects an ego model and fixed step. **Runs = 2** performs a repeat check; Runs = 1
 is explicitly `not_tested`, never a determinism PASS.
 
 - A successful **Start simulation** submission switches to **Simulation Tasks**.
   Validation/submission errors stay on the configuration page.
-- Tasks are grouped top-to-bottom as **Running**, **Queued**, **Finished**. Running
-  includes preparation and analysis; queue order stays FIFO; finished history is
-  newest first. Failed/cancelled/interrupted tasks are finished, not successful:
-  their original status, errors and analysis remain visible.
+- Task updates use one `/api/sim/events` SSE connection while the panel is open.
+  The initial connection and reconnections receive a complete snapshot; subsequent
+  events contain only changed tasks. There is no periodic list request or page reload.
+  Updates preserve the draft, selected detail, filter and command errors.
+  Only enqueue requests show **Starting…**. Disconnections are displayed explicitly;
+  the browser reconnects automatically and closing the panel releases the stream.
+- **仿真任务** opens a wider docked workspace with live totals, status shortcuts,
+  source/status dropdowns and search by task ID, scene, suite or status.
+  Counts reflect the complete task collection; pagination reflects the intersection
+  of the selected filters. Cancelled and interrupted tasks have their own statuses.
+- Tasks are grouped by suite submission ID (identical suite names do not merge);
+  standalone tasks form a separate group. Active suites appear first, and running
+  and queued tasks lead each group. Suite members retain their order within a status;
+  standalone finished history is newest first. Groups can be collapsed.
+  Each page renders at most ten cards and incoming events preserve the current page.
+- Cards show real source type, run count, progress, FIFO queue position and completed
+  wall-clock duration. Failed cards expose a short reason and quick actions;
+  the overflow menu provides detail, config reuse, cancellation and per-run replay.
+  Missing replay outputs disable replay. No status is inferred to be a determinism PASS.
+- **新建任务** opens a clean configuration draft without changing existing tasks.
 - Click a task's title to open **Simulation detail** inside the same Tasks panel.
   Status, progress, run count, stage history, errors, analysis and outputs update
   from the live service; **Back to tasks** or the Tasks tab restores the list.
@@ -28,13 +44,14 @@ is explicitly `not_tested`, never a determinism PASS.
   does not overwrite the draft; explicitly selecting View config replaces it.
   Invalid snapshots are rejected before changing any draft field. Unknown extra
   configuration fields are retained and displayed, not silently discarded.
-- The task filter matches ID, source, kind or status. Stage history/analysis and
-  cancellation remain on each task card; replay is offered only after a task ends,
+- Stage history and full analysis remain in task details. Cancellation is available
+  in the task action menu; replay is offered only after a task ends,
   so a record still being written cannot be opened as a finished result.
 
-The persistent queue runs up to three suite members concurrently. Single submissions
-remain serialized with one another; a suite can explicitly select concurrency 1, 2
-or 3. At concurrency 1, members run in manifest order. Each member follows:
+The running summary uses the service's advertised concurrency capacity.
+Single submissions remain serialized with one another; each suite also observes
+its submitted concurrency limit. At concurrency 1, members run in manifest order.
+Each member follows:
 
 `queued → data_preparation → map_update → profile_update → model_update → simulation_start → simulation_running → simulation_end → result_analysis → completed`
 

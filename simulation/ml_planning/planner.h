@@ -13,6 +13,20 @@ struct Obstacle { double s, l, vs, vl, length, width, yaw; };
 using Observation = std::array<double, 16>;
 using Action = std::array<double, 2>;
 
+// Maximum separating-axis gap between physical oriented boxes. Nonpositive
+// means physical overlap; a positive margin adds clearance without resizing.
+inline double BoxSeparation(double x,double y,double heading,double half_length,double half_width,
+                            double ox,double oy,double obstacle_heading,double obstacle_half_length,double obstacle_half_width) {
+  double separation=-1e9;
+  for(double axis:{heading,heading+M_PI/2,obstacle_heading,obstacle_heading+M_PI/2}) {
+    const double d=std::abs((ox-x)*std::cos(axis)+(oy-y)*std::sin(axis));
+    const double a=half_length*std::abs(std::cos(heading-axis))+half_width*std::abs(std::sin(heading-axis));
+    const double b=obstacle_half_length*std::abs(std::cos(obstacle_heading-axis))+obstacle_half_width*std::abs(std::sin(obstacle_heading-axis));
+    separation=std::max(separation,d-a-b);
+  }
+  return separation;
+}
+
 struct LateralTransition {
   double origin, length, a0, a1, a3, a4, a5;
   LateralTransition(const State& start,double target,double distance,double curvature)
@@ -146,9 +160,13 @@ inline Action Approach(const State& p, const std::vector<Obstacle>& obstacles,
     action[1]=std::min(action[1],std::atanh(std::clamp(2*target-1,-.999999,.999999)));
   }
   for(const auto& o:obstacles) {
-    const double gap=o.s-o.length/2-p.s-.62;
-    if(std::hypot(o.vs,o.vl)<.01 && gap>-.5 && gap<1.5 && std::abs(o.l)<half_width+o.width/2)
-      action[1]=std::min(action[1],std::atanh(-.5));  // static nudge at <=0.25 m/s
+    const double extent=o.length/2*std::abs(std::cos(o.yaw))+o.width/2*std::abs(std::sin(o.yaw));
+    const double gap=o.s-extent-p.s-.62;
+    const double rear_clearance=p.s-.1-(o.s+extent);
+    if(std::hypot(o.vs,o.vl)<.01 && rear_clearance<.20 && gap<1.5 && std::abs(o.l)<half_width+o.width/2)
+      // Leave deceleration headroom below the 0.25 m/s close-pass bound, and
+      // accelerate only after the rear has cleared the near-obstacle region.
+      action[1]=std::min(action[1],std::atanh(-.6));  // target 0.20 m/s
   }
   for (const auto& o : obstacles) {
     if (o.length<.5 || o.vs<.05 || std::abs(o.vl)>.1 || std::abs(o.yaw)>.3) continue;

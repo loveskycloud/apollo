@@ -6,7 +6,18 @@ async def sim_state(page):
 
 
 async def sim_click(page, key):
-    await page.wait_for_function('k=>window._handle.get_simulation_state()?.[k]', arg=key)
+    menu = None
+    if key.startswith('view_config_'):
+        menu = 'task_menu_' + key.removeprefix('view_config_')
+    elif key.startswith('cancel_'):
+        menu = 'task_menu_' + key.removeprefix('cancel_')
+    elif key.startswith('replay_'):
+        menu = 'task_menu_' + key.removeprefix('replay_').rsplit('_', 1)[0]
+    await page.wait_for_function('([k,m])=>{const s=window._handle.get_simulation_state();return s?.[k] || (m && s?.[m]);}', arg=[key,menu])
+    state = await sim_state(page)
+    if key not in state and menu:
+        await page.mouse.click(*state[menu])
+        await page.wait_for_function('k=>window._handle.get_simulation_state()?.[k]', arg=key)
     await page.mouse.click(*(await sim_state(page))[key])
     await page.wait_for_timeout(450)
 

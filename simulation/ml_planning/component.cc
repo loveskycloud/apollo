@@ -30,6 +30,11 @@ class MLPlanning final : public cyber::Component<perception::PerceptionObstacles
     if(!GetProtoConfig(&config) || !config.IsInitialized()) {
       AERROR << "Missing/invalid ML Planning config: " << ConfigFilePath(); return false;
     }
+    static_clearance_=config.static_obstacle_clearance_m();
+    if(!std::isfinite(static_clearance_) || static_clearance_<.05 || static_clearance_>.5) {
+      AERROR << "static_obstacle_clearance_m must be finite and in [0.05, 0.5]";
+      return false;
+    }
     try {
       const auto weights=ResolveModelWeights(ConfigFilePath(),config.model_version());
       policy_.Load(weights);
@@ -407,23 +412,32 @@ class MLPlanning final : public cyber::Component<perception::PerceptionObstacles
         const double ds=std::hypot(x-previous_x,y-previous_y);
         if(ds>1e-5 && std::abs(std::remainder(heading-previous_heading,2*M_PI)/ds)>max_k_) return reject(2,p.s);
       }
-      previous_x=x;previous_y=y;previous_heading=heading;
       if(i<states.size()) for(double u:{-back_,front_}) for(double v:{-half_,half_}) {
         if(!reference_.ContainsRoad(x+u*std::cos(heading)-v*std::sin(heading),
                                     y+u*std::sin(heading)+v*std::cos(heading),.02)) return reject(4,p.s);
       }
       for(const auto& o:obs.perception_obstacle()) {
-        const double ox=o.position().x()+o.velocity().x()*i*.1,oy=o.position().y()+o.velocity().y()*i*.1;
-        const double ex=x+(front_-back_)/2*std::cos(heading),ey=y+(front_-back_)/2*std::sin(heading);
-        bool separated=false;
-        for(double axis:{heading,heading+M_PI/2,o.theta(),o.theta()+M_PI/2}) {
-          const double d=std::abs((ox-ex)*std::cos(axis)+(oy-ey)*std::sin(axis));
-          const double a=(front_+back_)/2*std::abs(std::cos(heading-axis))+half_*std::abs(std::sin(heading-axis));
-          const double b=o.length()/2*std::abs(std::cos(o.theta()-axis))+o.width()/2*std::abs(std::sin(o.theta()-axis));
-          if(d>a+b+.12) {separated=true;break;}
+        const bool stationary=o.type()==perception::PerceptionObstacle::UNKNOWN_UNMOVABLE &&
+            std::hypot(o.velocity().x(),o.velocity().y())<.01;
+        const double margin=stationary ? static_clearance_ : .12;
+        // The consumer interpolates world positions and headings between
+        // 100 ms trajectory knots. Check the executed footprint at 10 ms too:
+        // safe endpoints alone can cut inside the clearance on a tight bend.
+        const int steps=i>0 && i<states.size() ? 10 : 1;
+        for(int j=1;j<=steps;++j) {
+          const double f=static_cast<double>(j)/steps;
+          const double t=i>0 && i<states.size() ? (i-1+f)*.1 : i*.1;
+          const double h=steps>1 ? previous_heading+f*std::remainder(heading-previous_heading,2*M_PI) : heading;
+          const double px=steps>1 ? previous_x+f*(x-previous_x) : x;
+          const double py=steps>1 ? previous_y+f*(y-previous_y) : y;
+          const double ex=px+(front_-back_)/2*std::cos(h),ey=py+(front_-back_)/2*std::sin(h);
+          const double ox=o.position().x()+o.velocity().x()*t,oy=o.position().y()+o.velocity().y()*t;
+          if(BoxSeparation(ex,ey,h,(front_+back_)/2,half_,
+                           ox,oy,o.theta(),o.length()/2,o.width()/2)<=margin)
+            return reject(5,p.s);
         }
-        if(!separated) return reject(5,p.s);
       }
+      previous_x=x;previous_y=y;previous_heading=heading;
     }
     return true;
   }
@@ -446,6 +460,7 @@ class MLPlanning final : public cyber::Component<perception::PerceptionObstacles
   std::string last_motion_key_;
   bool has_command_=false,pad_stop_=false,temporary_stop_=false,cleared_=false,finished_=false;
   double speed_limit_=1.;
+  double static_clearance_=.05;
   Policy policy_; ReferenceLine reference_;
   const hdmap::HDMap* map_=nullptr;
   double front_=0,back_=0,half_=0,max_k_=0,last_s_=0,goal_=0,last_lateral_=0;

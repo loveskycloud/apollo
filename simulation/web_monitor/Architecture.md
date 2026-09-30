@@ -34,7 +34,8 @@
 | 启动器 | `web_monitor_main.cc` | 解析 gflags，设置 `AD_LAYOUT_DIR`，exec `bin/rerun` |
 | 构建包装 | `BUILD`、`scripts/build_viewer.sh` | Cargo 编 Viewer；genrule 拷贝 `bin/rerun`；apollo_package 安装 |
 | AD UI 壳 | `rerun/.../ui/ad_shell.rs` | Source/Layout/Panel/Sim、主题、布局 `include_bytes`、窗口化播放 |
-| 仿真侧栏 | `rerun/.../ui/ad_sim.rs` | 与 Source 等互斥停靠；固定 Config / Tasks 标签，三类任务与实时详情；View config 复制历史配置至可编辑表单，新提交不改旧任务 |
+| 仿真侧栏 | `rerun/.../ui/ad_sim.rs` + `ad_sim_tasks.rs` + `ad_sim_events.rs` | 与 Source 等互斥停靠；仿真配置 / 仿真任务标签；任务页包含状态计数、搜索与来源/状态筛选、可折叠场景集、每页 10 条卡片与实时详情；SSE 快照与增量推送独立于操作请求，无任务列表轮询；View config 复制历史配置至可编辑表单，新提交不改旧任务 |
+| 仿真任务推送 | `simulator/task_service.py` → `debug_query.rs` → `re_web_viewer_server/simulation_events.rs` | 队列变更唤醒事件线程，经独立事件消息送至 `/api/sim/events`；慢订阅者合并同一任务的更新，重连获取完整快照 |
 | 视口 Layers | `ad_shell` + `ad_layers.rs`，3D 左上角 | 语义图层树、父子复选框；空间 View 的 EntityBehavior.visible 独立于缓存/TF 加载 |
 | 应用状态 | `rerun/.../app_state.rs` | 侧栏优先 AD shell；关 welcome；时间面板收起 |
 | 播放条 | `rerun/.../re_time_panel/` | scene_editor 风格媒体栏；时钟/步长下拉、实时可编辑原始时间戳，无设置菜单/复位/跳到终点动作，保留 `TimeControlCommand` 与回执缓存，见 `docs/PLAYBACK_BAR.md` |

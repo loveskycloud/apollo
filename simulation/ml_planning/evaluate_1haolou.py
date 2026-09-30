@@ -14,7 +14,7 @@ from modules.common_msgs.localization_msgs.localization_pb2 import LocalizationE
 from modules.common_msgs.perception_msgs.perception_obstacle_pb2 import PerceptionObstacles
 from modules.common_msgs.planning_msgs.planning_pb2 import ADCTrajectory
 from modules.common_msgs.routing_msgs.routing_pb2 import RoutingResponse
-from simulation.logsim.proto.simulation_task_pb2 import SimulationTask
+from modules.simulation.logsim.proto.simulation_task_pb2 import SimulationTask
 from evaluate import box, overlap, clearance
 
 

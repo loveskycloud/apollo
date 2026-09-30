@@ -4,6 +4,19 @@
 当前 Web Monitor 任务通过 `conf/ml_planning.pb.txt` 中唯一的 `model_version: "v4"` 选择 `models/v4/unified.weights`（V3 保留用于对照）。每次感知更新（10 Hz）结合当前障碍物、定位和 PlanningCommand/HDMap，重新推理并生成未来 8 秒轨迹；没有预存轨迹或按场景名切换模型。
 权重离线训练，动作/轨迹在线生成，运行中不会重新训练网络。
 
+## 静态路边障碍与低速 nudge（2026-09-30）
+
+`conf/ml_planning.pb.txt` 的 `static_obstacle_clearance_m: 0.05` 指定静态障碍安全余量。
+只对感知类型 `UNKNOWN_UNMOVABLE` 且水平速度小于 0.01 m/s 的物体使用；移动物体、行人和其他类型保留 0.12 m。
+不修改感知速度，不缩小 0.72 × 0.50 m 实际车身，也不改变物理碰撞失败判据。
+现有低速约束的目标速度调整为 0.20 m/s，给减速过程留出余量，并保持到车尾离开障碍物邻近区域。
+规划障碍物检查覆盖 100 ms 轨迹点之间的 10 ms 插值车身，避免弯道中间位置侵入余量。
+
+新增 `scene_editor/examples/beijing_static_nudge/static-nudge.suite.json`：100 个静态路边侵入场景，覆盖 14 条有向车道，使用实车北京总院地图快照 `beijing_zongyuan_1haolou_car_20260930`。
+每个场景要求到达终点、零碰撞、连续有效规划；局部宽度审核不代替实际车身扫掠验证。
+生成工具为 `roadside_scenarios.py`，原生验证工具为 `validate_roadside.py`，结果保存在 workspace `data/simulation/static-nudge-20260930/`。
+训练新增 `--stage roadside`，含双侧路边障碍及连续静态物体；训练产物经过原生验证后才可选择，默认模型仍为 V4。
+
 ## 仿真与实车共用的命令接口（2026-09-30）
 
 ML Planning 统一订阅 `/apollo/planning/command`（`PlanningCommand`），从 `lane_follow_command` 读取路线，不再订阅 raw RoutingResponse。实车由 `external_command` 的 `/apollo/external_command/lane_follow` 服务生成该消息；WorldSim 将独立 Routing 的结果转换为同一种消息。ML 组件没有仿真专用路由分支。

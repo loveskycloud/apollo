@@ -51,7 +51,7 @@ class Agent(nn.Module):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--stage", choices=["straight", "unified"], default="unified")
+    p.add_argument("--stage", choices=["straight", "unified", "roadside"], default="unified")
     p.add_argument("--steps", type=int, default=1000000)
     p.add_argument("--envs", type=int, default=64)
     p.add_argument("--seed", type=int, default=7)
