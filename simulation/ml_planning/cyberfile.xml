@@ -1,0 +1,15 @@
+<package format="2">
+  <name>ml-planning</name>
+  <version>local</version>
+  <description>PPO planning component and parallel WorldSim experiments</description>
+  <maintainer email="apollo-support@baidu.com">Apollo</maintainer>
+  <license>Apache License 2.0</license>
+  <type>module</type>
+  <src_path url="https://github.com/ApolloAuto/apollo">//modules/simulation/ml_planning</src_path>
+  <depend repo_name="cyber" lib_names="cyber">cyber</depend>
+  <depend>common</depend>
+  <depend>common-msgs</depend>
+  <depend>map</depend>
+  <depend>external-command-proto</depend>
+  <depend repo_name="com_google_googletest" lib_names="gtest,gtest_main">3rd-gtest</depend>
+</package>

@@ -30,6 +30,7 @@ struct SourceConfig {
   std::set<std::string> blacklist;
   uint32_t step_ms = 10;
   std::string ego_model = "perfect_planning";
+  std::string collision_report_path;
   MessageConsumer* consumer = nullptr;
 };
 

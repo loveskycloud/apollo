@@ -1,0 +1,203 @@
+{
+  "id": "beijing-opposing_pedestrians_02",
+  "name": "opposing_pedestrians · 2",
+  "description": "Family 9/12; variant 2/10; location-triggered deterministic held-out WorldSim regression.",
+  "duration": 90,
+  "mapId": "beijing_zongyuan_1haolou",
+  "simConfig": {
+    "planning": true,
+    "control": false,
+    "prediction": true,
+    "routing": true
+  },
+  "agents": [
+    {
+      "id": "first",
+      "name": "first",
+      "type": "AGENT_TYPE_PEDESTRIAN",
+      "position": {
+        "x": 9989.725369676076,
+        "y": 9000003.814572591,
+        "z": 0
+      },
+      "heading": 1.5357769653462194,
+      "speed": 0.375,
+      "size": {
+        "x": 0.4,
+        "y": 0.4,
+        "z": 1.7
+      },
+      "color": "#F5B654",
+      "enabled": false,
+      "activeRouteId": "first-route",
+      "routes": [
+        {
+          "id": "first-route",
+          "name": "first-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "id": "first-route-0",
+              "position": {
+                "x": 9989.725369676076,
+                "y": 9000003.814572591,
+                "z": 0
+              },
+              "speed": 0.375
+            },
+            {
+              "id": "first-route-1",
+              "position": {
+                "x": 9989.87942337454,
+                "y": 9000008.211874885,
+                "z": 0
+              },
+              "speed": 0.375
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "second",
+      "name": "second",
+      "type": "AGENT_TYPE_PEDESTRIAN",
+      "position": {
+        "x": 9988.352333283752,
+        "y": 9000007.464883678,
+        "z": 0
+      },
+      "heading": -1.605815688243574,
+      "speed": 0.3375,
+      "size": {
+        "x": 0.4,
+        "y": 0.4,
+        "z": 1.7
+      },
+      "color": "#F5B654",
+      "enabled": false,
+      "activeRouteId": "second-route",
+      "routes": [
+        {
+          "id": "second-route",
+          "name": "second-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "id": "second-route-0",
+              "position": {
+                "x": 9988.352333283752,
+                "y": 9000007.464883678,
+                "z": 0
+              },
+              "speed": 0.3375
+            },
+            {
+              "id": "second-route-1",
+              "position": {
+                "x": 9988.19827958529,
+                "y": 9000003.067581384,
+                "z": 0
+              },
+              "speed": 0.3375
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "first-position",
+      "name": "first-position",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "first"
+        }
+      ],
+      "center": {
+        "x": 9993.286245740903,
+        "y": 9000005.49092628,
+        "z": 0
+      },
+      "size": {
+        "x": 1.5,
+        "y": 3,
+        "z": 3
+      },
+      "heading": 3.106573292133608,
+      "targetAgentId": "ego"
+    },
+    {
+      "id": "second-position",
+      "name": "second-position",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "second"
+        }
+      ],
+      "center": {
+        "x": 9992.48673623295,
+        "y": 9000005.518936042,
+        "z": 0
+      },
+      "size": {
+        "x": 1.5,
+        "y": 3,
+        "z": 3
+      },
+      "heading": 3.1065732977183087,
+      "targetAgentId": "ego"
+    }
+  ],
+  "ego": {
+    "id": "ego",
+    "name": "ego",
+    "position": {
+      "x": 10000.881586066409,
+      "y": 9000005.224833554,
+      "z": 0
+    },
+    "heading": 3.106573295364492,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.8
+    },
+    "activeRouteId": "ego-route",
+    "routes": [
+      {
+        "id": "ego-route",
+        "name": "ego-route",
+        "pathType": "polyline",
+        "waypoints": [
+          {
+            "id": "ego-route-0",
+            "position": {
+              "x": 10000.881586066409,
+              "y": 9000005.224833554,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 3.106573292133799
+          },
+          {
+            "id": "ego-route-1",
+            "position": {
+              "x": 9970.650132797107,
+              "y": 9000006.283952633,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 3.106573292133799
+          }
+        ]
+      }
+    ],
+    "vehicleProfile": ""
+  }
+}

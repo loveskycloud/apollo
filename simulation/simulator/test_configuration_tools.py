@@ -17,6 +17,9 @@ class ConfigurationTests(unittest.TestCase):
         (self.map / "base_map.txt").write_text("map")
         self.flags = self.root / GLOBAL_FLAGS
         self.flags.parent.mkdir(parents=True)
+        isolated = patch("configuration_tools.APOLLO_GLOBAL_FLAGS", self.flags)
+        isolated.start()
+        self.addCleanup(isolated.stop)
         self.flags.write_text("# keep\n--map_dir=old\n--log_dir=data/log\n--half_vehicle_width=9\n--map_dir=stale\n")
         (self.root / VEHICLE_CONFIG).write_text("vehicle_param { width: 2.11 }")
         self.profile = self.make_profile("ranger", .86)

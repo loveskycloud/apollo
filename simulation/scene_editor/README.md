@@ -19,6 +19,9 @@ npm run dev -- --host 0.0.0.0 --port 5173
 
 ## 与 WorldSim
 
+新增 [北京总院一号楼场景集](examples/beijing_zongyuan_1haolou/README.md)：396 个可编辑项目、对应 WorldSim 导出及场景集清单，支持在 Web Monitor 一次提交、顺序运行或最多 10 场景并发。
+`beijing_zongyuan_1haolou` 也已加入编辑器内置地图。
+
 | 路径 | 角色 |
 |------|------|
 | `simulation/scene_editor/` | Web UI + 导出样例 |

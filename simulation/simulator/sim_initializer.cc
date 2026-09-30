@@ -188,6 +188,7 @@ bool SimInitializer::Init(const std::string& task_dir, Context* ctx) {
     src_cfg.step_ms = ctx->task.step_ms();
     src_cfg.ego_model = ctx->task.ego_model();
     src_cfg.consumer = &ctx->consumer;
+    src_cfg.collision_report_path = ctx->task.task_dir() + "/collision.json";
   }
   AINFO << "opening record source, paths=" << src_cfg.paths.size();
   auto source = MessageSourceFactory::Create(src_cfg);

@@ -1,0 +1,358 @@
+{
+  "id": "coverage_Lane_60_reverse_mixed",
+  "name": "Lane_60_reverse · mixed",
+  "description": "Map coverage: Lane_47_reverse -> Lane_48_reverse -> Lane_45_reverse -> Lane_61_reverse -> Lane_19_reverse -> Lane_60_reverse -> Lane_18_reverse -> Lane_50_reverse -> Lane_42_reverse; family mixed; anchor Lane_60_reverse. Expected: safe_stop. 窄路永久障碍占用可通行空间，预期在障碍前安全停车等待，不要求强行到达终点。",
+  "duration": 180,
+  "mapId": "beijing_zongyuan_1haolou",
+  "simConfig": {
+    "planning": true,
+    "control": false,
+    "prediction": true,
+    "routing": true
+  },
+  "agents": [
+    {
+      "id": "roadside",
+      "name": "roadside",
+      "type": "AGENT_TYPE_STATIC",
+      "position": {
+        "x": 9902.05545698575,
+        "y": 8999998.761713298,
+        "z": 0
+      },
+      "heading": -0.763469585158296,
+      "speed": 0,
+      "size": {
+        "x": 0.4,
+        "y": 0.18,
+        "z": 0.5
+      },
+      "color": "#F5B654",
+      "enabled": true,
+      "activeRouteId": "roadside-route",
+      "routes": [
+        {
+          "id": "roadside-route",
+          "name": "roadside",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "id": "roadside-0",
+              "position": {
+                "x": 9902.05545698575,
+                "y": 8999998.761713298,
+                "z": 0
+              },
+              "speed": 0,
+              "heading": -0.763469585158296
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ped-0",
+      "name": "ped-0",
+      "type": "AGENT_TYPE_PEDESTRIAN",
+      "position": {
+        "x": 9902.298516575978,
+        "y": 9000005.454998234,
+        "z": 0
+      },
+      "heading": -0.4710458953200698,
+      "speed": 0.4,
+      "size": {
+        "x": 0.4,
+        "y": 0.4,
+        "z": 1.7
+      },
+      "color": "#F5B654",
+      "enabled": false,
+      "activeRouteId": "ped-0-route",
+      "routes": [
+        {
+          "id": "ped-0-route",
+          "name": "ped-0",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "id": "ped-0-0",
+              "position": {
+                "x": 9902.298516575978,
+                "y": 9000005.454998234,
+                "z": 0
+              },
+              "speed": 0.4,
+              "heading": -0.4710458953200698
+            },
+            {
+              "id": "ped-0-1",
+              "position": {
+                "x": 9906.753987220945,
+                "y": 9000003.185905611,
+                "z": 0
+              },
+              "speed": 0.4,
+              "heading": -0.4710458953200698
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ped-1",
+      "name": "ped-1",
+      "type": "AGENT_TYPE_PEDESTRIAN",
+      "position": {
+        "x": 9904.84573290444,
+        "y": 8999999.853255568,
+        "z": 0
+      },
+      "heading": 3.112301395755557,
+      "speed": 0.5,
+      "size": {
+        "x": 0.4,
+        "y": 0.4,
+        "z": 1.7
+      },
+      "color": "#F5B654",
+      "enabled": false,
+      "activeRouteId": "ped-1-route",
+      "routes": [
+        {
+          "id": "ped-1-route",
+          "name": "ped-1",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "id": "ped-1-0",
+              "position": {
+                "x": 9904.84573290444,
+                "y": 8999999.853255568,
+                "z": 0
+              },
+              "speed": 0.5,
+              "heading": 3.112301395755557
+            },
+            {
+              "id": "ped-1-1",
+              "position": {
+                "x": 9902.746633716706,
+                "y": 8999999.914758414,
+                "z": 0
+              },
+              "speed": 0.5,
+              "heading": 3.112301395755557
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ped-2",
+      "name": "ped-2",
+      "type": "AGENT_TYPE_PEDESTRIAN",
+      "position": {
+        "x": 9903.583926740006,
+        "y": 9000004.091868818,
+        "z": 0
+      },
+      "heading": -0.30169026448529523,
+      "speed": 0.6000000000000001,
+      "size": {
+        "x": 0.4,
+        "y": 0.4,
+        "z": 1.7
+      },
+      "color": "#F5B654",
+      "enabled": false,
+      "activeRouteId": "ped-2-route",
+      "routes": [
+        {
+          "id": "ped-2-route",
+          "name": "ped-2",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "id": "ped-2-0",
+              "position": {
+                "x": 9903.583926740006,
+                "y": 9000004.091868818,
+                "z": 0
+              },
+              "speed": 0.6000000000000001,
+              "heading": -0.30169026448529523
+            },
+            {
+              "id": "ped-2-1",
+              "position": {
+                "x": 9905.589081536458,
+                "y": 9000003.467886252,
+                "z": 0
+              },
+              "speed": 0.6000000000000001,
+              "heading": -0.30169026448529523
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "activate-ped-0",
+      "name": "activate-ped-0",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "ped-0"
+        }
+      ],
+      "center": {
+        "x": 9901.581208508236,
+        "y": 9000001.411608078,
+        "z": 0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 1,
+        "z": 3
+      },
+      "heading": -1.598237677860528,
+      "targetAgentId": "ego"
+    },
+    {
+      "id": "activate-ped-1",
+      "name": "activate-ped-1",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "ped-1"
+        }
+      ],
+      "center": {
+        "x": 9901.567489554647,
+        "y": 9000000.911796324,
+        "z": 0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 1,
+        "z": 3
+      },
+      "heading": -1.598237677855073,
+      "targetAgentId": "ego"
+    },
+    {
+      "id": "activate-ped-2",
+      "name": "activate-ped-2",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "ped-2"
+        }
+      ],
+      "center": {
+        "x": 9901.553769916141,
+        "y": 9000000.411984587,
+        "z": 0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 1,
+        "z": 3
+      },
+      "heading": -1.59824486521074,
+      "targetAgentId": "ego"
+    }
+  ],
+  "ego": {
+    "id": "ego",
+    "name": "ego",
+    "position": {
+      "x": 9901.64691896694,
+      "y": 9000004.410781872,
+      "z": 0
+    },
+    "heading": -1.5798815039684495,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.8
+    },
+    "activeRouteId": "ego-route",
+    "routes": [
+      {
+        "id": "ego-route",
+        "name": "ego",
+        "pathType": "polyline",
+        "waypoints": [
+          {
+            "id": "ego-0",
+            "position": {
+              "x": 9901.64691896694,
+              "y": 9000004.410781872,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -1.5798815039684495
+          },
+          {
+            "id": "ego-1",
+            "position": {
+              "x": 9901.579479729948,
+              "y": 9000001.34862487,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -1.598237677860528
+          },
+          {
+            "id": "ego-2",
+            "position": {
+              "x": 9902.738068666607,
+              "y": 8999998.199779179,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -0.07954532390436879
+          },
+          {
+            "id": "ego-3",
+            "position": {
+              "x": 9904.072496679819,
+              "y": 9000000.778423633,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 1.5415050687970062
+          },
+          {
+            "id": "ego-4",
+            "position": {
+              "x": 9904.734854762248,
+              "y": 9000004.681417668,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 1.0018929221899726
+          },
+          {
+            "id": "ego-5",
+            "position": {
+              "x": 9907.985750899292,
+              "y": 9000005.740798876,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -0.012178044025790095
+          }
+        ]
+      }
+    ],
+    "vehicleProfile": ""
+  }
+}

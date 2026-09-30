@@ -14,6 +14,7 @@
 #include "modules/common_msgs/localization_msgs/localization.pb.h"
 #include "modules/common_msgs/perception_msgs/perception_obstacle.pb.h"
 #include "modules/common_msgs/planning_msgs/planning.pb.h"
+#include "modules/common_msgs/planning_msgs/pad_msg.pb.h"
 #include "modules/common_msgs/planning_msgs/planning_command.pb.h"
 #include "modules/common_msgs/prediction_msgs/prediction_obstacle.pb.h"
 #include "modules/common_msgs/routing_msgs/routing.pb.h"
@@ -51,6 +52,7 @@ void MessageConsumer::RegisterDefaultPublishers() {
   publishers_["/apollo/canbus/chassis"] = &PublishTyped<canbus::Chassis>;
   publishers_["/apollo/prediction"] = &PublishTyped<prediction::PredictionObstacles>;
   publishers_["/apollo/planning"] = &PublishTyped<planning::ADCTrajectory>;
+  publishers_["/apollo/planning/pad"] = &PublishTyped<planning::PadMessage>;
   publishers_["/apollo/planning/command"] = &PublishTyped<planning::PlanningCommand>;
   publishers_["/apollo/planning_command_history"] = &PublishTyped<planning::PlanningCommand>;
   publishers_["/apollo/raw_routing_request"] = &PublishTyped<routing::RoutingRequest>;

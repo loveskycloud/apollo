@@ -1,0 +1,34 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "38fa9b556e131edc6dfb6a16dedde3de0a81f823df041dcf64849eea66e3c683",
+  "expectation": "reach_goal",
+  "reason": "道路可通行，预期无碰撞到达终点。",
+  "audit": {
+    "anchor": "Lane_65",
+    "passages": [
+      {
+        "actor_id": "static-0",
+        "s": 15.793318256334134,
+        "lane_width_m": 0.9283082851178437,
+        "available_passage_m": 0.8128901308731119,
+        "curvature_per_m": 1.4572975660938134,
+        "swept_vehicle_width_m": 0.6866845989257635,
+        "required_passage_m": 0.8266845989257635,
+        "blocked": true
+      }
+    ],
+    "static_obstacle_clearance_m": 0.12,
+    "road_margin_m": 0.02,
+    "vehicle_width_m": 0.5,
+    "passability_evidence": {
+      "geometry_sha256": "51481e19426aa251c7377d1681b7647161b767d89a6436725d3c7426020b96ac",
+      "job_id": "e1fc40fb53a14dda",
+      "vehicle": "ranger_mini_v3",
+      "goal_distance_m": 0.12718552934293254,
+      "collision": "PASS",
+      "planning_continuity": "PASS",
+      "reason": "完整真实仿真无碰撞到达且轨迹连续，反证局部扫掠估计的阻塞分类。保留实际通过，不以停车作为该场景预期。"
+    }
+  }
+}

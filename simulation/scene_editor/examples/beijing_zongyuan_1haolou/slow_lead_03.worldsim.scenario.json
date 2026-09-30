@@ -1,0 +1,157 @@
+{
+  "id": "beijing-slow_lead_03",
+  "name": "slow_lead · 3",
+  "description": "Family 10/12; variant 3/10; location-triggered deterministic held-out WorldSim regression.",
+  "duration": 90,
+  "mapId": "beijing_zongyuan_1haolou",
+  "simConfig": {
+    "planning": true,
+    "control": false,
+    "prediction": true,
+    "routing": true
+  },
+  "agents": [
+    {
+      "id": "lead",
+      "name": "lead",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 9988.933660961666,
+        "y": 9000005.493321324,
+        "z": 0
+      },
+      "heading": 3.10657329536653,
+      "speed": 0.43,
+      "size": {
+        "x": 0.72,
+        "y": 0.5,
+        "z": 0.8
+      },
+      "color": "#F5B654",
+      "enabled": false,
+      "activeRouteId": "lead-route",
+      "routes": [
+        {
+          "id": "lead-route",
+          "name": "lead-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "id": "lead-route-0",
+              "position": {
+                "x": 9988.933660961666,
+                "y": 9000005.493321324,
+                "z": 0
+              },
+              "speed": 0.43
+            },
+            {
+              "id": "lead-route-1",
+              "position": {
+                "x": 9964.648559657722,
+                "y": 9000006.344117807,
+                "z": 0
+              },
+              "speed": 0.43
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "lead-position",
+      "name": "lead-position",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "lead"
+        }
+      ],
+      "center": {
+        "x": 9999.63235246025,
+        "y": 9000005.268598804,
+        "z": 0
+      },
+      "size": {
+        "x": 1.5,
+        "y": 3,
+        "z": 3
+      },
+      "heading": 3.1065732977183087,
+      "targetAgentId": "ego"
+    },
+    {
+      "id": "lead-accelerates",
+      "name": "lead-accelerates",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "actions": [
+        {
+          "kind": "ACTION_SET_SPEED",
+          "targetAgentId": "lead",
+          "speed": 0.9
+        }
+      ],
+      "center": {
+        "x": 9985.940752136661,
+        "y": 9000005.74826596,
+        "z": 0
+      },
+      "size": {
+        "x": 1.5,
+        "y": 3,
+        "z": 3
+      },
+      "heading": 3.1065732977183087,
+      "targetAgentId": "ego"
+    }
+  ],
+  "ego": {
+    "id": "ego",
+    "name": "ego",
+    "position": {
+      "x": 10000.631739345203,
+      "y": 9000005.233586604,
+      "z": 0
+    },
+    "heading": 3.106573295316332,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.8
+    },
+    "activeRouteId": "ego-route",
+    "routes": [
+      {
+        "id": "ego-route",
+        "name": "ego-route",
+        "pathType": "polyline",
+        "waypoints": [
+          {
+            "id": "ego-route-0",
+            "position": {
+              "x": 10000.631739345203,
+              "y": 9000005.233586604,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 3.106573292133799
+          },
+          {
+            "id": "ego-route-1",
+            "position": {
+              "x": 9969.650745912219,
+              "y": 9000006.318964835,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 3.106573292133799
+          }
+        ]
+      }
+    ],
+    "vehicleProfile": ""
+  }
+}

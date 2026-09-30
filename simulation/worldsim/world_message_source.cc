@@ -4,6 +4,10 @@
 #include <cmath>
 #include <limits>
 #include <set>
+#include <fstream>
+#include <cstdio>
+#include "google/protobuf/struct.pb.h"
+#include "google/protobuf/util/json_util.h"
 
 #include "cyber/cyber.h"
 #include "modules/common/configs/vehicle_config_helper.h"
@@ -14,6 +18,7 @@
 #include "modules/common_msgs/routing_msgs/routing.pb.h"
 #include "modules/simulation/simulator/message_consumer.h"
 #include "modules/simulation/worldsim/core/scenario_loader.h"
+#include "modules/simulation/worldsim/core/collision.h"
 
 namespace apollo {
 namespace simulation {
@@ -100,7 +105,9 @@ bool WorldMessageSource::Open(const SourceConfig& cfg) {
   AINFO << "WorldMessageSource open ok, duration_s="
         << static_cast<double>(duration_ns) / 1e9
         << " (scenario/timeout max)";
-  return true;
+  contacts_.clear();
+  collision_checked_frames_ = 0;
+  return WriteCollisions(false);
 }
 
 bool WorldMessageSource::Peek(SimEvent* out) const {
@@ -318,6 +325,7 @@ bool WorldMessageSource::Step(uint64_t now) {
   const uint64_t sequence = (now - begin_ns_) / step_ns_;
   world_.UpdateEgoPose(x_, y_, z_, heading_, speed_);
   world_.AdvanceTo(static_cast<double>(now - begin_ns_) / 1e9);
+  if (!CheckCollisions(now)) return false;
   canbus::Chassis chassis;
   Header(&chassis, now, sequence);
   chassis.set_engine_started(true); chassis.set_speed_mps(speed_);
@@ -376,6 +384,61 @@ bool WorldMessageSource::Step(uint64_t now) {
     if (!Send(config_.consumer, "/apollo/perception/obstacles", obstacles)) { return false; }
   }
   return !callback_failed_;
+}
+
+bool WorldMessageSource::WriteCollisions(bool complete) {
+  if (config_.collision_report_path.empty()) {
+    AERROR << "World collision report path is required";
+    return false;
+  }
+  google::protobuf::Struct report;
+  auto& fields = *report.mutable_fields();
+  fields["method"].set_string_value("world_ground_truth_obb_sat");
+  fields["complete"].set_bool_value(complete);
+  fields["checked_frames"].set_number_value(collision_checked_frames_);
+  fields["step_ms"].set_number_value(config_.step_ms);
+  fields["collision_count"].set_number_value(contacts_.size());
+  fields["status"].set_string_value(!contacts_.empty() ? "FAIL" : complete ? "PASS" : "INCOMPLETE");
+  auto* events = fields["contacts"].mutable_list_value();
+  for (const auto& [id, contact] : contacts_) {
+    auto& event = *events->add_values()->mutable_struct_value()->mutable_fields();
+    event["actor_id"].set_string_value(id);
+    event["first_time_s"].set_number_value(contact.first_s);
+    event["contact_frames"].set_number_value(contact.frames);
+  }
+  std::string json;
+  if (!google::protobuf::util::MessageToJsonString(report, &json).ok()) return false;
+  const auto temporary = config_.collision_report_path + ".tmp";
+  std::ofstream stream(temporary);
+  stream << json << '\n';
+  stream.close();
+  if (stream.fail() || std::rename(temporary.c_str(), config_.collision_report_path.c_str()) != 0) {
+    AERROR << "Cannot write collision report " << config_.collision_report_path;
+    return false;
+  }
+  return true;
+}
+
+bool WorldMessageSource::CheckCollisions(uint64_t now) {
+  const auto& v = common::VehicleConfigHelper::GetConfig().vehicle_param();
+  const double offset = (v.front_edge_to_center()-v.back_edge_to_center())/2;
+  const double lateral = (v.left_edge_to_center()-v.right_edge_to_center())/2;
+  const worldsim::BodyBox ego{x_+offset*std::cos(heading_)-lateral*std::sin(heading_),
+      y_+offset*std::sin(heading_)+lateral*std::cos(heading_), heading_,
+      (v.front_edge_to_center()+v.back_edge_to_center())/2,
+      (v.left_edge_to_center()+v.right_edge_to_center())/2};
+  bool first_contact = false;
+  for (const auto& actor : world_.SnapshotAgents()) {
+    if (!actor.enabled) continue;
+    if (worldsim::BodiesCollide(ego, {actor.x, actor.y, actor.heading, actor.length/2, actor.width/2})) {
+      auto [it, inserted] = contacts_.try_emplace(actor.id);
+      if (inserted) it->second.first_s = static_cast<double>(now-begin_ns_)/1e9;
+      ++it->second.frames;
+      first_contact |= inserted;
+    }
+  }
+  ++collision_checked_frames_;
+  return (!first_contact && now < end_ns_) || WriteCollisions(now >= end_ns_);
 }
 }  // namespace simulation
 }  // namespace apollo

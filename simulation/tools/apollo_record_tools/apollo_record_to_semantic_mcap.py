@@ -41,6 +41,7 @@ from google.protobuf.descriptor_pb2 import FileDescriptorSet
 from mcap.writer import Writer as McapWriter
 
 from foxglove_schemas_protobuf.CompressedVideo_pb2 import CompressedVideo
+from foxglove_schemas_protobuf.RawImage_pb2 import RawImage
 from foxglove_schemas_protobuf.FrameTransform_pb2 import FrameTransform
 from foxglove_schemas_protobuf.PackedElementField_pb2 import PackedElementField
 from foxglove_schemas_protobuf.PointCloud_pb2 import PointCloud
@@ -53,7 +54,7 @@ from hd_map import MapMesh, resolve_map, load_map, build_map_meshes
 from google.protobuf.message_factory import GetMessageClass
 from mcap_topic_debug import pool_from_file_descriptor_set
 
-CONVERTER_VERSION = "semantic-mcap-v14"
+CONVERTER_VERSION = "semantic-mcap-v15"
 
 
 def message_time_ns(message):
@@ -91,7 +92,7 @@ def is_bulky_topic(channel: str) -> bool:
     if "pointcloud" in c:
         return True
     # Uncompressed camera Image frames are multi-MB each.
-    if "/apollo/camera/" in c and not c.endswith("/compressed"):
+    if ("/apollo/camera/" in c or "/apollo/sensor/camera/" in c) and not c.endswith("/compressed"):
         return True
     return False
 
@@ -310,8 +311,33 @@ def set_timestamp(msg, ns: int) -> None:
 
 
 def camera_entity_topic(apollo_topic: str) -> str:
-    name = apollo_topic.removeprefix("/apollo/camera/").removesuffix("/compressed")
+    name = apollo_topic.removeprefix("/apollo/sensor/camera/").removeprefix("/apollo/camera/").removesuffix("/compressed").removesuffix("/image")
     return f"/camera/{name.replace('/', '_')}"
+
+
+
+def lidar_entity_topic(apollo_topic: str) -> str:
+    name = apollo_topic.removeprefix("/apollo/sensor/").removeprefix("rslidar/").removesuffix("/PointCloud2")
+    return f"/lidar/{name.strip('/')}/points"
+
+
+def write_raw_image(writer, channel, message, publish_ns, message_ns):
+    topic = camera_entity_topic(channel)
+    sizes = {"rgb8": 3, "bgr8": 3, "rgba8": 4, "bgra8": 4, "mono8": 1, "mono16": 2}
+    encoding = message.encoding.lower()
+    if encoding not in sizes:
+        raise ValueError(f"{channel}: unsupported Apollo Image encoding {message.encoding!r}")
+    width, height, step = message.width, message.height, message.step
+    if width <= 0 or height <= 0 or step < width * sizes[encoding] or len(message.data) != step * height:
+        raise ValueError(f"{channel}: invalid Image dimensions/stride/payload: {width}x{height}, step={step}, bytes={len(message.data)}")
+    if message_ns is None:
+        raise ValueError(f"{channel}: Image has no generation timestamp")
+    image = RawImage(width=width, height=height, step=step, encoding=encoding, data=message.data,
+                     frame_id=message.frame_id)
+    set_timestamp(image, message_ns)
+    if topic not in writer.channel_ids:
+        writer._register_foxglove("foxglove.RawImage", RawImage, topic, {"source_topic": channel})
+    writer.add(topic, publish_ns, message_ns, image.SerializeToString())
 
 
 def parse_h264_message(message_bytes: bytes) -> tuple[bytes | None, int | None]:
@@ -471,7 +497,6 @@ class SemanticMcapWriter:
         # FrameTransform is registered lazily via ensure_tf_channel() so bag `/tf`
         # can be preserved as a passthrough channel when present.
         self._register_foxglove("foxglove.PoseInFrame", PoseInFrame, "/vehicle")
-        self._register_foxglove("foxglove.PointCloud", PointCloud, "/lidar/up/points")
         self._register_foxglove("webmonitor.PlannedPath", PlannedPath, "/planning/trajectory")
         self.tf_topic: str | None = None
 
@@ -664,6 +689,7 @@ def write_pointcloud_packed(
     publish_ns: int,
     message_ns: int,
     sensor_frame: str,
+    topic: str = "/lidar/up/points",
 ) -> None:
     if message_ns is None:
         raise ValueError("Point cloud has no message_time; cannot align sensor geometry")
@@ -700,7 +726,9 @@ def write_pointcloud_packed(
         f.offset = offset
         f.type = dtype
     pc.data = packed
-    writer.add("/lidar/up/points", publish_ns, message_ns, pc.SerializeToString())
+    if topic not in writer.channel_ids:
+        writer._register_foxglove("foxglove.PointCloud", PointCloud, topic)
+    writer.add(topic, publish_ns, message_ns, pc.SerializeToString())
 
 
 def write_camera(
@@ -808,15 +836,15 @@ def main() -> int:
     def flush_pc_jobs(block: bool = False) -> None:
         nonlocal semantic_msgs
         still = []
-        for fut, publish_ns, message_ns in pending_pc:
+        for fut, publish_ns, message_ns, topic in pending_pc:
             if not block and not fut.done():
-                still.append((fut, publish_ns, message_ns))
+                still.append((fut, publish_ns, message_ns, topic))
                 continue
             result = fut.result()
             if result is None or writer is None:
                 continue
             packed, n, _, sensor_frame = result
-            write_pointcloud_packed(writer, packed, n, publish_ns, message_ns, sensor_frame)
+            write_pointcloud_packed(writer, packed, n, publish_ns, message_ns, sensor_frame, topic)
             semantic_msgs += 1
         pending_pc[:] = still
 
@@ -877,7 +905,9 @@ def main() -> int:
             publish_ns = int(event["timestamp_ns"])
             channel = event["channel"]
             payload = base64.b64decode(event["data_b64"])
-            message_ns = message_time_ns(writer.message_classes[channel].FromString(payload))
+            message = writer.message_classes[channel].FromString(payload)
+            message_ns = message_time_ns(message)
+            message_type = message.DESCRIPTOR.full_name
 
             # 1) Topic list + Topic View payloads (protobuf FDS from Cyber ProtoDesc).
             if do_passthrough:
@@ -909,11 +939,15 @@ def main() -> int:
                     paths = scene.perceived_obstacles(payload) if is_perception else scene.predicted_trajectories(payload)
                     writer.add(target, publish_ns, message_ns, paths.SerializeToString())
                     semantic_msgs += 1
-                elif channel == POINTCLOUD_TOPIC and not args.no_lidar:
+                elif message_type == "apollo.drivers.PointCloud" and not args.no_lidar:
                     fut = pool.submit(pack_pointcloud_bytes, payload, args.max_points, gpu)
-                    pending_pc.append((fut, publish_ns, message_ns))
+                    pending_pc.append((fut, publish_ns, message_ns, lidar_entity_topic(channel)))
                     if len(pending_pc) >= workers * 2:
-                        flush_pc_jobs(block=False)
+                        # Bound queued payloads even when packing is slower than disk reads.
+                        flush_pc_jobs(block=True)
+                elif message_type == "apollo.drivers.Image" and (not args.camera or "all" in args.camera):
+                    write_raw_image(writer, channel, message, publish_ns, message_ns)
+                    semantic_msgs += 1
                 elif channel in camera_topics_set:
                     write_camera(writer, channel, payload, publish_ns, message_ns)
                     semantic_msgs += 1

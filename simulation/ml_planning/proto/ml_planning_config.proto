@@ -1,0 +1,7 @@
+syntax = "proto2";
+package apollo.simulation.ml;
+
+message MLPlanningConfig {
+  // Immutable directory name under models/, e.g. v3, v4, v5.
+  required string model_version = 1;
+}

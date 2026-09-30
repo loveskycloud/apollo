@@ -1,0 +1,38 @@
+{
+  "id": "1haolou-turn_clear",
+  "name": "1haolou turn clear",
+  "description": "Unified ML planner test. Obstacle becomes observable after 5 seconds.",
+  "duration": 60,
+  "mapId": "1haolou_202608241047qh",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 9901.658943893664,
+      "y": 9000004.657402473,
+      "z": 0
+    },
+    "heading": 1.5570081025809317,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "route",
+    "routes": [
+      {
+        "id": "route",
+        "waypoints": [
+          {
+            "position": {
+              "x": 9921.917517706228,
+              "y": 9000007.938748602,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "agents": [],
+  "triggers": []
+}

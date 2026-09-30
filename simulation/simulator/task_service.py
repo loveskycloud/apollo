@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Persistent FIFO simulation jobs. Private subprocess + immutable run inputs.
+"""Persistent bounded simulation jobs. Private subprocess + immutable run inputs.
 
 JSON-lines protocol is owned by rerun's /api/sim handler; never accepts shell
 commands, executable paths or arbitrary environment variables from the browser.
@@ -14,7 +14,6 @@ import json
 import math
 import os
 from pathlib import Path
-import queue
 import re
 import shutil
 import signal
@@ -24,11 +23,22 @@ import threading
 import time
 import uuid
 import xml.etree.ElementTree as ET
+from driving_quality import analyze_trace
 
 # Apollo's generated Python schemas use the pure-Python runtime in this service;
 # do not inherit a shell's `cpp` setting without the matching extension module.
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
+
+
+def collision_summary(runs):
+    """Any collision in any repeat fails; absent/incomplete checks never pass."""
+    count = sum(r.get("collision_count", 0) for r in runs)
+    complete = bool(runs) and all(r.get("complete") is True and r.get("checked_frames", 0) > 0 for r in runs)
+    return {"status": "FAIL" if count or any(r.get("status") == "FAIL" for r in runs) else
+            "PASS" if complete and all(r.get("status") == "PASS" for r in runs) else
+            "INCOMPLETE" if runs else "NOT_EVALUATED",
+            "collision_count": count, "runs": runs}
 
 def _dedupe_dirs(paths):
     """Keep both bind-mount aliases (e.g. /apollo_workspace vs host checkout)."""
@@ -101,6 +111,7 @@ INPUT_ROOTS = _dedupe_dirs([
     "/apollo_workspace",
     "/home/wangsheng/test/application-core",
     "/opt/apollo/neo/share",
+    "/apollo/modules/map/data",
 ])
 _SIM_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(_SIM_DIR))
@@ -109,13 +120,14 @@ sys.path.insert(0, str(_logsim_tools))
 if str(ROOT / "modules/simulation/logsim/tools") not in sys.path:
     sys.path.insert(0, str(ROOT / "modules/simulation/logsim/tools"))
 from bag_diff import compare, messages, difference_page
-from configuration_tools import (APOLLO_GLOBAL_FLAGS, apply_workspace_configuration,
-                                 configuration_lock, update_global_flagfile, vehicle_geometry)
+from configuration_tools import APOLLO_GLOBAL_FLAGS, update_global_flagfile, vehicle_geometry
+from scenario_evaluation import evaluation_path, load_evaluation, evaluate_record
 
 MODULES = {
     "PREDICTION": ("modules/prediction/dag/prediction.dag", "/apollo/prediction"),
     "fake_prediction": ("modules/fake_prediction/dag/fake_prediction.dag", "/apollo/prediction"),
     "PLANNING": ("modules/planning/planning_component/dag/planning.dag", "/apollo/planning"),
+    "ML_PLANNING": ("modules/simulation/ml_planning/dag/ml_planning.dag", "/apollo/planning"),
     "CONTROL": ("modules/control/control_component/dag/control.dag", "/apollo/control"),
     "ROUTING": ("modules/routing/dag/routing.dag", "/apollo/raw_routing_response"),
 }
@@ -220,9 +232,9 @@ def preflight_world(path):
                 raise ValueError(f"Trigger {trigger.id}: unknown target route")
 
 
-def atomic_json(path, value):
+def atomic_json(path, value, compact=False):
     tmp = Path(str(path) + ".tmp")
-    tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False))
+    tmp.write_text(json.dumps(value, ensure_ascii=False, indent=None if compact else 2, allow_nan=False))
     tmp.replace(path)
 
 
@@ -242,7 +254,7 @@ def resolve(path, directory=False):
         ("/home/wangsheng/test/application-core/", "/apollo_workspace/"),
     )
     for src, dst in aliases:
-        if value.startswith(src):
+        if value.startswith(src) and Path(dst).is_dir():
             value = dst + value[len(src):]
             break
     out = Path(value)
@@ -308,6 +320,11 @@ def validate(request):
     if config.get("kind") not in ("bag", "world"):
         raise ValueError("Choose bag or world input")
     config["source"] = str(resolve(config.get("source", "")))
+    if config["kind"] == "world":
+        config["evaluation"] = load_evaluation(config["source"])
+        validity = config["evaluation"].get("validity", {})
+        if validity.get("status") == "INVALID":
+            raise ValueError("Invalid scenario excluded from validation: " + validity["reason"])
     config["map"] = str(resolve(config.get("map", ""), directory=True))
     if not any((Path(config["map"]) / name).is_file() for name in ("base_map.bin", "base_map.txt")):
         raise ValueError("Selected map has no base_map.bin / base_map.txt")
@@ -319,6 +336,10 @@ def validate(request):
         raise ValueError("Unsupported algorithm module")
     if "PREDICTION" in selected and "fake_prediction" in selected:
         raise ValueError("Choose either PREDICTION or fake_prediction, not both")
+    if "ML_PLANNING" in selected and "PLANNING" in selected:
+        raise ValueError("Choose either PLANNING or ML_PLANNING")
+    if "ML_PLANNING" in selected and config.get("model", "perfect_planning") != "perfect_planning":
+        raise ValueError("ML_PLANNING currently requires perfect_planning")
     config["modules"] = [module for module in MODULES if module in selected]
     config["repeat"] = int(config.get("repeat", 2))
     if config["repeat"] not in (1, 2, 3):
@@ -344,8 +365,14 @@ def validate(request):
     if config["kind"] == "world":
         if Path(config["source"]).suffix != ".json":
             raise ValueError("World input must be a scenario JSON")
-        if not {"ROUTING", "PLANNING"}.issubset(selected) or not _prediction_selected(selected):
-            raise ValueError("World closed loop requires ROUTING, PLANNING and PREDICTION or fake_prediction")
+        if "ROUTING" not in selected or not ({"PLANNING", "ML_PLANNING"} & set(selected)) or ("PLANNING" in selected and not _prediction_selected(selected)):
+            raise ValueError("World closed loop requires ROUTING and either ML_PLANNING or PLANNING + prediction")
+        document = json.loads(Path(config["source"]).read_text())
+        map_id = document.get("mapId", document.get("map_id", ""))
+        if map_id and Path(config["map"]).name != map_id:
+            raise ValueError(f"Scenario map {map_id} does not match selected map {config['map']}")
+        if "timeout_s" not in request:
+            config["timeout_s"] = max(10, min(7200, math.ceil(document.get("duration", 60))))
         if config["model"] == "kinematic_control" and "CONTROL" not in selected:
             raise ValueError("kinematic_control requires CONTROL")
     elif ".record" not in Path(config["source"]).name:
@@ -357,7 +384,7 @@ def catalog():
     search_roots = _dedupe_dirs([ROOT, SIM_PKG, ROOT / "modules/simulation", ROOT / "simulation"])
     records = []
     worlds = []
-    maps = set()
+    maps = {str(p.parent) for p in Path("/apollo/modules/map/data").glob("*/base_map.bin")}
     profiles = []
     for base_root in search_roots:
         records += sorted(str(p) for p in (base_root / "data/bag").glob("*.record*") if p.is_file())
@@ -388,19 +415,30 @@ def catalog():
         if extracted.is_dir():
             profiles.append(str(extracted))
     records = sorted(set(records))
-    worlds = sorted(set(worlds))
+    worlds += [str(p) for p in (SIM_PKG / "scene_editor/examples").rglob("*.worldsim.scenario.json")]
+    worlds += [str(p) for p in (SIM_PKG / "ml_planning/examples").rglob("*.worldsim.scenario.json")]
+    worlds = sorted(set(p for p in worlds if not p.endswith((".mineproj.json", ".suite.json"))))
+    suites = sorted(str(p) for p in (SIM_PKG / "scene_editor/examples").rglob("*.suite.json"))
     profiles = sorted(set(profiles))
     # Dreamview-style vehicle list: named packs/profiles that carry vehicle_param.
     vehicles = sorted(
         p for p in profiles
         if (Path(p) / "modules/common/data/vehicle_param.pb.txt").is_file())
-    return {"modules": list(MODULES), "bags": records, "worlds": worlds, "maps": sorted(maps),
+    source_maps = {}
+    for path in worlds + suites:
+        if path.endswith((".worldsim.scenario.json", ".suite.json")):
+            document = json.loads(Path(path).read_text())
+            source_maps[path] = document.get("mapId", "")
+    return {"source_maps": source_maps, "suites": suites, "max_concurrency": 30, "modules": list(MODULES), "bags": records, "worlds": worlds, "maps": sorted(maps),
             "profiles": profiles, "vehicles": vehicles, "stages": STAGES,
             "models": ["perfect_planning", "kinematic_control"]}
 
 
 class TaskService:
-    def __init__(self, state_dir):
+    def __init__(self, state_dir, workers=1):
+        if type(workers) is not int or not 1 <= workers <= 30:
+            raise ValueError("Worker count must be 1..30")
+        self.worker_count = workers
         self.root = Path(state_dir).resolve()
         self.root.mkdir(parents=True, exist_ok=True)
         self.file_lock = (self.root / "queue.lock").open("a")
@@ -410,12 +448,15 @@ class TaskService:
             self.file_lock.close()
             raise
         self.lock = threading.RLock()
-        self.queue = queue.Queue()
+        self.condition = threading.Condition(self.lock)
+        self.pending_ids = []
+        self.running_counts = {}
         self.jobs = {}
         self.cancelled = set()
-        self.child = None
-        self.active = None
+        self.children = {}
+        self.limits = {"single": 1}
         self.stopping = False
+        self.last_progress_save = 0.0
         saved = self.root / "jobs.json"
         if saved.exists():
             self.jobs = json.loads(saved.read_text())
@@ -423,11 +464,16 @@ class TaskService:
                 if job["stage"] not in TERMINAL:
                     job.update(stage="interrupted", error="Simulation service restarted; submit a new run from the saved configuration")
             self.save()
-        self.thread = threading.Thread(target=self.work, name="simulation-fifo", daemon=True)
-        self.thread.start()
+        self.threads = [threading.Thread(target=self.work, name=f"simulation-{i}", daemon=True)
+                        for i in range(workers)]
+        for thread in self.threads:
+            thread.start()
 
     def save(self):
-        atomic_json(self.root / "jobs.json", self.jobs)
+        # Compact encoding uses Python's C encoder; pretty-printing hundreds of
+        # histories under the queue lock serialized otherwise parallel workers.
+        atomic_json(self.root / "jobs.json", self.jobs, compact=True)
+        self.last_progress_save = time.monotonic()
 
     def update(self, job_id, **fields):
         with self.lock:
@@ -435,12 +481,16 @@ class TaskService:
             if "stage" in fields:
                 job["history"].append({"stage": fields["stage"], "wall_time": time.time()})
             job.update(fields)
+            if fields.get("stage") not in TERMINAL and time.monotonic()-self.last_progress_save < 1:
+                return  # Live state stays current; terminal states always persist immediately.
             self.save()
 
     def request(self, request):
         action = request.get("action")
         if action == "catalog":
-            return {"status": "ok", "catalog": catalog()}
+            value = catalog()
+            value["max_concurrency"] = self.worker_count
+            return {"status": "ok", "catalog": value}
         if action == "differences":
             with self.lock:
                 job = copy.deepcopy(self.jobs.get(request.get("id")))
@@ -460,18 +510,62 @@ class TaskService:
             page.update(task_id=job["id"], comparison=comparison,
                         left_run=1, right_run=comparison + 2)
             return {"status": "ok", "differences": page}
-        if action == "enqueue":
-            config = validate(request.get("config", {}))
+        if action in ("enqueue", "enqueue_suite"):
+            config_request = request.get("config", {})
+            suite = None
+            if action == "enqueue_suite":
+                path = resolve(config_request.get("suite", ""))
+                suite = json.loads(path.read_text())
+                if suite.get("kind") != "worldsim-suite" or suite.get("version") != 1:
+                    raise ValueError("Expected a version 1 worldsim-suite manifest")
+                if not isinstance(suite.get("name"), str) or not suite["name"].strip():
+                    raise ValueError("Suite name is required")
+                if not isinstance(suite.get("mapId"), str) or not suite["mapId"]:
+                    raise ValueError("Suite mapId is required")
+                scenes = suite.get("scenarios")
+                if not isinstance(scenes, list) or not 1 <= len(scenes) <= 512:
+                    raise ValueError("A suite requires 1..512 scenarios")
+                concurrency = config_request.get("concurrency", self.worker_count)
+                if type(concurrency) is not int or not 1 <= concurrency <= self.worker_count:
+                    raise ValueError(f"Concurrency must be 1..{self.worker_count}")
+                configs = []
+                for scene in scenes:
+                    if not isinstance(scene, str) or Path(scene).is_absolute() or ".." in Path(scene).parts:
+                        raise ValueError("Suite scenarios must be relative paths inside its directory")
+                    config = dict(config_request, kind="world", source=str(path.parent / scene))
+                    config.pop("suite", None)
+                    config.pop("concurrency", None)
+                    if suite.get("mapId") != Path(config.get("map", "")).name:
+                        raise ValueError("Select the suite's matching map: " + str(suite.get("mapId")))
+                    configs.append(validate(config))
+                # Check every member before publishing any jobs.
+                for config in configs:
+                    preflight_world(config["source"])
+            else:
+                configs = [validate(config_request)]
             with self.lock:
-                if sum(j["stage"] not in TERMINAL for j in self.jobs.values()) >= 32:
-                    raise ValueError("Queue limit reached (32 active / waiting tasks)")
-                job_id = uuid.uuid4().hex[:16]
-                self.jobs[job_id] = {"id": job_id, "stage": "queued", "config": config,
-                    "progress": 0, "history": [{"stage": "queued", "wall_time": time.time()}],
-                    "outputs": [], "error": None, "analysis": None}
+                if self.stopping:
+                    raise ValueError("Simulation service is stopping")
+                if sum(j["stage"] not in TERMINAL for j in self.jobs.values()) + len(configs) > 1024:
+                    raise ValueError("Queue limit reached (1024 active / waiting tasks)")
+                suite_id = uuid.uuid4().hex[:16] if suite else None
+                if suite:
+                    self.limits[suite_id] = concurrency
+                ids = []
+                for index, config in enumerate(configs):
+                    job_id = uuid.uuid4().hex[:16]
+                    ids.append(job_id)
+                    self.jobs[job_id] = {"id": job_id, "stage": "queued", "config": config,
+                        "progress": 0, "history": [{"stage": "queued", "wall_time": time.time()}],
+                        "outputs": [], "error": None, "analysis": None}
+                    if suite:
+                        self.jobs[job_id].update(suite_id=suite_id, suite_name=suite["name"],
+                                                suite_index=index + 1, suite_size=len(configs),
+                                                concurrency=concurrency)
                 self.save()
-                self.queue.put(job_id)
-            return {"status": "ok", "id": job_id}
+                self.pending_ids.extend(ids)
+                self.condition.notify_all()
+            return {"status": "ok", "id": ids[0], "ids": ids, "suite_id": suite_id}
         if action == "cancel":
             with self.lock:
                 job_id = request["id"]
@@ -479,9 +573,10 @@ class TaskService:
                     raise ValueError("Unknown task")
                 if self.jobs[job_id]["stage"] not in TERMINAL:
                     self.cancelled.add(job_id)
-                    if self.active == job_id and self.child and self.child.poll() is None:
-                        stop_process(self.child)
+                    stop_process(self.children.get(job_id))
                     if self.jobs[job_id]["stage"] == "queued":
+                        if job_id in self.pending_ids:
+                            self.pending_ids.remove(job_id)
                         self.update(job_id, stage="cancelled")
             return {"status": "ok"}
         if action == "list":
@@ -495,28 +590,47 @@ class TaskService:
 
     def work(self):
         while True:
-            job_id = self.queue.get()
-            if job_id is None:
-                return
+            with self.condition:
+                while True:
+                    if self.stopping:
+                        return
+                    # Pick the earliest eligible member while holding the queue
+                    # lock. A semaphore after dequeue lets later members jump
+                    # ahead of waiting members when concurrency is one.
+                    job_id = next((key for key in self.pending_ids
+                                   if self.running_counts.get(self.jobs[key].get("suite_id", "single"), 0)
+                                   < self.limits[self.jobs[key].get("suite_id", "single")]), None)
+                    if job_id is not None:
+                        self.pending_ids.remove(job_id)
+                        group = self.jobs[job_id].get("suite_id", "single")
+                        self.running_counts[group] = self.running_counts.get(group, 0) + 1
+                        break
+                    self.condition.wait()
             try:
                 self.check_cancel(job_id)
-                self.active = job_id
                 self.run(job_id)
             except InterruptedError as error:
                 self.update(job_id, stage="cancelled", error=str(error))
             except Exception as error:
                 self.update(job_id, stage="failed", error=str(error))
             finally:
-                self.active = self.child = None
+                with self.lock:
+                    child = self.children.pop(job_id, None)
+                if child and child.poll() is None:
+                    stop_process(child)
+                    try:
+                        child.wait(timeout=3)
+                    except subprocess.TimeoutExpired:
+                        stop_process(child, signal.SIGKILL)
+                        child.wait()
+                with self.condition:
+                    self.running_counts[group] -= 1
+                    self.condition.notify_all()
 
     def run(self, job_id):
-        # Configuration is workspace-wide, just like aem profile use. Serialize
-        # services too; failures never recover a different profile implicitly.
-        with configuration_lock(ROOT):
-            self.check_cancel(job_id)
-            self.run_with_configuration_lock(job_id)
-
-    def run_with_configuration_lock(self, job_id):
+        # Each process reads its own frozen profile and flagfile. Never apply a
+        # profile to the live workspace: other running jobs must stay unchanged.
+        self.check_cancel(job_id)
         config = self.jobs[job_id]["config"]
         job_dir = self.root / job_id
         job_dir.mkdir()
@@ -545,6 +659,11 @@ class TaskService:
         self.update(job_id, stage="data_preparation")
         source = snapshot(config["source"], job_dir / "input" / Path(config["source"]).name)
         if config["kind"] == "world":
+            sidecar = evaluation_path(config["source"])
+            if sidecar.exists():
+                snapshot(sidecar, evaluation_path(source))
+            if load_evaluation(source) != config.get("evaluation", load_evaluation(source)):
+                raise RuntimeError("Scene expectation changed after enqueue; submit the audited scene again")
             preflight_world(source)
         self.update(job_id, stage="map_update")
         map_dir = job_dir / "map"
@@ -555,7 +674,9 @@ class TaskService:
         vehicle = snapshot(config["vehicle"], job_dir / "vehicle/vehicle_param.pb.txt")
         profile = Path(config["profile"]) if config["profile"] else None
         preflight_plugins(profile or ROOT, config["modules"])
-        effective = apply_workspace_configuration(ROOT, profile, config["map"], config["vehicle"])
+        effective = {"configuration_scope": "task", "profile": str(profile or ""),
+                     "map_dir": config["map"], "vehicle_config_path": config["vehicle"],
+                     **vehicle_geometry(vehicle)}
         if any(effective[key] != value for key, value in vehicle_geometry(vehicle).items()):
             raise RuntimeError("Vehicle parameters changed during configuration preparation")
         atomic_json(job_dir / "configuration.json", effective)
@@ -592,7 +713,8 @@ class TaskService:
             names.update(p.name for p in (ROOT / "modules").iterdir())
         if profile and (profile / "modules").is_dir():
             names.update(p.name for p in (profile / "modules").iterdir())
-        names.update(_module_dir_name(module) for module in config["modules"])
+        names.update(_module_dir_name(module) for module in config["modules"] if module != "ML_PLANNING")
+        names.discard("simulation")
         names.add("common")
         for name in sorted(names):
             base = _module_base(name)
@@ -607,7 +729,7 @@ class TaskService:
             else:
                 override = None
             selected = any(_module_dir_name(module) == name for module in config["modules"])
-            if name in ("common", "planning", "prediction", "control", "routing", "fake_prediction") or selected or override:
+            if name == "common" or selected:
                 overlay(base, override, modules_dir / name)
             else:
                 (modules_dir / name).symlink_to(base.resolve(), target_is_directory=base.is_dir())
@@ -623,7 +745,8 @@ class TaskService:
         # Seed from the canonical container flagfile, not /apollo_workspace.
         runtime_vehicle = snapshot(vehicle, runtime / "modules/common/data/vehicle_param.pb.txt")
         global_flags = runtime / "modules/common/data/global_flagfile.txt"
-        snapshot(APOLLO_GLOBAL_FLAGS, global_flags)
+        flag_source = profile / "modules/common/data/global_flagfile.txt" if profile else APOLLO_GLOBAL_FLAGS
+        snapshot(flag_source if flag_source.is_file() else APOLLO_GLOBAL_FLAGS, global_flags)
         update_global_flagfile(global_flags, map_dir, runtime_vehicle)
         manifests[str(global_flags.relative_to(job_dir))] = digest(global_flags)
         if vehicle_geometry(runtime_vehicle) != vehicle_geometry(vehicle):
@@ -632,6 +755,23 @@ class TaskService:
                          runtime_vehicle_config_path=str(runtime_vehicle), task_vehicle_config_path=str(vehicle))
         atomic_json(job_dir / "configuration.json", effective)
         self.update(job_id, effective_configuration=effective)
+        ml_weights = None
+        if "ML_PLANNING" in config["modules"]:
+            snapshot(SIM_PKG / "ml_planning/dag/ml_planning.dag", runtime / MODULES["ML_PLANNING"][0])
+            sys.path.insert(0, str(SIM_PKG / "ml_planning"))
+            sys.path.insert(0, "/opt/apollo/neo/python")
+            from model_selection import read_model_selection
+            ml_root = runtime / "modules/simulation/ml_planning"
+            frozen_config = snapshot(SIM_PKG / "ml_planning/conf/ml_planning.pb.txt",
+                                     ml_root / "conf/ml_planning.pb.txt")
+            # The frozen selector chooses the source version exactly once.
+            selected = read_model_selection(frozen_config, SIM_PKG / "ml_planning/models")
+            ml_weights = snapshot(selected["weights"], ml_root / "models" / selected["version"] / "unified.weights")
+            if digest(ml_weights) != selected["sha256"]:
+                raise RuntimeError("ML model weights changed during selection; resubmit the task")
+            effective["ml_planning_model"] = dict(selected, frozen_weights=str(ml_weights))
+            atomic_json(job_dir / "configuration.json", effective)
+            self.update(job_id, effective_configuration=effective)
         self.update(job_id, stage="model_update")
         preflight_plugins(runtime, config["modules"])
         binary = Path(os.environ.get("SIMULATOR_BINARY", "/opt/apollo/neo/bin/simulator_main")).resolve(strict=True)
@@ -639,6 +779,7 @@ class TaskService:
             raise ValueError("Simulator binary is not executable")
         manifests["simulator_binary"] = digest(binary)
         runtime_libraries = sorted(Path("/opt/apollo/neo/lib/simulation").rglob("*.so"))
+        runtime_libraries += sorted(Path("/opt/apollo/neo/lib/modules/simulation").rglob("*.so"))
         for module in ["common", "map"] + [m.lower() for m in config["modules"]]:
             runtime_libraries += sorted((Path("/opt/apollo/neo/lib/modules") / module).rglob("*.so"))
         library_hashes = {str(p): digest(p) for p in runtime_libraries}
@@ -649,6 +790,7 @@ class TaskService:
                      "model_inputs": model_hashes,
                      "runtime_binary": str(binary), "ego_model": config["model"], "seed": config["seed"]})
         outputs = []
+        collision_runs = []
         for run in range(config["repeat"]):
             self.check_cancel(job_id)
             run_dir = job_dir / f"run-{run + 1}"
@@ -664,9 +806,13 @@ class TaskService:
                     inject.append("/apollo/raw_routing_request")
                 if not _prediction_selected(config["modules"]):
                     inject.append("/apollo/prediction")
-                if "PLANNING" not in config["modules"]:
+                if not {"PLANNING", "ML_PLANNING"}.intersection(config["modules"]):
                     inject.append("/apollo/planning")
+            if "ML_PLANNING" in config["modules"]:
+                inject.append("/apollo/planning/pad")
             suppress = [MODULES[m][1] for m in config["modules"]]
+            if "ML_PLANNING" in config["modules"]:
+                suppress += ["/apollo/planning/command_status", "/apollo/planning/reference_line_offset_command_status"]
             fields = {"scenario_id": job_id, "task_dir": str(run_dir), "map_dir": str(map_dir),
                 "vehicle_config_path": str(vehicle), "output_record_path": str(output),
                 "progress_path": str(progress), "random_seed": config["seed"], "step_ms": config["step_ms"],
@@ -694,13 +840,13 @@ class TaskService:
             def simulator_module(name):
                 # simulator_main ModuleCatalog only knows PREDICTION/PLANNING/...;
                 # fake_prediction reuses that slot with an overridden dag path.
-                return "PREDICTION" if name == "fake_prediction" else name
+                return {"fake_prediction": "PREDICTION", "ML_PLANNING": "PLANNING"}.get(name, name)
             lines = [f"{key}: {pb(value)}" for key, value in fields.items()]
             lines += ["input_kind: " + ("WORLD" if config["kind"] == "world" else "BAG")]
             lines += [f"runtime_modules: {pb(simulator_module(m))}" for m in config["modules"]]
             lines += [f"dag_paths: {pb(str(runtime / MODULES[m][0]))}" for m in config["modules"]]
             lines += ["channel_policy {"]
-            for key, values in (("inject_channels", inject), ("suppress_channels", suppress), ("record_channels", suppress)):
+            for key, values in (("inject_channels", inject), ("suppress_channels", suppress), ("record_channels", list(dict.fromkeys(inject + suppress)))):
                 lines += [f"  {key}: {pb(value)}" for value in values]
             lines += ["}"]
             (run_dir / "task.pb.txt").write_text("\n".join(lines) + "\n")
@@ -715,6 +861,11 @@ class TaskService:
                 LD_LIBRARY_PATH="/opt/apollo/neo/lib:" + env.get("LD_LIBRARY_PATH", ""))
             env.pop("SIM_OUTPUT_RECORD", None)
             env["SIM_PARENT_PID"] = str(os.getpid())
+            (run_dir / "log").mkdir()
+            env["GLOG_log_dir"] = str(run_dir / "log")
+            if ml_weights:
+                env.pop("ML_PLANNING_WEIGHTS", None)
+                env.update(ML_PLANNING_TRACE=str(run_dir / "policy.csv"))
             log = run_dir / "runtime.log"
             # World AFAP can be slower than sim-clock; keep timeout_s as sim duration
             # but give the subprocess a larger wall budget.
@@ -722,17 +873,19 @@ class TaskService:
             if config["kind"] == "world":
                 wall_s = min(7200, max(config["timeout_s"] * 5, config["timeout_s"] + 120))
             with log.open("wb") as stream:
-                self.child = subprocess.Popen([str(binary), "--task_dir=" + str(run_dir)], cwd=runtime,
+                child = subprocess.Popen([str(binary), "--task_dir=" + str(run_dir)], cwd=runtime,
                     env=env, stdout=stream, stderr=subprocess.STDOUT, start_new_session=True)
+                with self.lock:
+                    self.children[job_id] = child
                 start = time.monotonic()
-                self.update(job_id, stage="simulation_running", log_path=str(log), process_id=self.child.pid)
-                while self.child.poll() is None:
+                self.update(job_id, stage="simulation_running", log_path=str(log), process_id=child.pid)
+                while child.poll() is None:
                     if job_id in self.cancelled or self.stopping or time.monotonic() - start > wall_s:
-                        stop_process(self.child)
-                        try: self.child.wait(timeout=3)
+                        stop_process(child)
+                        try: child.wait(timeout=3)
                         except subprocess.TimeoutExpired:
-                            stop_process(self.child, signal.SIGKILL)
-                            self.child.wait()
+                            stop_process(child, signal.SIGKILL)
+                            child.wait()
                         self.check_cancel(job_id)
                         raise TimeoutError("Simulation exceeded its wall-time limit; see runtime.log")
                     if progress.is_file():
@@ -740,11 +893,24 @@ class TaskService:
                         self.update(job_id, progress=state["percent"], simulation=state)
                     time.sleep(.2)
                 self.check_cancel(job_id)
-                if self.child.returncode != 0:
+                if config["kind"] == "world":
+                    report_path = run_dir / "collision.json"
+                    report = json.loads(report_path.read_text()) if report_path.is_file() else {
+                        "status": "INCOMPLETE", "complete": False, "error": "Missing collision report"}
+                    report["run"] = run + 1
+                    collision_runs.append(report)
+                    early_analysis = {"collision": collision_summary(collision_runs)}
+                    atomic_json(job_dir / "analysis.json", early_analysis)
+                    self.update(job_id, analysis=early_analysis)
+                if child.returncode != 0:
+                    # Preserve a readable partial replay when contact causes
+                    # the planner/simulator to stop before normal completion.
+                    partial = [output] if output.is_file() else sorted(run_dir.glob("simulation.record.*"))
+                    self.update(job_id, outputs=outputs + [str(p) for p in partial])
                     with log.open("rb") as tail:
                         tail.seek(max(0, log.stat().st_size - 4000))
                         detail = tail.read().decode(errors="replace")
-                    raise RuntimeError(f"Simulator exited {self.child.returncode}; {detail}")
+                    raise RuntimeError(f"Simulator exited {child.returncode}; {detail}")
             self.update(job_id, stage="simulation_end")
             # Prefer a single unsplit file (ResultSink disables Cyber segmenting).
             # Fall back to one segment suffix for older binaries.
@@ -754,47 +920,26 @@ class TaskService:
             outputs.append(str(candidates[0]))
             self.update(job_id, outputs=outputs)
         self.update(job_id, stage="result_analysis")
-        counts = {}
-        stamps = {}
-        status_counts = {}
-        healthy_plans = 0
-        first_pose = last_pose = None
-        sys.path.insert(0, "/opt/apollo/neo/python")
-        from modules.common_msgs.planning_msgs.planning_pb2 import ADCTrajectory
-        from modules.common_msgs.control_msgs.control_cmd_pb2 import ControlCommand
-        from modules.common_msgs.localization_msgs.localization_pb2 import LocalizationEstimate
-        for channel, stamp, payload in messages(outputs[0]):
-            counts[channel] = counts.get(channel, 0) + 1
-            if channel in stamps and stamp < stamps[channel]:
-                raise RuntimeError(f"Output clock moved backwards: {channel}")
-            stamps[channel] = stamp
-            if channel in ("/apollo/planning", "/apollo/control"):
-                msg = (ADCTrajectory if channel == "/apollo/planning" else ControlCommand).FromString(payload)
-                code = msg.header.status.error_code
-                key = f"{channel}:{code}"
-                status_counts[key] = status_counts.get(key, 0) + 1
-                if channel == "/apollo/planning" and code == 0 and msg.trajectory_point and not msg.decision.main_decision.HasField("not_ready"):
-                    healthy_plans += 1
-            if channel == "/apollo/localization/pose":
-                p = LocalizationEstimate.FromString(payload).pose.position
-                last_pose = (p.x, p.y)
-                if first_pose is None: first_pose = last_pose
-        missing = [MODULES[m][1] for m in config["modules"] if not counts.get(MODULES[m][1])]
-        comparisons = [compare(outputs[0], item, algorithm=True) for item in outputs[1:]]
-        analysis = {"topic_message_counts": counts, "missing_module_outputs": missing,
-            "effective_configuration": effective,
-            "algorithm_status_counts": status_counts, "valid_planning_frames": healthy_plans,
-            "ego_displacement_m": math.dist(first_pose, last_pose) if first_pose is not None else None,
-            "determinism": "not_tested" if not comparisons else "PASS" if all(c["result"] == "PASS" for c in comparisons) else "FAIL",
-            "comparisons": comparisons, "manifest": str(job_dir / "manifest.json"),
-            "scope": "Exact ordered messages, nanosecond timestamps and protobuf values; only listed wall profiling fields excluded and map ordering canonicalized; raw differences retained. Same runtime environment."}
-        atomic_json(job_dir / "analysis.json", analysis)
+        analysis = self.analyze_results(job_id, {"config": config, "job_dir": str(job_dir),
+            "source": str(source), "outputs": outputs,
+            "collision_runs": collision_runs, "effective": effective})
         self.update(job_id, analysis=analysis)
-        if missing:
-            raise RuntimeError("Selected modules produced no output: " + ", ".join(missing))
-        if "PLANNING" in config["modules"] and healthy_plans == 0:
+        if config["kind"] == "world" and analysis["collision"]["status"] != "PASS":
+            raise RuntimeError("Collision check " + analysis["collision"]["status"] + "; contact evidence retained in Sim result")
+        if analysis.get("planning_continuity", {}).get("status") == "FAIL":
+            raise RuntimeError("Planning trajectory continuity failed: empty/invalid trajectory or missing publication; see planning_continuity evidence")
+        if analysis.get("driving_quality", {}).get("status") == "FAIL":
+            raise RuntimeError("Driving quality failed: straight-road offset or repeated lateral reversals; replay evidence retained")
+        if "ML_PLANNING" in config["modules"] and analysis["estop_frames"]:
+            raise RuntimeError(f"ML Planning reported emergency stop in {analysis['estop_frames']} frames; replay evidence retained")
+        if analysis.get("scenario_expectation", {}).get("status") == "FAIL":
+            raise RuntimeError("Scenario expectation failed: " + analysis["scenario_expectation"]["expectation"] +
+                               "; replay evidence retained")
+        if analysis["missing_module_outputs"]:
+            raise RuntimeError("Selected modules produced no output: " + ", ".join(analysis["missing_module_outputs"]))
+        if {"PLANNING", "ML_PLANNING"}.intersection(config["modules"]) and analysis["valid_planning_frames"] == 0:
             raise RuntimeError("Planning produced no valid trajectory frames; inspect algorithm status and replay the output bag")
-        if comparisons and any(c["result"] != "PASS" for c in comparisons):
+        if analysis["determinism"] == "FAIL":
             raise RuntimeError("Determinism comparison failed; output bags and first differences are retained")
         if digest(binary) != manifests["simulator_binary"]:
             raise RuntimeError("Simulator binary changed during task execution")
@@ -806,13 +951,51 @@ class TaskService:
             raise RuntimeError("Task input/config snapshots changed during execution")
         self.update(job_id, stage="completed", progress=100)
 
+    def analyze_results(self, job_id, request):
+        job_dir = Path(request["job_dir"])
+        request_path = job_dir / "analysis_request.json"
+        atomic_json(request_path, request)
+        analysis_log = job_dir / "analysis.log"
+        with analysis_log.open("wb") as stream:
+            child = subprocess.Popen([sys.executable, str(_SIM_DIR / "result_analysis.py"),
+                "--request", str(request_path)], stdout=stream, stderr=subprocess.STDOUT,
+                start_new_session=True)
+            with self.lock:
+                self.children[job_id] = child
+            self.update(job_id, analysis_process_id=child.pid)
+            started = time.monotonic()
+            while child.poll() is None:
+                if self.stopping or job_id in self.cancelled or time.monotonic()-started > 1800:
+                    stop_process(child)
+                    try:
+                        child.wait(timeout=3)
+                    except subprocess.TimeoutExpired:
+                        stop_process(child, signal.SIGKILL)
+                        child.wait()
+                    self.check_cancel(job_id)
+                    raise TimeoutError("Result analysis exceeded 1800 seconds; see analysis.log")
+                time.sleep(.2)
+            self.check_cancel(job_id)
+            if child.returncode != 0:
+                with analysis_log.open("rb") as tail:
+                    tail.seek(max(0, analysis_log.stat().st_size-4000))
+                    detail = tail.read().decode(errors="replace")
+                raise RuntimeError(f"Result analysis exited {child.returncode}; {detail}")
+        return json.loads((job_dir / "analysis.json").read_text())
+
     def close(self):
-        self.stopping = True
-        if self.child and self.child.poll() is None:
-            stop_process(self.child)
-        self.queue.put(None)
-        self.thread.join(timeout=5)
-        if not self.thread.is_alive():
+        with self.lock:
+            self.stopping = True
+            for child in self.children.values():
+                stop_process(child)
+            for job_id in self.pending_ids:
+                if self.jobs[job_id]["stage"] not in TERMINAL:
+                    self.update(job_id, stage="cancelled", error="Simulation service stopped")
+            self.pending_ids.clear()
+            self.condition.notify_all()
+        for thread in self.threads:
+            thread.join(timeout=10)
+        if not any(thread.is_alive() for thread in self.threads):
             self.file_lock.close()
 
 
@@ -820,7 +1003,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--state-dir", default=os.environ.get("SIM_TASK_ROOT", str(ROOT / "data/simulation/jobs")))
     args = parser.parse_args()
-    service = TaskService(args.state_dir)
+    service = TaskService(args.state_dir, workers=30)
     def shutdown(signum, frame):
         raise SystemExit(128 + signum)
     signal.signal(signal.SIGTERM, shutdown)

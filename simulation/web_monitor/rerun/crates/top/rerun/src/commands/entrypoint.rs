@@ -26,6 +26,10 @@ use crate::commands::RrdCommands;
 #[path = "convert_record.rs"]
 mod convert_record;
 
+#[cfg(all(feature = "server", feature = "web_viewer"))]
+#[path = "browser_record.rs"]
+mod browser_record;
+
 const LONG_ABOUT: &str = r#"
 The Rerun command-line interface:
 * Spawn viewers to visualize Rerun recordings and other supported formats.
@@ -1493,6 +1497,14 @@ fn serve_web(
     web_server.set_open_local_handler(open_local);
 
     let convert_mgr = convert_record::ConvertManager::new();
+    let browser_records = browser_record::BrowserRecords::new(
+        std::sync::Arc::clone(&convert_mgr),
+        convert_record::record_tool(),
+        upload_recording_dir().join("browser-streams"),
+    );
+    web_server.set_browser_record_handler(std::sync::Arc::new(move |query, reader| {
+        browser_records.request(query, reader)
+    }));
     {
         let mgr = std::sync::Arc::clone(&convert_mgr);
         web_server.set_convert_record_handler(std::sync::Arc::new(move |body: &str| {
@@ -2627,11 +2639,7 @@ fn save_uploaded_recording(filename: &str, bytes: &[u8]) -> Result<String, Strin
             .map_err(|e| format!("write upload: {e}"))?;
         file.sync_all().map_err(|e| format!("sync upload: {e}"))?;
     }
-    let path = dest
-        .canonicalize()
-        .unwrap_or(dest)
-        .display()
-        .to_string();
+    let path = dest.canonicalize().unwrap_or(dest).display().to_string();
     re_log::info!(
         "web_monitor upload_recording: saved {} ({} MiB)",
         path,

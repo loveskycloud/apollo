@@ -1,0 +1,61 @@
+{
+  "id": "beijing-clear_04",
+  "name": "clear · 4",
+  "description": "Family 1/12; variant 4/10; location-triggered deterministic held-out WorldSim regression.",
+  "duration": 90,
+  "mapId": "beijing_zongyuan_1haolou",
+  "simConfig": {
+    "planning": true,
+    "control": false,
+    "prediction": true,
+    "routing": true
+  },
+  "agents": [],
+  "triggers": [],
+  "ego": {
+    "id": "ego",
+    "name": "ego",
+    "position": {
+      "x": 10000.38189262395,
+      "y": 9000005.242339654,
+      "z": 0
+    },
+    "heading": 3.1065732953290977,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.8
+    },
+    "activeRouteId": "ego-route",
+    "routes": [
+      {
+        "id": "ego-route",
+        "name": "ego-route",
+        "pathType": "polyline",
+        "waypoints": [
+          {
+            "id": "ego-route-0",
+            "position": {
+              "x": 10000.38189262395,
+              "y": 9000005.242339654,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 3.1065732977183087
+          },
+          {
+            "id": "ego-route-1",
+            "position": {
+              "x": 9968.651359027264,
+              "y": 9000006.353977036,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 3.1065732977183087
+          }
+        ]
+      }
+    ],
+    "vehicleProfile": ""
+  }
+}

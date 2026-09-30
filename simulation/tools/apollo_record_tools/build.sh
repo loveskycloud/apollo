@@ -35,6 +35,8 @@ g++ -std=c++17 -O2 -Wall -Wextra \
   -lcyber_common \
   -lcyber_binary \
   -lcyber_base \
+  -L"${APOLLO_NEO}/lib/3rd-glog" \
+  -lglog \
   -lprotobuf \
   -o "${OUT_DIR}/apollo_record_tool"
 

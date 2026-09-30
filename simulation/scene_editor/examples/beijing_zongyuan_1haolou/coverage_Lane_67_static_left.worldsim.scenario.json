@@ -1,0 +1,151 @@
+{
+  "id": "coverage_Lane_67_static_left",
+  "name": "Lane_67 · static_left",
+  "description": "Map coverage: Lane_65 -> Lane_62 -> Lane_70 -> Lane_3 -> Lane_67 -> Lane_66 -> Lane_68 -> Lane_8 -> Lane_41_reverse -> Lane_37_reverse; family static_left; anchor Lane_67. Expected: safe_stop. 窄路永久障碍占用可通行空间，预期在障碍前安全停车等待，不要求强行到达终点。",
+  "duration": 180,
+  "mapId": "beijing_zongyuan_1haolou",
+  "simConfig": {
+    "planning": true,
+    "control": false,
+    "prediction": true,
+    "routing": true
+  },
+  "agents": [
+    {
+      "id": "static-0",
+      "name": "static-0",
+      "type": "AGENT_TYPE_STATIC",
+      "position": {
+        "x": 10000.086909011405,
+        "y": 8999994.500536798,
+        "z": 0
+      },
+      "heading": 0.4000900861682095,
+      "speed": 0,
+      "size": {
+        "x": 0.35,
+        "y": 0.18,
+        "z": 0.6
+      },
+      "color": "#F5B654",
+      "enabled": true,
+      "activeRouteId": "static-0-route",
+      "routes": [
+        {
+          "id": "static-0-route",
+          "name": "static-0",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "id": "static-0-0",
+              "position": {
+                "x": 10000.086909011405,
+                "y": 8999994.500536798,
+                "z": 0
+              },
+              "speed": 0,
+              "heading": 0.4000900861682095
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [],
+  "ego": {
+    "id": "ego",
+    "name": "ego",
+    "position": {
+      "x": 9993.879109413487,
+      "y": 8999995.910354229,
+      "z": 0
+    },
+    "heading": -1.6049466408372797,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.8
+    },
+    "activeRouteId": "ego-route",
+    "routes": [
+      {
+        "id": "ego-route",
+        "name": "ego",
+        "pathType": "polyline",
+        "waypoints": [
+          {
+            "id": "ego-0",
+            "position": {
+              "x": 9993.879109413487,
+              "y": 8999995.910354229,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -1.6049466408372797
+          },
+          {
+            "id": "ego-1",
+            "position": {
+              "x": 9994.170907407424,
+              "y": 8999994.392301854,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -0.6059778222952791
+          },
+          {
+            "id": "ego-2",
+            "position": {
+              "x": 9997.230024128756,
+              "y": 8999994.134703906,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -0.04129276883534195
+          },
+          {
+            "id": "ego-3",
+            "position": {
+              "x": 10000.2425847607,
+              "y": 8999994.132421484,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 0.4000900861682095
+          },
+          {
+            "id": "ego-4",
+            "position": {
+              "x": 10000.710339603827,
+              "y": 8999997.955723591,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 1.5352284758736074
+          },
+          {
+            "id": "ego-5",
+            "position": {
+              "x": 10000.945186997049,
+              "y": 9000002.014908342,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 1.2774032197994571
+          },
+          {
+            "id": "ego-6",
+            "position": {
+              "x": 10002.86935495481,
+              "y": 9000002.540874908,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 0.007571773353985784
+          }
+        ]
+      }
+    ],
+    "vehicleProfile": ""
+  }
+}

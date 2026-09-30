@@ -1,0 +1,91 @@
+{
+  "id": "coverage_Lane_76_clear",
+  "name": "Lane_76 · clear",
+  "description": "Map coverage: Lane_45 -> Lane_48 -> Lane_47 -> Lane_76 -> Lane_72_reverse -> Lane_73_reverse; family clear; anchor Lane_76. Expected: reach_goal. 道路可通行，预期无碰撞到达终点。",
+  "duration": 180,
+  "mapId": "beijing_zongyuan_1haolou",
+  "simConfig": {
+    "planning": true,
+    "control": false,
+    "prediction": true,
+    "routing": true
+  },
+  "agents": [],
+  "triggers": [],
+  "ego": {
+    "id": "ego",
+    "name": "ego",
+    "position": {
+      "x": 9908.056277613596,
+      "y": 9000008.468955288,
+      "z": 0
+    },
+    "heading": -0.01527699274344336,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.8
+    },
+    "activeRouteId": "ego-route",
+    "routes": [
+      {
+        "id": "ego-route",
+        "name": "ego",
+        "pathType": "polyline",
+        "waypoints": [
+          {
+            "id": "ego-0",
+            "position": {
+              "x": 9908.056277613596,
+              "y": 9000008.468955288,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -0.01527699274344336
+          },
+          {
+            "id": "ego-1",
+            "position": {
+              "x": 9908.902126260358,
+              "y": 9000008.45603226,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -0.01527699274344336
+          },
+          {
+            "id": "ego-2",
+            "position": {
+              "x": 9915.0523883961,
+              "y": 9000008.292158496,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -0.07305987276628194
+          },
+          {
+            "id": "ego-3",
+            "position": {
+              "x": 9921.153199999468,
+              "y": 9000008.07332498,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -0.026623773468727158
+          },
+          {
+            "id": "ego-4",
+            "position": {
+              "x": 9926.045668111215,
+              "y": 9000007.942838559,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -0.11230741612398722
+          }
+        ]
+      }
+    ],
+    "vehicleProfile": ""
+  }
+}

@@ -177,6 +177,16 @@ function densifyPolyline(points: Vec3[], maxStep = 0.45): Vec3[] {
   return out;
 }
 
+/** Exact lane-width samples for scenario feasibility audits (not rendered averages). */
+export function parseApolloLaneWidths(text: string) {
+  const root = parseObject(tokenize(text), { at: 0 });
+  return new Map(asArray(root.lane as ProtoObject | ProtoObject[]).map(lane => {
+    const samples = (key: string) => asArray(lane[key] as ProtoObject | ProtoObject[])
+      .map(p => ({ s: Number(p.s), width: Number(p.width) }));
+    return [idOf(lane.id, ''), { left: samples('left_sample'), right: samples('right_sample') }] as const;
+  }));
+}
+
 /** Parse Apollo HDMap protobuf text (base_map.txt). */
 export function parseApolloBaseMapText(text: string, name = 'Apollo Base Map'): HdMap {
   const tokens = tokenize(text);

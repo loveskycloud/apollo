@@ -1,0 +1,381 @@
+{
+  "id": "coverage_Lane_42_continuous_crossing",
+  "name": "Lane_42 · continuous_crossing",
+  "description": "Map coverage: Lane_48 -> Lane_47 -> Lane_75 -> Lane_42 -> Lane_50 -> Lane_18 -> Lane_60 -> Lane_19; family continuous_crossing; anchor Lane_42. Expected: yield_then_proceed. 动态障碍会离开道路，预期合理让行后到达终点。",
+  "duration": 180,
+  "mapId": "beijing_zongyuan_1haolou",
+  "simConfig": {
+    "planning": true,
+    "control": false,
+    "prediction": true,
+    "routing": true
+  },
+  "agents": [
+    {
+      "id": "cross-car-0",
+      "name": "cross-car-0",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 9910.230605778639,
+        "y": 9000003.213296566,
+        "z": 0
+      },
+      "heading": 1.5586182827690402,
+      "speed": 0.55,
+      "size": {
+        "x": 0.65,
+        "y": 0.4,
+        "z": 0.6
+      },
+      "color": "#F5B654",
+      "enabled": false,
+      "activeRouteId": "cross-car-0-route",
+      "routes": [
+        {
+          "id": "cross-car-0-route",
+          "name": "cross-car-0",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "id": "cross-car-0-0",
+              "position": {
+                "x": 9910.230605778639,
+                "y": 9000003.213296566,
+                "z": 0
+              },
+              "speed": 0.55,
+              "heading": 1.5586182827690402
+            },
+            {
+              "id": "cross-car-0-1",
+              "position": {
+                "x": 9910.342641014402,
+                "y": 9000012.412614373,
+                "z": 0
+              },
+              "speed": 0.55,
+              "heading": 1.5586182827690402
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cross-car-1",
+      "name": "cross-car-1",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 9910.213556938414,
+        "y": 9000001.813400378,
+        "z": 0
+      },
+      "heading": 1.5586182827690402,
+      "speed": 0.55,
+      "size": {
+        "x": 0.65,
+        "y": 0.4,
+        "z": 0.6
+      },
+      "color": "#F5B654",
+      "enabled": false,
+      "activeRouteId": "cross-car-1-route",
+      "routes": [
+        {
+          "id": "cross-car-1-route",
+          "name": "cross-car-1",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "id": "cross-car-1-0",
+              "position": {
+                "x": 9910.213556938414,
+                "y": 9000001.813400378,
+                "z": 0
+              },
+              "speed": 0.55,
+              "heading": 1.5586182827690402
+            },
+            {
+              "id": "cross-car-1-1",
+              "position": {
+                "x": 9910.325592174177,
+                "y": 9000011.012718186,
+                "z": 0
+              },
+              "speed": 0.55,
+              "heading": 1.5586182827690402
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cross-car-2",
+      "name": "cross-car-2",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 9910.19650809819,
+        "y": 9000000.41350419,
+        "z": 0
+      },
+      "heading": 1.5586182827690402,
+      "speed": 0.55,
+      "size": {
+        "x": 0.65,
+        "y": 0.4,
+        "z": 0.6
+      },
+      "color": "#F5B654",
+      "enabled": false,
+      "activeRouteId": "cross-car-2-route",
+      "routes": [
+        {
+          "id": "cross-car-2-route",
+          "name": "cross-car-2",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "id": "cross-car-2-0",
+              "position": {
+                "x": 9910.19650809819,
+                "y": 9000000.41350419,
+                "z": 0
+              },
+              "speed": 0.55,
+              "heading": 1.5586182827690402
+            },
+            {
+              "id": "cross-car-2-1",
+              "position": {
+                "x": 9910.308543333953,
+                "y": 9000009.612821998,
+                "z": 0
+              },
+              "speed": 0.55,
+              "heading": 1.5586182827690402
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cross-car-3",
+      "name": "cross-car-3",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 9910.179459257964,
+        "y": 8999999.013608003,
+        "z": 0
+      },
+      "heading": 1.5586182827690402,
+      "speed": 0.55,
+      "size": {
+        "x": 0.65,
+        "y": 0.4,
+        "z": 0.6
+      },
+      "color": "#F5B654",
+      "enabled": false,
+      "activeRouteId": "cross-car-3-route",
+      "routes": [
+        {
+          "id": "cross-car-3-route",
+          "name": "cross-car-3",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "id": "cross-car-3-0",
+              "position": {
+                "x": 9910.179459257964,
+                "y": 8999999.013608003,
+                "z": 0
+              },
+              "speed": 0.55,
+              "heading": 1.5586182827690402
+            },
+            {
+              "id": "cross-car-3-1",
+              "position": {
+                "x": 9910.291494493727,
+                "y": 9000008.21292581,
+                "z": 0
+              },
+              "speed": 0.55,
+              "heading": 1.5586182827690402
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "activate-cross-car-0",
+      "name": "activate-cross-car-0",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "cross-car-0"
+        }
+      ],
+      "center": {
+        "x": 9914.248965712963,
+        "y": 9000005.71414538,
+        "z": 0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 1,
+        "z": 3
+      },
+      "heading": -2.656847994352552,
+      "targetAgentId": "ego"
+    },
+    {
+      "id": "activate-cross-car-1",
+      "name": "activate-cross-car-1",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "cross-car-1"
+        }
+      ],
+      "center": {
+        "x": 9914.248965712963,
+        "y": 9000005.71414538,
+        "z": 0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 1,
+        "z": 3
+      },
+      "heading": -2.656847994352552,
+      "targetAgentId": "ego"
+    },
+    {
+      "id": "activate-cross-car-2",
+      "name": "activate-cross-car-2",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "cross-car-2"
+        }
+      ],
+      "center": {
+        "x": 9914.248965712963,
+        "y": 9000005.71414538,
+        "z": 0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 1,
+        "z": 3
+      },
+      "heading": -2.656847994352552,
+      "targetAgentId": "ego"
+    },
+    {
+      "id": "activate-cross-car-3",
+      "name": "activate-cross-car-3",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "cross-car-3"
+        }
+      ],
+      "center": {
+        "x": 9914.248965712963,
+        "y": 9000005.71414538,
+        "z": 0
+      },
+      "size": {
+        "x": 0.8,
+        "y": 1,
+        "z": 3
+      },
+      "heading": -2.656847994352552,
+      "targetAgentId": "ego"
+    }
+  ],
+  "ego": {
+    "id": "ego",
+    "name": "ego",
+    "position": {
+      "x": 9912.904348301545,
+      "y": 9000008.394803071,
+      "z": 0
+    },
+    "heading": -0.01536449471444014,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.8
+    },
+    "activeRouteId": "ego-route",
+    "routes": [
+      {
+        "id": "ego-route",
+        "name": "ego",
+        "pathType": "polyline",
+        "waypoints": [
+          {
+            "id": "ego-0",
+            "position": {
+              "x": 9912.904348301545,
+              "y": 9000008.394803071,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -0.01536449471444014
+          },
+          {
+            "id": "ego-1",
+            "position": {
+              "x": 9914.825207522552,
+              "y": 9000006.893957615,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -1.6153582805542113
+          },
+          {
+            "id": "ego-2",
+            "position": {
+              "x": 9910.261050136183,
+              "y": 9000005.713111188,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 3.129414609563937
+          },
+          {
+            "id": "ego-3",
+            "position": {
+              "x": 9904.736716196114,
+              "y": 9000004.680075048,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -2.1813242853027286
+          },
+          {
+            "id": "ego-4",
+            "position": {
+              "x": 9904.068693871342,
+              "y": 9000000.651822452,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -1.6000875846345874
+          }
+        ]
+      }
+    ],
+    "vehicleProfile": ""
+  }
+}

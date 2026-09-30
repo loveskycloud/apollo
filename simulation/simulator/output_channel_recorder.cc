@@ -3,6 +3,8 @@
  *****************************************************************************/
 
 #include "modules/simulation/simulator/output_channel_recorder.h"
+#include "modules/common_msgs/planning_msgs/pad_msg.pb.h"
+#include "modules/common_msgs/external_command_msgs/command_status.pb.h"
 
 #include <utility>
 
@@ -71,6 +73,10 @@ bool OutputChannelRecorder::Start(const std::shared_ptr<cyber::Node>& node,
       added = AddTypedReader<control::ControlCommand>(channel);
     } else if (channel == "/apollo/planning/command" || channel == "/apollo/planning_command_history") {
       added = AddTypedReader<planning::PlanningCommand>(channel);
+    } else if (channel == "/apollo/planning/pad") {
+      added = AddTypedReader<planning::PadMessage>(channel);
+    } else if (channel == "/apollo/planning/command_status" || channel == "/apollo/planning/reference_line_offset_command_status") {
+      added = AddTypedReader<external_command::CommandStatus>(channel);
     } else if (channel == "/apollo/raw_routing_request") {
       added = AddTypedReader<routing::RoutingRequest>(channel);
     } else if (channel == "/apollo/routing_response" || channel == "/apollo/raw_routing_response") {

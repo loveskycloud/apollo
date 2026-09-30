@@ -8,7 +8,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use parking_lot::Mutex;
 
-const CONVERTER_VERSION: &str = "semantic-mcap-v14";
+const CONVERTER_VERSION: &str = "semantic-mcap-v15";
 
 #[derive(Clone, Debug)]
 pub struct ConvertJob {
@@ -317,7 +317,7 @@ fn converter_script() -> PathBuf {
     apollo_record_tools_dir().join("apollo_record_to_semantic_mcap.py")
 }
 
-fn record_tool() -> PathBuf {
+pub(super) fn record_tool() -> PathBuf {
     if let Ok(p) = std::env::var("WEB_MONITOR_RECORD_TOOL") {
         return PathBuf::from(p);
     }

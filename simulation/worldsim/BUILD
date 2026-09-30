@@ -1,4 +1,4 @@
-load("//tools:apollo_package.bzl", "apollo_cc_binary", "apollo_cc_library", "apollo_package")
+load("//tools:apollo_package.bzl", "apollo_cc_binary", "apollo_cc_library", "apollo_cc_test", "apollo_package")
 load("//tools:cpplint.bzl", "cpplint")
 
 package(default_visibility = ["//visibility:public"])
@@ -23,6 +23,7 @@ apollo_cc_library(
         "agent/agents.h",
         "agent/bezier_path.h",
         "core/scenario_loader.h",
+        "core/collision.h",
         "core/world.h",
         "ego/ego_car.h",
         "trigger/trigger_base.h",
@@ -39,6 +40,14 @@ apollo_cc_binary(
     name = "worldsim",
     srcs = ["main.cc"],
     deps = ["//modules/simulation/simulator:apollo_simulation_core"],
+)
+
+apollo_cc_test(
+    name = "agent_base_test",
+    size = "small",
+    srcs = ["agent/agent_base_test.cc"],
+    deps = [":worldsim_core", "@com_google_googletest//:gtest_main"],
+    linkstatic = True,
 )
 
 filegroup(

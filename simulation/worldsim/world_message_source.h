@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -29,6 +30,11 @@ class WorldMessageSource final : public IMessageSource {
 
  private:
   bool Step(uint64_t now_ns);
+  bool CheckCollisions(uint64_t now_ns);
+  bool WriteCollisions(bool complete);
+  struct Contact { double first_s = 0; uint64_t frames = 0; };
+  std::map<std::string, Contact> contacts_;
+  uint64_t collision_checked_frames_ = 0;
   bool AdvanceEgo(uint64_t now_ns);
   bool SendRoute(uint64_t now_ns);
   bool IsMissionComplete() const;

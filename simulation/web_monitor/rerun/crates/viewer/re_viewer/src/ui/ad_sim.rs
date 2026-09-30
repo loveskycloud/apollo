@@ -1,15 +1,16 @@
-//! Docked configuration and persistent FIFO tasks. Painting never runs a job.
+//! Docked configuration and bounded parallel tasks. Painting never runs a job.
 use super::ad_shell::theme;
 use re_viewer_context::AppContext;
 use serde_json::{Value, json};
 
 type Reply = std::sync::Arc<parking_lot::Mutex<Option<Result<Value, String>>>>;
-const MODULES: [&str; 5] = [
+const MODULES: [&str; 6] = [
     "PREDICTION",
     "fake_prediction",
     "PLANNING",
     "CONTROL",
     "ROUTING",
+    "ML_PLANNING",
 ];
 
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
@@ -64,7 +65,10 @@ struct State {
     /// vehicle_param + applies the profile overlay, like Dreamview CHANGE_VEHICLE.
     vehicle: String,
     model: String,
-    modules: [bool; 5],
+    modules: [bool; 6],
+    use_suite: bool,
+    suite: String,
+    concurrency: u32,
     repeat: u32,
     seed: u32,
     step: u32,
@@ -95,7 +99,10 @@ impl Default for State {
             map: String::new(),
             vehicle: String::new(),
             model: "perfect_planning".into(),
-            modules: [true, false, true, true, false],
+            modules: [true, false, true, true, false, false],
+            use_suite: false,
+            suite: String::new(),
+            concurrency: 30,
             repeat: 2,
             seed: 1,
             step: 10,
@@ -133,6 +140,10 @@ impl State {
                 .expect("config is an object literal")
                 .clone(),
         );
+        if self.kind == "world" && self.use_suite {
+            config.insert("suite".into(), json!(self.suite));
+            config.insert("concurrency".into(), json!(self.concurrency));
+        }
         Value::Object(config)
     }
     fn receive(&mut self, reply: Result<Value, String>) {
@@ -223,6 +234,7 @@ impl State {
                     .into(),
             );
         }
+        self.use_suite = false;
         self.kind = c.kind;
         self.source = c.source;
         self.map = c.map;
@@ -369,9 +381,7 @@ pub(super) fn show(
                     ui.horizontal(|ui| {
                         let back = ui.add(
                             egui::Button::new(
-                                egui::RichText::new("← Tasks")
-                                    .size(12.0)
-                                    .color(theme::TEXT),
+                                egui::RichText::new("← Tasks").size(12.0).color(theme::TEXT),
                             )
                             .fill(theme::CARD_BG)
                             .corner_radius(6.0),
@@ -545,25 +555,84 @@ fn config_editor(
                 point(diagnostic, kind, &r);
                 if r.clicked() {
                     state.kind = kind.into();
+                    state.source.clear();
+                    if kind == "world" {
+                        state.modules[4] = true;
+                        state.modules[3] = false;
+                        state.modules[0] = false;
+                        state.modules[1] = !state.modules[5];
+                    }
                 }
             }
         });
         ui.add_space(10.0);
+        if state.kind == "world" {
+            ui.horizontal(|ui| {
+                for (enabled, label) in [(false, "Single scenario"), (true, "Scenario suite")] {
+                    let response = module_chip(ui, label, state.use_suite == enabled);
+                    point(
+                        diagnostic,
+                        if enabled { "suite_mode" } else { "single_mode" },
+                        &response,
+                    );
+                    if response.clicked() {
+                        state.use_suite = enabled;
+                    }
+                }
+            });
+        }
+        let suite_mode = state.kind == "world" && state.use_suite;
+        let source = if suite_mode {
+            &mut state.suite
+        } else {
+            &mut state.source
+        };
+        let before = source.clone();
         diagnostic["Scenario"] = picker(
             ui,
-            if state.kind == "bag" {
+            if suite_mode {
+                "Scenario suite"
+            } else if state.kind == "bag" {
                 "Record"
             } else {
                 "Scenario"
             },
-            &mut state.source,
-            &catalog[if state.kind == "bag" {
+            source,
+            &catalog[if suite_mode {
+                "suites"
+            } else if state.kind == "bag" {
                 "bags"
             } else {
                 "worlds"
             }],
             false,
         );
+        if *source != before {
+            if let Some(map_id) = catalog["source_maps"][source.as_str()].as_str() {
+                if let Some(map) = catalog["maps"].as_array().and_then(|maps| {
+                    maps.iter()
+                        .find_map(|m| m.as_str().filter(|m| m.rsplit('/').next() == Some(map_id)))
+                }) {
+                    state.map = map.to_owned();
+                }
+            }
+        }
+        if suite_mode {
+            ui.add_space(8.0);
+            field_label(ui, "Concurrent scenarios");
+            themed_drag(
+                ui,
+                &mut state.concurrency,
+                Some(1..=30),
+                "concurrency",
+                diagnostic,
+            );
+            ui.label(
+                egui::RichText::new("Run every member; each has its own progress and replay.")
+                    .size(11.0)
+                    .color(theme::TEXT_DIM),
+            );
+        }
     });
 
     ui.add_space(10.0);
@@ -581,6 +650,33 @@ fn config_editor(
 
     ui.add_space(10.0);
     section_card(ui, "Stack", |ui| {
+        field_label(ui, "Planner");
+        let mut planner = if state.modules[5] {
+            "ML_PLANNING"
+        } else {
+            "PLANNING"
+        }
+        .to_owned();
+        let title = planner.clone();
+        let planner_response = themed_combo(ui, "planner", &title, &mut planner, |ui, selected| {
+            menu_option(ui, selected, "PLANNING".into(), "Planning");
+            menu_option(ui, selected, "ML_PLANNING".into(), "ML Planning");
+        });
+        point(diagnostic, "planner", &planner_response);
+        if planner != title {
+            state.modules[2] = planner == "PLANNING";
+            state.modules[5] = planner == "ML_PLANNING";
+            state.modules[4] = true;
+            if state.modules[5] {
+                state.modules[0] = false;
+                state.modules[1] = false;
+                state.modules[3] = false;
+                state.model = "perfect_planning".into();
+            } else if !state.modules[0] && !state.modules[1] {
+                state.modules[1] = true;
+            }
+        }
+        ui.add_space(8.0);
         ui.label(
             egui::RichText::new("Modules")
                 .size(11.0)
@@ -590,22 +686,29 @@ fn config_editor(
         ui.horizontal_wrapped(|ui| {
             ui.spacing_mut().item_spacing = egui::vec2(6.0, 6.0);
             for (index, module) in MODULES.iter().enumerate() {
+                if matches!(*module, "PLANNING" | "ML_PLANNING") {
+                    continue;
+                }
                 let on = state.modules[index];
                 let r = module_chip(ui, module_label(module), on);
                 point(diagnostic, module, &r);
                 if r.clicked() {
                     state.modules[index] = !on;
+                    if !on && index == 0 {
+                        state.modules[1] = false;
+                    }
+                    if !on && index == 1 {
+                        state.modules[0] = false;
+                    }
                 }
             }
         });
         if state.kind == "world" {
             ui.add_space(8.0);
             ui.label(
-                egui::RichText::new(
-                    "World closed loop needs Routing + Planning + Prediction or Fake prediction.",
-                )
-                .size(11.0)
-                .color(theme::TEXT_DIM),
+                egui::RichText::new("Routing + one planner. Planning also requires prediction.")
+                    .size(11.0)
+                    .color(theme::TEXT_DIM),
             );
             ui.add_space(8.0);
             field_label(ui, "Ego model");
@@ -723,6 +826,8 @@ fn config_editor(
         egui::Button::new(
             egui::RichText::new(if state.pending.is_some() {
                 "Starting…"
+            } else if state.kind == "world" && state.use_suite {
+                "Run scenario suite"
             } else {
                 "Start simulation"
             })
@@ -736,7 +841,9 @@ fn config_editor(
     );
     point(diagnostic, "enqueue", &r);
     if r.clicked() {
-        *action = Some(json!({"action":"enqueue","config":state.config()}));
+        *action = Some(
+            json!({"action":if state.kind == "world" && state.use_suite { "enqueue_suite" } else { "enqueue" },"config":state.config()}),
+        );
     }
     ui.add_space(8.0);
 }
@@ -746,6 +853,7 @@ fn module_label(module: &str) -> &'static str {
         "PREDICTION" => "Prediction",
         "fake_prediction" => "Fake prediction",
         "PLANNING" => "Planning",
+        "ML_PLANNING" => "ML Planning",
         "CONTROL" => "Control",
         "ROUTING" => "Routing",
         _ => "Module",
@@ -811,8 +919,7 @@ fn module_chip(ui: &mut egui::Ui, label: &str, on: bool) -> egui::Response {
 fn dropdown_trigger(ui: &mut egui::Ui, text: &str) -> egui::Response {
     let height = 34.0;
     let width = ui.available_width();
-    let (rect, response) =
-        ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
+    let (rect, response) = ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
 
     let fill = if response.hovered() || response.has_focus() {
         theme::CARD_BG_HOVER
@@ -827,13 +934,8 @@ fn dropdown_trigger(ui: &mut egui::Ui, text: &str) -> egui::Response {
             theme::ACCENT.gamma_multiply(0.35)
         },
     );
-    ui.painter().rect(
-        rect,
-        8.0,
-        fill,
-        stroke,
-        egui::StrokeKind::Inside,
-    );
+    ui.painter()
+        .rect(rect, 8.0, fill, stroke, egui::StrokeKind::Inside);
 
     // Right chevron well — makes this read as a select, not a label.
     let chevron_w = 28.0;
@@ -878,7 +980,7 @@ fn themed_combo(
     button_text: &str,
     selected: &mut String,
     add_contents: impl FnOnce(&mut egui::Ui, &mut String),
-) {
+) -> egui::Response {
     let response = dropdown_trigger(ui, button_text);
     egui::Popup::menu(&response)
         .id(egui::Id::new(("themed_combo", id)))
@@ -890,6 +992,7 @@ fn themed_combo(
                 add_contents(ui, selected);
             });
         });
+    response
 }
 
 fn themed_drag(
@@ -921,8 +1024,7 @@ fn dark_menu_frame(ui: &mut egui::Ui, add_contents: impl FnOnce(&mut egui::Ui)) 
         .inner_margin(egui::Margin::symmetric(8, 8))
         .show(ui, |ui| {
             ui.visuals_mut().override_text_color = Some(theme::TEXT);
-            ui.visuals_mut().widgets.inactive.fg_stroke =
-                egui::Stroke::new(1.0, theme::TEXT);
+            ui.visuals_mut().widgets.inactive.fg_stroke = egui::Stroke::new(1.0, theme::TEXT);
             ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
             ui.visuals_mut().selection.bg_fill = theme::ACCENT_STRONG.gamma_multiply(0.45);
             add_contents(ui);
@@ -1031,9 +1133,7 @@ fn picker(
                 egui::TextEdit::singleline(selected)
                     .desired_width(ui.available_width())
                     .background_color(theme::CARD_BG)
-                    .hint_text(
-                        egui::RichText::new("/apollo_workspace/...").color(theme::TEXT_DIM),
-                    )
+                    .hint_text(egui::RichText::new("/apollo_workspace/...").color(theme::TEXT_DIM))
                     .text_color(theme::TEXT)
                     .margin(egui::Margin::symmetric(10, 8)),
             );
@@ -1096,9 +1196,11 @@ fn tasks_list(
             .color(theme::TEXT),
     );
     ui.label(
-        egui::RichText::new("FIFO · one active job · closing this panel does not stop work")
-            .size(11.0)
-            .color(theme::TEXT_DIM),
+        egui::RichText::new(
+            "Up to 10 concurrent scenarios · closing this panel does not stop work",
+        )
+        .size(11.0)
+        .color(theme::TEXT_DIM),
     );
     ui.add_space(8.0);
     egui::Frame::new()
@@ -1212,6 +1314,16 @@ fn task_card(
     replay: &mut Option<(String, bool)>,
     detail: bool,
 ) {
+    if let Some(name) = job["suite_name"].as_str() {
+        ui.label(
+            egui::RichText::new(format!(
+                "{} · {}/{}",
+                name, job["suite_index"], job["suite_size"]
+            ))
+            .size(11.0)
+            .color(theme::TEXT_DIM),
+        );
+    }
     let job_id = job["id"].as_str().unwrap_or("Unknown task");
     let stage = job["stage"].as_str().unwrap_or("unknown");
     let (accent, badge_bg, stage_label) = stage_style(stage);
@@ -1268,7 +1380,10 @@ fn task_card(
                             .sense(egui::Sense::click()),
                         );
                         point(diagnostic, &format!("inspect_{job_id}"), &title_r);
-                        if title_r.on_hover_text(format!("{source}\n{job_id}")).clicked() {
+                        if title_r
+                            .on_hover_text(format!("{source}\n{job_id}"))
+                            .clicked()
+                        {
                             state.inspect(job);
                         }
                     },
@@ -1283,9 +1398,12 @@ fn task_card(
                     );
                     if let Some(run) = job["run"].as_u64() {
                         ui.label(
-                            egui::RichText::new(format!("·  run {run}/{}", job["config"]["repeat"]))
-                                .size(11.0)
-                                .color(theme::TEXT_DIM),
+                            egui::RichText::new(format!(
+                                "·  run {run}/{}",
+                                job["config"]["repeat"]
+                            ))
+                            .size(11.0)
+                            .color(theme::TEXT_DIM),
                         );
                     }
                 });
@@ -1338,9 +1456,7 @@ fn task_card(
                             .corner_radius(6.0)
                             .min_size(egui::vec2(0.0, 26.0)),
                         )
-                        .on_hover_text(
-                            "Load into Config editor; starting creates a new task",
-                        );
+                        .on_hover_text("Load into Config editor; starting creates a new task");
                     point(diagnostic, &format!("view_config_{job_id}"), &reuse);
                     if reuse.clicked()
                         && let Err(error) = state.edit_config(job)
@@ -1351,9 +1467,7 @@ fn task_card(
                         let cancel = ui.add_enabled(
                             state.pending.is_none(),
                             egui::Button::new(
-                                egui::RichText::new("Cancel")
-                                    .size(11.0)
-                                    .color(theme::TEXT),
+                                egui::RichText::new("Cancel").size(11.0).color(theme::TEXT),
                             )
                             .fill(theme::CARD_BG)
                             .corner_radius(6.0)
@@ -1383,9 +1497,9 @@ fn task_card(
                                 if r.clicked() {
                                     *replay = Some((
                                         path.into(),
-                                        job["config"]["modules"].as_array().is_some_and(|m| {
-                                            m.iter().any(|m| m == "CONTROL")
-                                        }),
+                                        job["config"]["modules"]
+                                            .as_array()
+                                            .is_some_and(|m| m.iter().any(|m| m == "CONTROL")),
                                     ));
                                 }
                             }
@@ -1412,10 +1526,8 @@ fn task_card(
                     .show(ui, |ui| {
                         if let Some(error) = job["error"].as_str() {
                             ui.add(
-                                egui::Label::new(
-                                    egui::RichText::new(error).color(theme::TEXT),
-                                )
-                                .wrap(),
+                                egui::Label::new(egui::RichText::new(error).color(theme::TEXT))
+                                    .wrap(),
                             );
                         }
                         if let Some(history) = job["history"].as_array() {
@@ -1430,6 +1542,81 @@ fn task_card(
                             }
                         }
                         if !job["analysis"].is_null() {
+                            let expectation = &job["analysis"]["scenario_expectation"];
+                            if let Some(mode) = expectation["expectation"].as_str() {
+                                let label = match mode {
+                                    "safe_stop" => "Blocked road · safe stop",
+                                    "yield_then_proceed" => "Yield then reach destination",
+                                    "reach_goal" => "Reach destination",
+                                    other => other,
+                                };
+                                let status =
+                                    expectation["status"].as_str().unwrap_or("NOT_EVALUATED");
+                                ui.label(
+                                    egui::RichText::new(format!("Expected: {label} · {status}"))
+                                        .color(if status == "FAIL" {
+                                            egui::Color32::from_rgb(255, 110, 110)
+                                        } else {
+                                            theme::TEXT
+                                        }),
+                                );
+                                if let Some(reason) = expectation["reason"].as_str() {
+                                    ui.label(
+                                        egui::RichText::new(reason)
+                                            .color(theme::TEXT_DIM)
+                                            .size(11.0),
+                                    );
+                                }
+                            }
+                            let collision = &job["analysis"]["collision"];
+                            let continuity = &job["analysis"]["planning_continuity"];
+                            let continuity_status =
+                                continuity["status"].as_str().unwrap_or("NOT_EVALUATED");
+                            ui.label(
+                                egui::RichText::new(format!(
+                                    "Planning continuity: {continuity_status}"
+                                ))
+                                .color(
+                                    if continuity_status == "FAIL" {
+                                        egui::Color32::from_rgb(255, 110, 110)
+                                    } else {
+                                        theme::TEXT
+                                    },
+                                ),
+                            );
+                            if continuity_status == "FAIL" {
+                                ui.label(
+                                    egui::RichText::new(continuity["runs"].to_string())
+                                        .color(theme::TEXT_DIM)
+                                        .size(11.0),
+                                );
+                            }
+                            let status = collision["status"].as_str().unwrap_or("NOT_EVALUATED");
+                            ui.label(
+                                egui::RichText::new(format!(
+                                    "Collision: {status} · {} contacts",
+                                    collision["collision_count"].as_u64().unwrap_or(0)
+                                ))
+                                .color(if status == "FAIL" {
+                                    egui::Color32::from_rgb(255, 110, 110)
+                                } else {
+                                    theme::TEXT
+                                }),
+                            );
+                            if let Some(runs) = collision["runs"].as_array() {
+                                for run in runs {
+                                    if let Some(contacts) = run["contacts"].as_array() {
+                                        for contact in contacts {
+                                            ui.label(format!(
+                                                "Run {} · {} · first contact {:.2} s",
+                                                run["run"],
+                                                contact["actor_id"].as_str().unwrap_or("?"),
+                                                contact["first_time_s"].as_f64().unwrap_or(0.0)
+                                            ));
+                                        }
+                                    }
+                                }
+                            }
                             ui.label(
                                 egui::RichText::new(format!(
                                     "Determinism: {}",

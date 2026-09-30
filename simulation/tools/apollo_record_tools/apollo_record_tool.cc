@@ -142,7 +142,7 @@ bool ParseArgs(int argc, char** argv, Options* options) {
   }
 
   if (options->command != "index" && options->command != "split" &&
-      options->command != "slice" && options->command != "dump-jsonl") {
+      options->command != "slice" && options->command != "prefix" && options->command != "header" && options->command != "dump-jsonl") {
     std::cerr << "Unknown command: " << options->command << "\n";
     return false;
   }
@@ -449,6 +449,66 @@ int RunSlice(const Options& options) {
   return 0;
 }
 
+int RunHeader(const Options& options) {
+  if (options.inputs.size() != 1) return 1;
+  apollo::cyber::record::RecordFileReader reader;
+  if (!reader.Open(options.inputs.front())) return 1;
+  const auto& header = reader.GetHeader();
+  std::cout << "{\"begin_ns\":\"" << header.begin_time()
+            << "\",\"end_ns\":\"" << header.end_time()
+            << "\",\"messages\":" << header.message_number() << "}\n";
+  return 0;
+}
+
+// Extract one fully received Cyber chunk using the existing Cyber protobuf reader.
+// This accepts a growing source: it never reads its not-yet-arrived index/tail.
+int RunPrefix(const Options& options) {
+  if (options.inputs.size() != 1 || options.output.empty()) {
+    std::cerr << "prefix requires one source and -o output.record\n";
+    return 1;
+  }
+  apollo::cyber::record::RecordFileReader reader;
+  if (!reader.Open(options.inputs.front())) return 1;
+  if (reader.GetHeader().compress() != apollo::cyber::proto::COMPRESS_NONE) {
+    std::cerr << "Compressed Cyber sections are unsupported\n";
+    return 1;
+  }
+  RecordWriter writer;
+  writer.SetSizeOfFileSegmentation(0);
+  writer.SetIntervalOfFileSegmentation(0);
+  if (!writer.Open(options.output)) return 1;
+  std::unordered_set<std::string> channels;
+  apollo::cyber::record::Section section;
+  while (reader.ReadSection(&section)) {
+    if (section.type == apollo::cyber::proto::SECTION_CHANNEL) {
+      apollo::cyber::proto::Channel channel;
+      if (!reader.ReadSection(section.size, &channel) ||
+          !writer.WriteChannel(channel.name(), channel.message_type(), channel.proto_desc())) {
+        return 1;
+      }
+      channels.insert(channel.name());
+    } else if (section.type == apollo::cyber::proto::SECTION_CHUNK_BODY) {
+      apollo::cyber::proto::ChunkBody chunk;
+      if (!reader.ReadSection(section.size, &chunk) || chunk.messages().empty()) return 1;
+      for (const auto& message : chunk.messages()) {
+        if (!channels.count(message.channel_name()) ||
+            !writer.WriteMessage(message.channel_name(), message.content(), message.time())) {
+          std::cerr << "Invalid first record chunk\n";
+          return 1;
+        }
+      }
+      writer.Close();
+      return 0;
+    } else if (section.type == apollo::cyber::proto::SECTION_CHUNK_HEADER) {
+      if (!reader.SkipSection(section.size)) return 1;
+    } else {
+      std::cerr << "No complete first chunk in source\n";
+      return 1;
+    }
+  }
+  return 1;
+}
+
 int RunDumpJsonl(const Options& options) {
   std::unique_ptr<std::ofstream> file_out;
   std::ostream* out = &std::cout;
@@ -548,6 +608,8 @@ int main(int argc, char** argv) {
     return 2;
   }
 
+  if (options.command == "header") return RunHeader(options);
+  if (options.command == "prefix") return RunPrefix(options);
   if (options.command == "index") {
     return RunIndex(options);
   }

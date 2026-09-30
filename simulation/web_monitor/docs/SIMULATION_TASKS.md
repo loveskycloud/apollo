@@ -32,7 +32,9 @@ is explicitly `not_tested`, never a determinism PASS.
   cancellation remain on each task card; replay is offered only after a task ends,
   so a record still being written cannot be opened as a finished result.
 
-The persistent FIFO runs one task at a time:
+The persistent queue runs up to three suite members concurrently. Single submissions
+remain serialized with one another; a suite can explicitly select concurrency 1, 2
+or 3. At concurrency 1, members run in manifest order. Each member follows:
 
 `queued → data_preparation → map_update → profile_update → model_update → simulation_start → simulation_running → simulation_end → result_analysis → completed`
 
@@ -44,19 +46,13 @@ unfinished jobs `interrupted`; it does not silently resume from an unverified ch
 Each task retains source/map/config snapshots, a SHA-256 manifest, per-run logs,
 `task.pb.txt`, `progress.json`, output Cyber records and `analysis.json`. Configuration
 overlays are in `.runtime` so buildtool cannot confuse them with source packages.
-Profile application follows AEM's `profiles/current` and per-file symlink convention
-and really updates workspace files before the task is initialized.
-`simulation/simulator/configuration_tools.py` applies the selected profile, updates
-`modules/common/data/global_flagfile.txt` with the selected map and vehicle paths,
-and derives `half_vehicle_width` strictly from `vehicle_param.width / 2`.
-There are **no new configuration backups, rollbacks or automatic recovery**.
-Missing configuration, invalid widths, broken links, profile/vehicle mismatches and
-I/O failures fail explicitly; an old profile's missing files are not silently
-replaced with installed defaults. Select a profile explicitly when a workspace
-profile is active instead of treating that profile as unspecified defaults.
-Workspace configuration changes are serialized across simulation services.
-Existing per-task input snapshots remain for reproducibility, not as a recovery
-mechanism; the task-local global flagfile points to the frozen map and vehicle.
+The selected profile is copied into the task's `.runtime` directory. Tasks do not
+switch `profiles/current`, create workspace profile links, or write the live global
+flagfile. The task-local flagfile uses the frozen map and vehicle and derives
+`half_vehicle_width` strictly from `vehicle_param.width / 2`.
+Only selected algorithm modules and common configuration are frozen; unrelated
+installed packages remain read-only references. Missing selected configuration,
+invalid widths, broken links and profile/vehicle mismatches fail explicitly.
 No module daemon launch or workspace data-root links occur.
 `environment_tools.cc` applies the same derived half-width **before the first map
 load**, and module override flagfiles retain it after loading profile flags.
@@ -73,6 +69,26 @@ the service does **not** automatically substitute them for an incompatible profi
 switches to the corresponding algorithm layout and enables result spatial layers.
 The standard Layers checkboxes remain authoritative afterwards. Output records include
 complete Cyber ProtoDesc dependency trees; the viewer does not guess schemas.
+
+## Scene suites and planners
+
+A `worldsim-suite` version 1 manifest contains `name`, `mapId` and a `scenarios`
+array of relative WorldSim JSON filenames. Select WorldSim → Scenario suite in
+the UI, choose a matching vehicle and planner, then Run scenario suite.
+The included [Beijing suite](../../scene_editor/examples/beijing_zongyuan_1haolou/README.md)
+contains eight editor projects and exports. Map selection follows the manifest.
+The API action is `enqueue_suite`; config includes `suite` and `concurrency` in
+addition to the usual WorldSim settings. All members are validated before any
+are published to the queue. Each task carries suite identity and member index;
+failure does not stop the remaining members, and each has independent Replay.
+
+Choose exactly one of Planning and ML Planning. The ML DAG occupies the existing
+Planning runtime slot, publishes `/apollo/planning`, and reads raw world perception.
+Its selected weights are copied and fingerprinted per task. ML currently requires
+`perfect_planning`; Routing is required for both planners. New WorldSim forms select
+Fake prediction explicitly for classical Planning; real Prediction remains available.
+An ML emergency stop or terminal error greater than 0.4 m marks a failed task with
+recordings retained. Runs compares repetitions per scene and differs from concurrency.
 
 ## Runtime contract
 
@@ -255,3 +271,41 @@ map and vehicle are required; the supplied legacy profile is not a working defau
 `dashboard-regression2/` additionally reopens the user's original control record and
 checks chassis-value parity, paused seeks, planar/chase camera following and 28
 buffered playback samples on the deployed 9090 build.
+
+
+### 128 场景与物理碰撞结果（2026-09-29）
+
+北京总院一号楼清单包含 128 个不同配置的可编辑场景，整套可并发 1–3 个运行。单清单上限 256，待运行/运行任务合计上限 512。所有成员先校验，再原子入队；失败不跳过剩余成员。
+
+WORLD 每个步长从真实 world 状态取启用的物体，使用车辆实际前后左右边界和物体旋转矩形执行 SAT 接触判断，默认 10 ms。`run-N/collision.json` 保存完成状态、检查帧数、首次接触秒数、actor ID 和接触帧数；collision_count 是发生接触的物体个数。此检查为每步离散检测，不宣称连续时间扫掠。
+
+Sim result 展示 Collision PASS / FAIL / INCOMPLETE / NOT_EVALUATED。任意重复运行碰撞即失败；缺失或未完成检测不算 PASS。LogSim 尚未接入真实 world 碰撞检查，显示 NOT_EVALUATED。ML 另检查 estop、终点 0.4 m、直路偏移（3 m 恢复距离后 0.15 m）和 10 s 内显著横向反向次数。碰撞、质量检查和确定性是独立指标。
+
+ML 默认权重改为 `ml_planning/models/v3/unified.weights`；旧任务仍使用其冻结模型与当时的结果，新检测不会悄悄改写旧任务。原 8 场景按到达终点给出的历史结果不能作为行为质量验收。
+
+
+## 场景预期与合理停车
+
+WorldSim 场景可配同名 `.evaluation.json`，例如 `case.worldsim.scenario.json` 对应 `case.evaluation.json`。该文件通过场景内容 SHA-256 绑定，修改场景后必须重新审核，不能继续使用过期判据。配置入队时记录预期，执行时快照冻结并校验。
+
+- `reach_goal`：终点距离不超过 0.4 m。
+- `yield_then_proceed`：动态障碍会清空，仍需到达；碰撞与驾驶质量独立判定。
+- `safe_stop`：永久静态阻塞，在预先审定的障碍前等待区域内稳定停车至少 5 秒（速度 ≤ 0.05 m/s、位移 ≤ 0.10 m）。停在无关位置或起点不自动通过。
+
+Sim result 显示 Expected、对应状态和审核理由。每次重复均检查；碰撞、规划器 estop、缺失检测和非预期停车仍失败。历史任务判据与结果不会被重新改写。无显式元数据的旧场景保留到达要求。
+
+
+## 30 路并发与结果分析
+
+场景集并发范围为 1–30，默认 30；每个任务的重复运行仍顺序执行。任务槽覆盖准备、仿真和分析整个生命周期，避免无界堆积分析进程。结果分析由独立 Python 子进程执行，避免多个线程争用同一解释器；取消任务和关闭服务均会终止对应子进程。失败会显示真实错误，并保留 `analysis.log`。
+
+`analysis.json` 的 `analysis_resources` 记录分析进程的 wall_s、cpu_s 和 peak_rss_kib。任务 history 可计算准备、仿真、分析各阶段耗时。非终态状态在内存中立即更新、落盘最多每秒一次；终态始终立即持久化。碰撞、estop、场景预期和确定性比较的判据不变。
+
+
+## 规划轨迹持续性与无效场景（2026-09-29）
+
+WorldSim 选择任一规划器后，每次重复运行都检查 `planning_continuity`：空轨迹、非有限数值、非递增轨迹时间、estop/not_ready/错误状态、少于两个点、不能覆盖下一个 100 ms 周期，以及发布间隔大于当前固定 100 ms 周期（1 微秒数值容差）均失败。首尾按定位时间检查覆盖，允许一个启动周期；正常停车仍须发布有效零速轨迹。结果保留计数及前 20 条时间/原因，超出部分显示省略数量。Sim result 单独显示 Planning continuity；历史未检查任务显示 NOT_EVALUATED，不能据此认定通过。LogSim 输入频率由录包决定，此固定频率检查仅用于 WorldSim。
+
+场景 `.evaluation.json` 可携带 `validity.status=INVALID` 与原因；提交时明确拒绝，不把无效场景当作算法通过。北京总院有效集合当前为 381 个，清单 `excluded` 保存另外 15 个永久阻塞用例的哈希及几何审核依据。文件和历史结果保留。局部扫掠宽度只是当前安全余量下的保守审核，并非全姿态不可通行证明；`passability-evidence.json` 记录 Lane_65_static_right 的真实无碰撞、连续轨迹到达证据，已纠正其停车误判。
+
+按用户要求不为 30 并发重跑全量：本轮只运行 7 个有效失败用例，1 个纠正预期后通过，6 个仍因不能到达失败，全部碰撞检查及轨迹连续性通过。旧 396 录包只读复核找到 Lane_60_mixed 的 35 帧空轨迹，其失败及根因证据保留，不能因为场景从集合剔除就宣称该规划缺陷已修复。详见 workspace `data/simulation/v4-validation-20260929/FAILED_SCENARIO_REVIEW.md`。

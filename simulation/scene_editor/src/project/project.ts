@@ -19,6 +19,11 @@ export interface BuiltinMap {
 
 export const BUILTIN_MAPS: BuiltinMap[] = [
   {
+    id: 'builtin:beijing_zongyuan_1haolou',
+    name: 'beijing_zongyuan_1haolou',
+    source: '/maps/beijing_zongyuan_1haolou/base_map.txt',
+  },
+  {
     id: 'builtin:1haolou_202608241047qh',
     name: '1haolou_202608241047qh',
     source: '/maps/1haolou_202608241047qh/base_map.txt',

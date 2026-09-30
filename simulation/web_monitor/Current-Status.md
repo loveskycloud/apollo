@@ -6,9 +6,27 @@
 
 ## 当前任务
 
+- 2026-09-29：部署场景集 1–30 并发及独立结果分析进程；不为压测重新跑全量。增加逐帧规划轨迹与 100 ms 发布连续性硬门禁，取消/错误传播等 41 项测试通过（1 项既有 SDK 跳过），Wasm Clippy 与构建通过。
+- 失败场景审核：保留 396 个定义，15 个永久阻塞用例标记 INVALID 并排除；Lane_65_static_right 的真实到达反证原停车预期，修正后有效集合 381 个。仅回归 7 个有效失败用例：1 通过、6 仍无法到达，7 个均无碰撞且轨迹连续。
+- 尚未解决：Lane_60_mixed 录包存在 35 帧空规划轨迹（已由新门禁明确判失败）；6 个有效弯道/静态避障用例仍需改进规划。不能宣称全部通过或已修复轨迹缺失。证据 `data/simulation/v4-validation-20260929/FAILED_SCENARIO_REVIEW.md`。
+
 算法调试工具已迁移为 Layout 内真实停靠 Panel；Planning 四窗、Control 六窗，支持自定义窗口布局，详见 `docs/AD_LAYOUTS.md`。
 
+## 场景预期审核（2026-09-29）
+
+按用户明确反馈，窄弯永久阻塞的合理停车不再统一按“未到终点”失败。396 场景在执行前区分到达（203）、动态让行后通过（177）、永久阻塞停车（16）；空间审核使用原始地图宽度采样和 Ranger 车头弯道扫掠估算。每场景有 SHA-256 绑定的 `.evaluation.json`，运行时冻结判据。停车需在审定等待区稳定至少 5 秒；碰撞、异常 estop、无关位置停车仍失败。修正脚本演员出生重叠、终点占路及穿过阻塞等待区等场景缺陷。详见 scene_editor 北京场景集 `SCENARIO_AUDIT.md`，当前正进行新判据回归，不能宣称完整 396 个场景已通过。
+
+## 全图场景回归进展（2026-09-29）
+
+北京总院一号楼场景集现有 396 个场景，可直接整套提交；界面和服务支持 1–10 并发，默认 10，已实测 10 个独立原生进程。覆盖 76 条有向车道及静态绕行、超车、车队、行人群、连续车辆横穿和混合场景。V4 已重训，完整场景集仍在验收，尚不能标记全部通过。碰撞、estop、未到达目标及驾驶质量失败均保留录包和失败状态。证据：workspace `data/simulation/v4-validation-20260929/`。
+
 ## 已完成
+
+- [x] 2026-09-29 后续：北京总院一号楼扩展为 128 个不同可编辑场景（同一清单、最多 3 并发），ML V3 完成 6,012,928 步 PPO 重训，并修正远处行人引起的偏移与折返等待过早释放。原生 WorldSim 每步执行真实车身 OBB 接触检测；Sim result 展示碰撞、对象与首次接触时间，任意重复碰撞直接失败，检测缺失/未完成不算通过。旧“到达终点”结果不代表行为合格；新增直路居中/连续横摆检查。证据：workspace `data/simulation/v3-validation-20260929/`。
+
+- [x] 2026-09-29：WorldSim 增加 Planning / ML Planning 互斥选择、北京总院一号楼 8 场景集合与 1–3 并发。配置/权重/录包按任务隔离，不修改共享 profile/global flags；8 场景串行与三并发算法比较全部 PASS。接入时的旧模型 7 场景到达终点，慢速前车误差 0.488 m 保留失败。传统 Planning + Fake prediction 真实运行有有效轨迹；真实 Prediction 因 GPU CUDA kernel 不兼容失败，未掩盖。正式 9090 界面互斥切换规划器、整套提交（每场景两次均确定性 PASS）、主车/轨迹录包回放通过，浏览器异常 0。证据：`data/simulation/integration-20260929/`、`data/simulation/browser-validation-20260929/`（workspace）。
+
+- [x] 2026-09-21：撤回容器桌面选择器，恢复浏览器所在电脑任意目录选文件，面板/layout 不变。File/Blob 每次最多 2 MiB，服务端直接写盘；首个完整 Cyber chunk 由现有 RecordFileReader/Writer 提取并交给现有转换器，首段真实可回放后才继续传剩余数据，完整转换完成后切换全长。客户端独有 /tmp 副本实测 2.15 GB 文件在 22 MiB（1.07%）已到达时回放就绪；无整包 FileReader/旧 upload_recording 请求。Wasm/native Clippy、发布构建、分块/首段背压测试及接口偏移/大小/错误/取消检查通过，全长 2/8/15 秒双雷达跳转及播放推进通过，浏览器异常为 0；正式 9090 已部署。保留 v15 多雷达/原始 Image 适配，不自动重绑相机布局。
 
 - [x] 2026-09-15：仿真真正应用 workspace profile/map/vehicle：遵循 AEM 的 current + 逐文件链接，更新实际 global_flagfile；按所选 vehicle_param.width / 2 写 half_vehicle_width（当前 ranger 为 0.5 / 2 = 0.25）。不新增 backup/rollback/recover，预检查与 I/O 错误直接失败；任务配置冻结、原生地图加载前赋值和模块初始化后校验共用工具函数。26 项 Python、6 项 C++ 用例通过；正式 9090 WorldSim `16963375edf64e00` 与 LogSim `81de472c45414326` 均 completed，逐任务核对 260 个 profile 运行文件、四模块 flags、地图与车辆快照。WorldSim 仍有 506 帧 Planning 6000，单次运行不验证确定性；不宣称算法问题已解决。证据 `test-artifacts/simulation-configuration-20260915/`。
 - [x] 2026-09-14：补齐确定性字段明细：Simulation detail 提供 JSON 列表、完整消息、运行对选择、前后翻页和差异序号输入；保留 topic、双时间戳、帧序号、字段路径及两次值/存在性。按记录内 ProtoDesc 解码，旧任务无需重跑；不更改比较规则、原始记录或任务状态。修复后台刷新期间点击丢失，并启用 JSON 浮点精确往返。两套 Protobuf 环境各 17 项测试、正式 9090 差异/完整消息/跨 20 条分页及配置草稿隔离浏览器回归通过。`d3ade1846813436c` 仍真实 FAIL（17,778 条），首个差异 3.6 s Planning，含 2,449 个字段；9.71 s 的 Z=0 是 Planning 平面路径高度存在性与 perfect_planning 采样造成，本次仅分析未修改算法。证据 `test-artifacts/determinism-details-20260914/`。

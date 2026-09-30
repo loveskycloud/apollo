@@ -1,0 +1,172 @@
+{
+  "algorithm": "PPO",
+  "environment": "vectorized Frenet surrogate (not WorldSim)",
+  "seed": 2913,
+  "envs": 64,
+  "requested_steps": 2000000,
+  "actual_steps": 2007040,
+  "resume": "modules/simulation/ml_planning/models/v4/round2/unified.pt",
+  "resume_sha256": "8af7589529f36aeef5958bafab60819a4a2c05a24f0531a012e7c23bc470a89a",
+  "sources": {
+    "env.py": "d55a6c92768494670d82123e1623c3e91c152341e0819ee71998e39321822278",
+    "train.py": "3fea309fa81223bf03814b3acdbb834bb4dbd8c05bc4d1bdf095c5952caf4831"
+  },
+  "history": [
+    {
+      "steps": 8192,
+      "return": -205.06447930839389,
+      "success_rate": 0.0,
+      "elapsed_s": 0.41
+    },
+    {
+      "steps": 90112,
+      "return": 64.15794793371134,
+      "success_rate": 0.87,
+      "elapsed_s": 3.52
+    },
+    {
+      "steps": 172032,
+      "return": 63.22790071668675,
+      "success_rate": 0.89,
+      "elapsed_s": 6.62
+    },
+    {
+      "steps": 253952,
+      "return": 70.70855044000095,
+      "success_rate": 0.87,
+      "elapsed_s": 9.72
+    },
+    {
+      "steps": 335872,
+      "return": 74.39168912758004,
+      "success_rate": 0.89,
+      "elapsed_s": 12.81
+    },
+    {
+      "steps": 417792,
+      "return": 53.73675220981937,
+      "success_rate": 0.81,
+      "elapsed_s": 15.91
+    },
+    {
+      "steps": 499712,
+      "return": 79.19196553663863,
+      "success_rate": 0.89,
+      "elapsed_s": 19.0
+    },
+    {
+      "steps": 581632,
+      "return": 92.87594420042555,
+      "success_rate": 0.9,
+      "elapsed_s": 22.1
+    },
+    {
+      "steps": 663552,
+      "return": 83.4612025322389,
+      "success_rate": 0.88,
+      "elapsed_s": 25.2
+    },
+    {
+      "steps": 745472,
+      "return": 85.8685045251528,
+      "success_rate": 0.88,
+      "elapsed_s": 28.3
+    },
+    {
+      "steps": 827392,
+      "return": 87.20175247267993,
+      "success_rate": 0.89,
+      "elapsed_s": 31.39
+    },
+    {
+      "steps": 909312,
+      "return": 88.26599305849194,
+      "success_rate": 0.89,
+      "elapsed_s": 34.47
+    },
+    {
+      "steps": 991232,
+      "return": 99.72937527715504,
+      "success_rate": 0.9,
+      "elapsed_s": 37.56
+    },
+    {
+      "steps": 1073152,
+      "return": 76.67081930399267,
+      "success_rate": 0.88,
+      "elapsed_s": 40.61
+    },
+    {
+      "steps": 1155072,
+      "return": 101.16276079073313,
+      "success_rate": 0.92,
+      "elapsed_s": 43.66
+    },
+    {
+      "steps": 1236992,
+      "return": 88.05944973475769,
+      "success_rate": 0.86,
+      "elapsed_s": 46.75
+    },
+    {
+      "steps": 1318912,
+      "return": 109.8530286100819,
+      "success_rate": 0.92,
+      "elapsed_s": 49.89
+    },
+    {
+      "steps": 1400832,
+      "return": 106.27009079140778,
+      "success_rate": 0.9,
+      "elapsed_s": 52.98
+    },
+    {
+      "steps": 1482752,
+      "return": 103.45385691767532,
+      "success_rate": 0.89,
+      "elapsed_s": 56.05
+    },
+    {
+      "steps": 1564672,
+      "return": 103.12874073301043,
+      "success_rate": 0.9,
+      "elapsed_s": 59.1
+    },
+    {
+      "steps": 1646592,
+      "return": 109.28183964523716,
+      "success_rate": 0.9,
+      "elapsed_s": 62.15
+    },
+    {
+      "steps": 1728512,
+      "return": 79.81117026803877,
+      "success_rate": 0.85,
+      "elapsed_s": 65.24
+    },
+    {
+      "steps": 1810432,
+      "return": 109.26416572630018,
+      "success_rate": 0.93,
+      "elapsed_s": 68.31
+    },
+    {
+      "steps": 1892352,
+      "return": 99.09545718424486,
+      "success_rate": 0.9,
+      "elapsed_s": 71.37
+    },
+    {
+      "steps": 1974272,
+      "return": 95.10593242794002,
+      "success_rate": 0.85,
+      "elapsed_s": 74.41
+    },
+    {
+      "steps": 2007040,
+      "return": 122.70654267426066,
+      "success_rate": 0.95,
+      "elapsed_s": 75.64
+    }
+  ]
+}

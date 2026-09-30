@@ -89,6 +89,8 @@ apollo_cc_library(
         "//modules/common_msgs/perception_msgs:perception_obstacle_proto",
         "//modules/common_msgs/planning_msgs:planning_proto",
         "//modules/common_msgs/planning_msgs:planning_command_proto",
+        "//modules/common_msgs/planning_msgs:pad_msg_proto",
+        "//modules/common_msgs/external_command_msgs:command_status_proto",
         "//modules/common_msgs/prediction_msgs:prediction_obstacle_proto",
         "//modules/common_msgs/routing_msgs:routing_proto",
         "//modules/map:apollo_map",

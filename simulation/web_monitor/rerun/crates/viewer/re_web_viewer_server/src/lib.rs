@@ -372,6 +372,9 @@ pub type TopicDebugHandler =
 pub type UploadRecordingHandler =
     std::sync::Arc<dyn Fn(&str, &[u8]) -> Result<String, String> + Send + Sync>;
 
+pub type BrowserRecordHandler =
+    std::sync::Arc<dyn Fn(&str, &mut dyn std::io::Read) -> Result<String, String> + Send + Sync>;
+
 pub type DebugQueryHandler = std::sync::Arc<dyn Fn(&str) -> Result<String, String> + Send + Sync>;
 
 /// `POST /api/playback_window` — body lines:
@@ -446,6 +449,7 @@ struct WebViewerServerInner {
     convert_status: parking_lot::Mutex<Option<ConvertStatusHandler>>,
     /// Optional client→host bag upload (remote browser users).
     upload_recording: parking_lot::Mutex<Option<UploadRecordingHandler>>,
+    browser_record: parking_lot::Mutex<Option<BrowserRecordHandler>>,
     /// Optional MCAP summary topic list (header/channels, no message decode).
     mcap_topics: parking_lot::Mutex<Option<McapTopicsHandler>>,
     topic_debug: parking_lot::Mutex<Option<TopicDebugHandler>>,
@@ -527,6 +531,7 @@ impl WebViewerServer {
             convert_record: parking_lot::Mutex::new(None),
             convert_status: parking_lot::Mutex::new(None),
             upload_recording: parking_lot::Mutex::new(None),
+            browser_record: parking_lot::Mutex::new(None),
             mcap_topics: parking_lot::Mutex::new(None),
             topic_debug: parking_lot::Mutex::new(None),
             debug_query: parking_lot::Mutex::new(None),
@@ -580,6 +585,10 @@ impl WebViewerServer {
     /// Install handler for `GET /api/convert_record?job_id=…`.
     pub fn set_convert_status_handler(&self, handler: ConvertStatusHandler) {
         *self.inner.convert_status.lock() = Some(handler);
+    }
+
+    pub fn set_browser_record_handler(&self, handler: BrowserRecordHandler) {
+        *self.inner.browser_record.lock() = Some(handler);
     }
 
     /// Install handler for `POST /api/upload_recording` (client machine bag → host path).
@@ -1298,6 +1307,50 @@ impl WebViewerServerInner {
         }
     }
 
+    fn handle_browser_record(&self, mut request: tiny_http::Request) -> Result<(), std::io::Error> {
+        let host = request
+            .headers()
+            .iter()
+            .find(|h| h.field.equiv("Host"))
+            .map(|h| h.value.as_str());
+        let invalid_origin = request.headers().iter().any(|h| {
+            (h.field.equiv("Sec-Fetch-Site") && h.value.as_str() == "cross-site")
+                || (h.field.equiv("Origin")
+                    && !host.is_some_and(|host| {
+                        h.value.as_str() == format!("http://{host}")
+                            || h.value.as_str() == format!("https://{host}")
+                    }))
+        });
+        let query = request
+            .url()
+            .split_once('?')
+            .map(|(_, q)| q.to_owned())
+            .unwrap_or_default();
+        let result = if invalid_origin {
+            Err("Cross-site browser file request forbidden".to_owned())
+        } else if request.method() != &tiny_http::Method::Post {
+            Err("Use POST".to_owned())
+        } else if request.body_length().is_some_and(|n| n > 2 * 1024 * 1024) {
+            Err("Browser chunk exceeds 2 MiB".to_owned())
+        } else if let Some(handler) = self.browser_record.lock().clone() {
+            handler(&query, request.as_reader())
+        } else {
+            Err("Browser recording handler unavailable".to_owned())
+        };
+        let (code, body) = match result {
+            Ok(body) => (200, body),
+            Err(error) => (
+                400,
+                format!(r#"{{"status":"error","message":{}}}"#, json_escape(&error)),
+            ),
+        };
+        let mut response = tiny_http::Response::from_string(body).with_status_code(code);
+        response.add_header(
+            tiny_http::Header::from_str("Content-Type: application/json").expect("valid header"),
+        );
+        request.respond(response)
+    }
+
     fn send_response(&self, request: tiny_http::Request) -> Result<(), std::io::Error> {
         // Strip arguments from url so we get the actual path.
         let url = request.url();
@@ -1309,6 +1362,9 @@ impl WebViewerServerInner {
         }
         if path == "/api/convert_record" {
             return self.handle_convert_record(request);
+        }
+        if path == "/api/browser_record" {
+            return self.handle_browser_record(request);
         }
         if path == "/api/upload_recording" {
             return self.handle_upload_recording(request);

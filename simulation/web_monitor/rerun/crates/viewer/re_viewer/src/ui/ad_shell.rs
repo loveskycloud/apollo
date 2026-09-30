@@ -562,6 +562,17 @@ impl AdShell {
         }
         if !self.playback_restore_checked {
             self.playback_restore_checked = true;
+            // FileReader/XHR tasks cannot survive a page reload. Old versions
+            // persisted their progress and left an undismissable 0% dialog.
+            if let Some(mut progress) = crate::web_tools::peek_upload_progress()
+                && matches!(progress.phase.as_str(), "reading" | "uploading")
+            {
+                progress.phase = "error".into();
+                progress.message =
+                    "Previous browser file read was interrupted. Choose the bag again from Source."
+                        .into();
+                crate::web_tools::set_upload_progress(&progress);
+            }
             match crate::web_tools::playback_bookmark().and_then(|value| {
                 value
                     .map(|v| {
@@ -1721,10 +1732,7 @@ impl AdShell {
         let name = prefix.rsplit('/').next().unwrap_or(prefix);
         let depth = prefix.matches('/').count();
         let label = if depth == 0 {
-            RichText::new(name)
-                .size(12.5)
-                .strong()
-                .color(theme::TEXT)
+            RichText::new(name).size(12.5).strong().color(theme::TEXT)
         } else {
             RichText::new(name).size(12.0).color(theme::TEXT)
         };
@@ -1929,7 +1937,9 @@ impl AdShell {
         if let Some(db) = db {
             if let Some(LogSource::File { path }) = db.data_source.as_ref() {
                 let p = path.display().to_string();
-                if self.local_bag != p {
+                if path.extension().and_then(|ext| ext.to_str()) != Some("rbl")
+                    && self.local_bag != p
+                {
                     self.local_bag = p;
                 }
             }
@@ -2016,7 +2026,7 @@ impl AdShell {
         section_label(ui, "Recording");
         ui.label(
             RichText::new(
-                "Choose a bag on this computer. It is uploaded to the web_monitor server, then converted or streamed for playback.",
+                "Choose a bag on this computer. Data is read in chunks; the first segment opens while the rest loads.",
             )
             .size(11.0)
             .color(theme::TEXT_DIM),
@@ -2031,12 +2041,12 @@ impl AdShell {
         } else {
             self.open_local_path_draft.clone()
         };
-        // Dropdown-styled trigger → OS file picker (remote client → upload to host).
+        // Preserve the existing trigger; select from the browser computer.
         let choose = source_choose_trigger(ui, &bag_label);
         source_control_rect(ui, "Choose a bag", choose.rect);
         #[cfg(target_arch = "wasm32")]
         if choose
-            .on_hover_text("Open file picker and upload from this computer")
+            .on_hover_text("Open the browser file picker")
             .clicked()
         {
             crate::web_tools::pick_local_recording_files(
@@ -2049,7 +2059,7 @@ impl AdShell {
             let _ = ctx;
             if choose.clicked() {
                 self.open_status_msg =
-                    "File upload is available in the web viewer (remote clients).".into();
+                    "Local file selection is available in the web viewer.".into();
             }
         }
 
@@ -2183,7 +2193,8 @@ impl AdShell {
             && (progress.phase == "converting"
                 || (progress.total > 0 && progress.phase != "opening"));
 
-        ctx.egui_ctx.request_repaint_after(std::time::Duration::from_millis(50));
+        ctx.egui_ctx
+            .request_repaint_after(std::time::Duration::from_millis(50));
 
         egui::Window::new(title)
             .id(egui::Id::new("ad_upload_progress_modal"))
@@ -2259,9 +2270,7 @@ impl AdShell {
                     ui.add_space(12.0);
                     let dismiss = ui.add(
                         egui::Button::new(
-                            RichText::new("Dismiss")
-                                .size(12.0)
-                                .color(Color32::WHITE),
+                            RichText::new("Dismiss").size(12.0).color(Color32::WHITE),
                         )
                         .fill(theme::ACCENT_STRONG)
                         .corner_radius(6.0)
@@ -3104,6 +3113,9 @@ impl AdShell {
 
     #[cfg(target_arch = "wasm32")]
     fn poll_convert_job(&mut self, ctx: &AppContext<'_>) {
+        if self.indexed_source_ready(ctx) && !self.playback_window_pending {
+            crate::web_tools::acknowledge_browser_preview(&self.playback_mcap_path);
+        }
         if let Some(body) = crate::web_tools::take_convert_status_json() {
             self.apply_convert_status_json(ctx, &body);
         }
@@ -3595,12 +3607,7 @@ fn source_control_rect(ui: &Ui, name: &str, rect: Rect) {
 }
 
 fn field_label(ui: &mut Ui, label: &str) {
-    ui.label(
-        RichText::new(label)
-            .size(11.0)
-            .strong()
-            .color(theme::TEXT),
-    );
+    ui.label(RichText::new(label).size(11.0).strong().color(theme::TEXT));
     ui.add_space(4.0);
 }
 
@@ -3608,8 +3615,7 @@ fn field_label(ui: &mut Ui, label: &str) {
 fn source_mode_picker(ui: &mut Ui, selected: &mut SourceOpenMode) {
     let height = 34.0;
     let width = ui.available_width();
-    let (rect, response) =
-        ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
+    let (rect, response) = ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
     let fill = if response.hovered() || response.has_focus() {
         theme::CARD_BG_HOVER
     } else {
@@ -3667,8 +3673,7 @@ fn source_mode_picker(ui: &mut Ui, selected: &mut SourceOpenMode) {
                     ui.set_min_width(response.rect.width().max(220.0));
                     ui.visuals_mut().override_text_color = Some(theme::TEXT);
                     ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
-                    ui.visuals_mut().selection.bg_fill =
-                        theme::ACCENT_STRONG.gamma_multiply(0.45);
+                    ui.visuals_mut().selection.bg_fill = theme::ACCENT_STRONG.gamma_multiply(0.45);
                     for mode in SourceOpenMode::all() {
                         let on = *selected == mode;
                         if menu_row(ui, mode.label()).clicked() {
@@ -3687,8 +3692,7 @@ fn source_mode_picker(ui: &mut Ui, selected: &mut SourceOpenMode) {
 fn source_choose_trigger(ui: &mut Ui, label: &str) -> egui::Response {
     let height = 34.0;
     let width = ui.available_width();
-    let (rect, response) =
-        ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
+    let (rect, response) = ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
     let fill = if response.hovered() || response.has_focus() {
         theme::CARD_BG_HOVER
     } else {
@@ -3753,8 +3757,7 @@ fn source_path_picker(
 
     let height = 34.0;
     let width = ui.available_width();
-    let (rect, response) =
-        ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
+    let (rect, response) = ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
     let fill = if response.hovered() || response.has_focus() {
         theme::CARD_BG_HOVER
     } else {
@@ -3813,8 +3816,7 @@ fn source_path_picker(
                     ui.set_max_height(280.0);
                     ui.visuals_mut().override_text_color = Some(theme::TEXT);
                     ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
-                    ui.visuals_mut().selection.bg_fill =
-                        theme::ACCENT_STRONG.gamma_multiply(0.45);
+                    ui.visuals_mut().selection.bg_fill = theme::ACCENT_STRONG.gamma_multiply(0.45);
                     egui::ScrollArea::vertical().show(ui, |ui| {
                         if optional && menu_row(ui, empty_label).clicked() {
                             selected.clear();
@@ -3870,12 +3872,7 @@ fn themed_text_edit(ui: &mut Ui, text: &mut String, hint: &str) -> egui::Respons
 }
 
 /// Dark CARD_BG slab + TEXT — never use Frame::NONE (skips TextEdit background_color).
-fn dark_framed_text_edit(
-    ui: &mut Ui,
-    text: &mut String,
-    hint: &str,
-    width: f32,
-) -> egui::Response {
+fn dark_framed_text_edit(ui: &mut Ui, text: &mut String, hint: &str, width: f32) -> egui::Response {
     ui.scope(|ui| {
         ui.visuals_mut().override_text_color = Some(theme::TEXT);
         ui.visuals_mut().text_edit_bg_color = Some(theme::CARD_BG);

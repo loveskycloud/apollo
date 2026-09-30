@@ -3,6 +3,8 @@
  *****************************************************************************/
 #include "modules/simulation/worldsim/agent/agent_base.h"
 
+#include <cmath>
+
 namespace apollo {
 namespace simulation {
 namespace worldsim {
@@ -20,9 +22,14 @@ AgentBase::AgentBase(const AgentConfig& config) : config_(config) {
   state_.heading = config.heading();
   state_.speed = config.speed();
   if (config.has_size()) {
-    state_.length = config.size().x() > 0.1 ? config.size().x() : 4.5;
-    state_.width = config.size().y() > 0.1 ? config.size().y() : 2.0;
-    state_.height = config.size().z() > 0.1 ? config.size().z() : 1.5;
+    // Thin objects from perception are valid geometry. Replacing them with
+    // car-sized defaults creates obstacles and collisions absent in the scene.
+    const auto dimension = [](double value, double fallback) {
+      return std::isfinite(value) && value > 0.0 ? value : fallback;
+    };
+    state_.length = dimension(config.size().x(), state_.length);
+    state_.width = dimension(config.size().y(), state_.width);
+    state_.height = dimension(config.size().z(), state_.height);
   }
   // enabled defaults to true when field absent
   state_.enabled = !config.has_enabled() || config.enabled();

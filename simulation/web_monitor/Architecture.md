@@ -109,13 +109,19 @@ Both bag and world inputs use the shared
 [`docs/SIMULATION_TASKS.md`](docs/SIMULATION_TASKS.md) for the scheduling contract,
 artifact format, replay path, and repeatability scope.
 
-`configuration_tools.py` applies the explicitly selected profile to the workspace
-using AEM-style symlinks, writes map/vehicle flags and derives half_vehicle_width
-from protobuf width / 2. A workspace lock covers application and execution;
-per-task configuration is then frozen. No new backups, rollback or recovery are
-performed; invalid inputs and application failures are surfaced. Native
-`environment_tools` applies flags before map loading and validates them after each
-module initializes. `configuration.json` and analysis expose the effective paths.
+Simulation preparation freezes the selected profile, map, vehicle and component DAGs
+inside each task directory; it does not write the live global flagfile or switch
+`profiles/current`. Native `environment_tools` validates map and vehicle flags
+after module initialization. Only selected modules and common configuration are
+copied; unrelated installed packages remain read-only references.
+
+`/api/sim` accepts `enqueue_suite` with a version 1 `worldsim-suite` manifest.
+All members are validated before queue publication. Each member remains an ordinary
+persistent task with `suite_id`, name, index and size, independent cancellation,
+errors, output records and Replay. A suite chooses 1–3 concurrent members under a
+global three-process limit; repetitions within one member are sequential.
+`ML_PLANNING` replaces the Planning runtime slot with the ML component DAG and a
+frozen actor weight file; choosing both planners is rejected.
 
 - 禁止用 overlay/patch 栈替代对 `rerun/` 原文件的修改
 - 布局变更必须同步 `layouts/` 与 `re_viewer/layouts/` 并重编

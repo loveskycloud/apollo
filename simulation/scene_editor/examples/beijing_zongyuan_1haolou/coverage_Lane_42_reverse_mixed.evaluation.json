@@ -1,0 +1,25 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "b9b2b7fc2ce80a9f67ee6d112520ac1c8b06ae4379def01436fa089cd20d5c91",
+  "expectation": "yield_then_proceed",
+  "reason": "动态障碍会离开道路，预期合理让行后到达终点。",
+  "audit": {
+    "anchor": "Lane_42_reverse",
+    "passages": [
+      {
+        "actor_id": "roadside",
+        "s": 18.370798487215456,
+        "lane_width_m": 1.6044105780204072,
+        "available_passage_m": 1.4399642624693756,
+        "curvature_per_m": 0,
+        "swept_vehicle_width_m": 0.5001921519435655,
+        "required_passage_m": 0.6401921519435655,
+        "blocked": false
+      }
+    ],
+    "static_obstacle_clearance_m": 0.12,
+    "road_margin_m": 0.02,
+    "vehicle_width_m": 0.5
+  }
+}

@@ -379,24 +379,15 @@ mod playback_proxy_tests {
     #[test]
     fn rewrites_localhost_proxy_to_page_host() {
         assert_eq!(
-            rewrite_loopback_proxy_host(
-                "rerun+http://localhost:9876/proxy",
-                "192.168.1.10"
-            ),
+            rewrite_loopback_proxy_host("rerun+http://localhost:9876/proxy", "192.168.1.10"),
             "rerun+http://192.168.1.10:9876/proxy"
         );
         assert_eq!(
-            rewrite_loopback_proxy_host(
-                "rerun+http://127.0.0.1:9876/proxy",
-                "192.168.1.10"
-            ),
+            rewrite_loopback_proxy_host("rerun+http://127.0.0.1:9876/proxy", "192.168.1.10"),
             "rerun+http://192.168.1.10:9876/proxy"
         );
         assert_eq!(
-            rewrite_loopback_proxy_host(
-                "rerun+http://192.168.1.10:9876/proxy",
-                "192.168.1.10"
-            ),
+            rewrite_loopback_proxy_host("rerun+http://192.168.1.10:9876/proxy", "192.168.1.10"),
             "rerun+http://192.168.1.10:9876/proxy"
         );
     }
@@ -594,13 +585,10 @@ pub fn is_apollo_record_path(path: &str) -> bool {
     lower.contains(".record") && !lower.ends_with(".rrd") && !lower.ends_with(".rbl")
 }
 
-/// Open the **browser** file picker, upload the selected bag to the host, then convert/open.
-///
-/// Remote users (browser on another machine) need this: the host cannot see their disk.
-/// Must be called from a user-gesture handler (e.g. button `clicked()`).
+/// Open the browser file chooser on the client computer.
 pub fn pick_local_recording_files(egui_ctx: egui::Context, map: String) {
     use wasm_bindgen::closure::Closure;
-    use web_sys::{FileReader, HtmlInputElement, ProgressEvent};
+    use web_sys::HtmlInputElement;
 
     let window = match web_sys::window() {
         Some(w) => w,
@@ -617,6 +605,9 @@ pub fn pick_local_recording_files(egui_ctx: egui::Context, map: String) {
         }
     };
 
+    if let Some(old) = document.get_element_by_id("wm-local-bag-input") {
+        old.remove();
+    }
     let Ok(input) = document.create_element("input") else {
         return;
     };
@@ -624,6 +615,7 @@ pub fn pick_local_recording_files(egui_ctx: egui::Context, map: String) {
         return;
     };
 
+    input.set_id("wm-local-bag-input");
     input.set_type("file");
     input.set_multiple(false);
     // Do NOT set `accept` to `.record` — Apollo Cyber bags are named like
@@ -666,122 +658,64 @@ pub fn pick_local_recording_files(egui_ctx: egui::Context, map: String) {
             egui_ctx.request_repaint();
             return;
         }
-        let total = file.size() as u64;
-        let size_mib = file.size() / (1024.0 * 1024.0);
-        re_log::info!("Reading {name} ({size_mib:.1} MiB) for upload…");
-        set_open_status(&format!("Reading {name} ({size_mib:.0} MiB)…"));
-        set_upload_phase(
-            "reading",
-            &name,
-            0.0,
-            0,
-            total,
-            &format!("Reading {name}…"),
-        );
-        egui_ctx.request_repaint();
-
-        let Ok(reader) = FileReader::new() else {
-            set_open_status("Browser FileReader unavailable");
-            set_upload_phase("error", &name, 0.0, 0, total, "Browser FileReader unavailable");
-            egui_ctx.request_repaint();
-            return;
-        };
-
-        // Read progress (local disk → memory).
-        {
-            let ctx = egui_ctx.clone();
-            let name_prog = name.clone();
-            let on_progress = Closure::wrap(Box::new(move |ev: ProgressEvent| {
-                let loaded = ev.loaded() as u64;
-                let total = if ev.length_computable() {
-                    ev.total() as u64
-                } else {
-                    total.max(loaded)
-                };
-                let fraction = if total > 0 {
-                    (loaded as f64 / total as f64) as f32
-                } else {
-                    0.0
-                };
-                set_upload_phase(
-                    "reading",
-                    &name_prog,
-                    fraction,
-                    loaded,
-                    total,
-                    &format!(
-                        "Reading {name_prog}… {} / {}",
-                        format_bytes(loaded),
-                        format_bytes(total)
-                    ),
-                );
-                ctx.request_repaint();
-            }) as Box<dyn FnMut(_)>);
-            reader.set_onprogress(Some(on_progress.as_ref().unchecked_ref()));
-            on_progress.forget();
-        }
-
-        let reader_cb = reader.clone();
         let ctx = egui_ctx.clone();
-        let map = map.clone();
-        let name_for_upload = name.clone();
-        let on_load = Closure::wrap(Box::new(move |_ev: web_sys::Event| {
-            let Ok(result) = reader_cb.result() else {
-                set_open_status("Failed to read selected file");
-                set_upload_phase(
-                    "error",
-                    &name_for_upload,
-                    0.0,
-                    0,
-                    0,
-                    "Failed to read selected file",
-                );
-                ctx.request_repaint();
-                return;
+        let filename = name.clone();
+        let callback = Closure::wrap(Box::new(move |body: String| {
+            let event: serde_json::Value = match serde_json::from_str(&body) {
+                Ok(value) => value,
+                Err(err) => {
+                    set_upload_phase("error", &filename, 0.0, 0, 0, &err.to_string());
+                    ctx.request_repaint();
+                    return;
+                }
             };
-            let array = js_sys::Uint8Array::new(&result);
-            let bytes = array.to_vec();
-            set_upload_phase(
-                "uploading",
-                &name_for_upload,
-                0.0,
-                0,
-                bytes.len() as u64,
-                &format!("Uploading {name_for_upload}…"),
-            );
-            set_open_status(&format!(
-                "Uploading {name_for_upload} ({:.0} MiB) to server…",
-                bytes.len() as f64 / (1024.0 * 1024.0)
-            ));
-            upload_recording_then_open(&name_for_upload, bytes, &map, ctx.clone());
-        }) as Box<dyn FnMut(_)>);
-        reader.set_onload(Some(on_load.as_ref().unchecked_ref()));
-        on_load.forget();
-
-        {
-            let ctx = egui_ctx.clone();
-            let name_err = name.clone();
-            let on_error = Closure::wrap(Box::new(move |_ev: web_sys::Event| {
-                set_open_status("Failed to read selected file");
-                set_upload_phase("error", &name_err, 0.0, 0, 0, "Failed to read selected file");
-                ctx.request_repaint();
-            }) as Box<dyn FnMut(_)>);
-            reader.set_onerror(Some(on_error.as_ref().unchecked_ref()));
-            on_error.forget();
-        }
-
-        if reader.read_as_array_buffer(&file).is_err() {
-            set_open_status("Failed to start reading selected file");
-            set_upload_phase(
-                "error",
-                &name,
-                0.0,
-                0,
-                total,
-                "Failed to start reading selected file",
-            );
-            egui_ctx.request_repaint();
-        }
+            let message = event["message"].as_str().unwrap_or("");
+            match event["kind"].as_str() {
+                Some("progress") => {
+                    if event["background"].as_bool() == Some(true) {
+                        set_open_status(message);
+                    } else {
+                        let loaded = event["received"].as_u64().unwrap_or(0);
+                        let total = event["total"].as_u64().unwrap_or(0);
+                        let fraction = if total > 0 {
+                            loaded as f32 / total as f32
+                        } else {
+                            0.0
+                        };
+                        set_upload_phase("reading", &filename, fraction, loaded, total, message);
+                    }
+                }
+                Some("background") => {
+                    clear_upload_progress();
+                    set_open_status(message);
+                }
+                Some("convert" | "direct") => {
+                    if let Some(store) =
+                        web_sys::window().and_then(|w| w.session_storage().ok().flatten())
+                    {
+                        if let Some(path) = event["source"].as_str() {
+                            let _ = store.set_item("wm_source_bag_path", path);
+                        }
+                        if event["kind"] == "convert" {
+                            let _ = store.set_item("wm_convert_status", &event["job"].to_string());
+                        } else if let Some(path) = event["job"]["output_path"].as_str() {
+                            if path.to_ascii_lowercase().ends_with(".mcap") {
+                                let _ = store.set_item("wm_pending_mcap", path);
+                                request_host_mcap_topics(path, ctx.clone());
+                            } else {
+                                request_host_open_local(path, ctx.clone());
+                            }
+                        }
+                    }
+                }
+                Some("error") => set_upload_phase("error", &filename, 0.0, 0, 0, message),
+                _ => {}
+            }
+            ctx.request_repaint();
+        }) as Box<dyn FnMut(String)>);
+        clear_upload_progress();
+        stream_browser_record(&file, &map, callback.as_ref().unchecked_ref());
+        callback.forget();
     }) as Box<dyn FnMut(_)>);
 
     if input
@@ -799,184 +733,122 @@ pub fn pick_local_recording_files(egui_ctx: egui::Context, map: String) {
     input.click();
 }
 
-fn format_bytes(n: u64) -> String {
-    const KIB: f64 = 1024.0;
-    const MIB: f64 = 1024.0 * 1024.0;
-    const GIB: f64 = 1024.0 * 1024.0 * 1024.0;
-    let n = n as f64;
-    if n >= GIB {
-        format!("{:.2} GiB", n / GIB)
-    } else if n >= MIB {
-        format!("{:.1} MiB", n / MIB)
-    } else if n >= KIB {
-        format!("{:.0} KiB", n / KIB)
-    } else {
-        format!("{n:.0} B")
+const BROWSER_RECORD_JS: &str = r#"return (async function(file, map, notify) {
+    if (window.__wmBrowserRecordAbort) window.__wmBrowserRecordAbort.abort();
+    const controller = new AbortController();
+    window.__wmBrowserRecordAbort = controller;
+    let id = null, received = 0, previewOpened = false, firstOpenBytes = null;
+    const emit = event => notify(JSON.stringify(event));
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const save = (phase, extra = {}) => {
+        const state = {phase, id, filename: file.name, received, total: file.size, first_open_bytes: firstOpenBytes, ...extra};
+        sessionStorage.setItem("wm_browser_stream", JSON.stringify(state));
+        return state;
+    };
+    const post = async (action, body = "", offset = null) => {
+        const query = new URLSearchParams({action});
+        if (id) query.set("id", id);
+        if (offset !== null) query.set("offset", String(offset));
+        const response = await fetch("/api/browser_record?" + query, {
+            method:"POST", body, signal: controller.signal,
+            headers: {"Content-Type": action === "start" ? "application/json" : "application/octet-stream"}
+        });
+        const state = await response.json();
+        if (!response.ok || state.status === "error") throw Error(state.message || "Browser recording request failed");
+        return state;
+    };
+    const isDone = job => job && (job.status === "done" || job.status === "ready");
+    try {
+        const start = await post("start", JSON.stringify({name:file.name, size:file.size, map}));
+        id = start.id;
+        let state;
+        while (received < file.size) {
+            if (controller.signal.aborted) throw Error("File selection superseded");
+            const end = Math.min(received + start.chunk_bytes, file.size);
+            // Only this Blob slice is sent. No full ArrayBuffer and no Wasm payload copy.
+            state = await post("chunk", file.slice(received, end), received);
+            received = state.received;
+            save(previewOpened ? "background" : "reading");
+            emit({kind:"progress", received, total:file.size, background:previewOpened,
+                message: previewOpened ? "First segment open; loading remaining data…" : "Reading first record segment…"});
+            if (state.preview_started && !previewOpened && received < file.size) {
+                const deadline = Date.now() + 180000;
+                while (!isDone(state.preview)) {
+                    if (Date.now() > deadline) throw Error("First segment conversion timed out");
+                    emit({kind:"progress", received, total:file.size, message:"Parsing first record segment…"});
+                    await sleep(300);
+                    state = await post("status");
+                }
+                const path = state.preview.output_path;
+                sessionStorage.removeItem("wm_browser_preview_ready");
+                sessionStorage.setItem("wm_browser_preview_expected", path);
+                emit({kind:"convert", job:state.preview, source:state.source});
+                while (sessionStorage.getItem("wm_browser_preview_ready") !== path) {
+                    if (controller.signal.aborted) throw Error("File selection superseded");
+                    if (Date.now() > deadline) throw Error("First segment playback did not become ready");
+                    await sleep(100);
+                }
+                previewOpened = true;
+                firstOpenBytes = received;
+                save("preview", {preview:path});
+                emit({kind:"background", message:"First segment open; continuing to read the remaining file…"});
+                // Publish readiness before the next bounded chunk request.
+                await sleep(0);
+            }
+        }
+        const deadline = Date.now() + 900000;
+        while (!isDone(state.complete)) {
+            save("converting");
+            emit({kind:"progress",received,total:file.size,background:previewOpened,
+                message:"First segment available; converting the remaining record…"});
+            if (Date.now() > deadline) throw Error("Record conversion timed out");
+            await sleep(500);
+            state = await post("status");
+        }
+        emit({kind:state.complete.direct ? "direct" : "convert",job:state.complete,source:state.source});
+        save("done",{output:state.complete.output_path});
+    } catch (error) {
+        if (id) {
+            fetch("/api/browser_record?action=cancel&id="+encodeURIComponent(id), {method:"POST",keepalive:true}).catch(()=>{});
+        }
+        if (window.__wmBrowserRecordAbort === controller) {
+            save("error",{message:String(error)});
+            emit({kind:"error",message:String(error)});
+        }
+    } finally {
+        if (window.__wmBrowserRecordAbort === controller) window.__wmBrowserRecordAbort = null;
+    }
+} )(file, map, notify);
+"#;
+fn stream_browser_record(file: &web_sys::File, map: &str, notify: &js_sys::Function) {
+    let function = js_sys::Function::new_with_args("file,map,notify", BROWSER_RECORD_JS);
+    if let Err(error) = function.call3(
+        &JsValue::NULL,
+        file.as_ref(),
+        &JsValue::from_str(map),
+        notify.as_ref(),
+    ) {
+        let event = serde_json::json!({"kind":"error","message":format!("Cannot start browser reader: {error:?}")}).to_string();
+        let _ = notify.call1(&JsValue::NULL, &JsValue::from_str(&event));
+    }
+}
+
+/// Acknowledge actual first-window readiness before the browser sends the remaining file.
+pub fn acknowledge_browser_preview(path: &str) {
+    if let Some(store) = web_sys::window().and_then(|w| w.session_storage().ok().flatten())
+        && store
+            .get_item("wm_browser_preview_expected")
+            .ok()
+            .flatten()
+            .as_deref()
+            == Some(path)
+    {
+        let _ = store.set_item("wm_browser_preview_ready", path);
     }
 }
 
 fn set_open_status(msg: &str) {
-    if let Some(win) = web_sys::window() {
-        let _ = win
-            .session_storage()
-            .ok()
-            .flatten()
-            .and_then(|s| s.set_item("wm_open_local_status", msg).ok());
-    }
-}
-
-fn upload_recording_then_open(
-    name: &str,
-    bytes: Vec<u8>,
-    map: &str,
-    egui_ctx: egui::Context,
-) {
-    use wasm_bindgen::closure::Closure;
-    use web_sys::{ProgressEvent, XmlHttpRequest};
-
-    let origin = web_sys::window()
-        .and_then(|w| w.location().origin().ok())
-        .unwrap_or_else(|| "http://127.0.0.1:9090".into());
-    let url = format!("{origin}/api/upload_recording");
-    let name_owned = name.to_owned();
-    let map_owned = map.to_owned();
-    let total = bytes.len() as u64;
-
-    let Ok(xhr) = XmlHttpRequest::new() else {
-        set_open_status("XMLHttpRequest unavailable");
-        set_upload_phase("error", name, 0.0, 0, total, "XMLHttpRequest unavailable");
-        egui_ctx.request_repaint();
-        return;
-    };
-    if xhr.open_with_async("POST", &url, true).is_err() {
-        set_open_status("Failed to open upload request");
-        set_upload_phase("error", name, 0.0, 0, total, "Failed to open upload request");
-        egui_ctx.request_repaint();
-        return;
-    }
-    let _ = xhr.set_request_header("Content-Type", "application/octet-stream");
-    let _ = xhr.set_request_header("X-Filename", &name_owned);
-    if !map_owned.trim().is_empty() {
-        let _ = xhr.set_request_header("X-Map", map_owned.trim());
-    }
-
-    // Upload byte progress (browser → host).
-    if let Ok(upload) = xhr.upload() {
-        let ctx = egui_ctx.clone();
-        let name_prog = name_owned.clone();
-        let on_progress = Closure::wrap(Box::new(move |ev: ProgressEvent| {
-            let loaded = ev.loaded() as u64;
-            let total = if ev.length_computable() {
-                ev.total() as u64
-            } else {
-                total.max(loaded)
-            };
-            let fraction = if total > 0 {
-                (loaded as f64 / total as f64) as f32
-            } else {
-                0.0
-            };
-            set_upload_phase(
-                "uploading",
-                &name_prog,
-                fraction,
-                loaded,
-                total,
-                &format!(
-                    "Uploading {name_prog}… {} / {}",
-                    format_bytes(loaded),
-                    format_bytes(total)
-                ),
-            );
-            ctx.request_repaint();
-        }) as Box<dyn FnMut(_)>);
-        upload.set_onprogress(Some(on_progress.as_ref().unchecked_ref()));
-        on_progress.forget();
-    }
-
-    {
-        let ctx = egui_ctx.clone();
-        let name_done = name_owned.clone();
-        let map_done = map_owned.clone();
-        let xhr_cb = xhr.clone();
-        let on_load = Closure::wrap(Box::new(move |_ev: web_sys::Event| {
-            let status = xhr_cb.status().unwrap_or(0);
-            let body = xhr_cb.response_text().ok().flatten().unwrap_or_default();
-            if !(200..300).contains(&status) {
-                let msg = format!("Upload failed (HTTP {status}): {body}");
-                set_open_status(&msg);
-                set_upload_phase("error", &name_done, 0.0, 0, 0, &msg);
-                ctx.request_repaint();
-                return;
-            }
-            let path = serde_json::from_str::<serde_json::Value>(&body)
-                .ok()
-                .and_then(|v| v["path"].as_str().map(str::to_owned));
-            let Some(path) = path else {
-                let msg = format!("Upload succeeded but path missing: {body}");
-                set_open_status(&msg);
-                set_upload_phase("error", &name_done, 1.0, 0, 0, &msg);
-                ctx.request_repaint();
-                return;
-            };
-            re_log::info!("Uploaded {name_done} → {path}");
-            set_open_status(&format!("Uploaded {name_done} — opening…"));
-            set_upload_phase(
-                "opening",
-                &name_done,
-                1.0,
-                total,
-                total,
-                &format!("Uploaded {name_done} — opening on server…"),
-            );
-            if let Some(win) = web_sys::window() {
-                let _ = win.session_storage().ok().flatten().and_then(|s| {
-                    s.set_item("wm_source_bag_path", &path).ok()
-                });
-            }
-            let lower = name_done.to_ascii_lowercase();
-            let is_record = lower.contains(".record")
-                && !lower.ends_with(".rrd")
-                && !lower.ends_with(".rbl");
-            if is_record {
-                request_host_convert_record_with_map(&path, &map_done, ctx.clone());
-            } else if lower.ends_with(".mcap") {
-                if let Some(win) = web_sys::window() {
-                    let _ = win.session_storage().ok().flatten().and_then(|s| {
-                        s.set_item("wm_pending_mcap", &path).ok();
-                        s.set_item(
-                            "wm_open_local_status",
-                            &format!("Preparing windowed playback for {name_done}…"),
-                        )
-                        .ok()
-                    });
-                }
-                request_host_mcap_topics(&path, ctx.clone());
-            } else {
-                request_host_open_local(&path, ctx.clone());
-            }
-            ctx.request_repaint();
-        }) as Box<dyn FnMut(_)>);
-        xhr.set_onload(Some(on_load.as_ref().unchecked_ref()));
-        on_load.forget();
-    }
-
-    {
-        let ctx = egui_ctx.clone();
-        let name_err = name_owned.clone();
-        let on_error = Closure::wrap(Box::new(move |_ev: web_sys::Event| {
-            let msg = "Upload request failed (network error)".to_owned();
-            set_open_status(&msg);
-            set_upload_phase("error", &name_err, 0.0, 0, 0, &msg);
-            ctx.request_repaint();
-        }) as Box<dyn FnMut(_)>);
-        xhr.set_onerror(Some(on_error.as_ref().unchecked_ref()));
-        on_error.forget();
-    }
-
-    if xhr.send_with_opt_u8_array(Some(&bytes)).is_err() {
-        set_open_status("Failed to start upload");
-        set_upload_phase("error", &name_owned, 0.0, 0, total, "Failed to start upload");
-        egui_ctx.request_repaint();
+    if let Some(store) = web_sys::window().and_then(|w| w.session_storage().ok().flatten()) {
+        let _ = store.set_item("wm_open_local_status", msg);
     }
 }
