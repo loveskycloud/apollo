@@ -1,0 +1,49 @@
+{
+  "id": "parallel_w55_aisle120_front__in_out__base",
+  "name": "parallel_w55_aisle120_front__in_out__base",
+  "mapId": "ranger_parking_lab_v1",
+  "duration": 120,
+  "description": "Parking lab: parallel, width=0.55m, aisle=1.2m, front entry. Full-body containment required.",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 998,
+      "y": 1999.4,
+      "z": 0
+    },
+    "heading": 0,
+    "vehicleProfile": "ranger_mini_v3",
+    "parkingSpaceId": "parallel_w55_aisle120_front",
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "approach",
+    "routes": [
+      {
+        "id": "approach",
+        "waypoints": [
+          {
+            "position": {
+              "x": 1000,
+              "y": 1999.4,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ],
+    "parkingOperation": "in_out",
+    "parkingExit": {
+      "position": {
+        "x": 1002.0,
+        "y": 1999.4,
+        "z": 0
+      },
+      "heading": 0
+    }
+  },
+  "agents": [],
+  "triggers": []
+}

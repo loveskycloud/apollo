@@ -1,0 +1,103 @@
+{
+  "id": "diagonal45_w90_aisle240_front__in__trigger_relevance_vehicle_passing",
+  "name": "diagonal45_w90_aisle240_front__in__trigger_relevance_vehicle_passing",
+  "mapId": "ranger_parking_lab_v1",
+  "duration": 120,
+  "description": "持续轻微移动的围观行人/无关行驶车辆不应阻断泊车；混合真实横穿时仍须安全让行。",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 1058,
+      "y": 2073.8,
+      "z": 0
+    },
+    "heading": 0,
+    "vehicleProfile": "ranger_mini_v3",
+    "parkingSpaceId": "diagonal45_w90_aisle240_front",
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "approach",
+    "routes": [
+      {
+        "id": "approach",
+        "waypoints": [
+          {
+            "position": {
+              "x": 1060,
+              "y": 2073.8,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ],
+    "parkingOperation": "in"
+  },
+  "agents": [
+    {
+      "id": "unrelated_vehicle",
+      "name": "unrelated_vehicle",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 1056.4,
+        "y": 2072.9,
+        "z": 0
+      },
+      "heading": 0.0,
+      "speed": 0.12,
+      "size": {
+        "x": 0.72,
+        "y": 0.5,
+        "z": 0.66
+      },
+      "enabled": false,
+      "activeRouteId": "unrelated_vehicle-route",
+      "routes": [
+        {
+          "id": "unrelated_vehicle-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "position": {
+                "x": 1056.4,
+                "y": 2072.9,
+                "z": 0
+              },
+              "speed": 0.12
+            },
+            {
+              "position": {
+                "x": 1063.6,
+                "y": 2072.9,
+                "z": 0
+              },
+              "speed": 0.12
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "activate-unrelated-motion",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "targetAgentId": "ego",
+      "center": {
+        "x": 1058.254306483693,
+        "y": 2073.839831655567,
+        "z": 0
+      },
+      "radius": 0.06,
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "unrelated_vehicle"
+        }
+      ]
+    }
+  ]
+}

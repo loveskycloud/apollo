@@ -1,0 +1,107 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "310b14ffc7e7ab00a9ccc62f9d6fffe31f435ff4da1904495474ecc781ac6311",
+  "expectation": "park",
+  "reason": "Persistent unrelated motion must not stall parking; real crossing remains a safety test",
+  "parking": {
+    "space_id": "perpendicular_w90_aisle240_front",
+    "style": "perpendicular",
+    "width_m": 0.9,
+    "length_m": 1.1,
+    "aisle_width_m": 2.4,
+    "entry": "front",
+    "goal": [
+      1062.0,
+      2043.8,
+      0
+    ],
+    "area": [
+      [
+        1064.0,
+        2045.0
+      ],
+      [
+        1064.0,
+        2042.6
+      ],
+      [
+        1056.0,
+        2042.6
+      ],
+      [
+        1056.0,
+        2045.0
+      ],
+      [
+        1059.55,
+        2045.0
+      ],
+      [
+        1059.55,
+        2046.1
+      ],
+      [
+        1060.45,
+        2046.1
+      ],
+      [
+        1060.45,
+        2045.0
+      ]
+    ],
+    "slot": [
+      [
+        1060.45,
+        2045.0
+      ],
+      [
+        1060.45,
+        2046.1
+      ],
+      [
+        1059.55,
+        2046.1
+      ],
+      [
+        1059.55,
+        2045.0
+      ]
+    ],
+    "operation": "out",
+    "variant": "trigger_relevance_crowd_and_crossing",
+    "park_goal": [
+      1060.0,
+      2045.29,
+      1.5707963267948966
+    ],
+    "witness_length_m": 6.650849930017129
+  },
+  "validity": {
+    "status": "VALID",
+    "reason": "Unchanged successful ego path and area; background swept bodies clear full baseline body corridor by >0.20 m; crossing uses audited separated activation."
+  },
+  "parking_interaction": {
+    "version": 1,
+    "background_actor_ids": [
+      "bystander_0",
+      "bystander_1",
+      "bystander_2",
+      "bystander_3",
+      "bystander_4",
+      "bystander_5",
+      "bystander_6",
+      "bystander_7"
+    ],
+    "crossing_actor_id": "pedestrian",
+    "minimum_moving_fraction": 0.9,
+    "minimum_concurrent_motion_s": 1.0,
+    "baseline_duration_s": 21.4,
+    "maximum_extra_duration_s": null,
+    "counterfactual": {
+      "baseline_contact_time_s": 12.8,
+      "trigger_time_s": 4.1,
+      "reason": "Without response, constant-speed pedestrian center reaches baseline ego body center at this timestamp"
+    }
+  }
+}

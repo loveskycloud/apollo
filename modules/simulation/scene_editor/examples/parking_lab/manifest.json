@@ -1,0 +1,2677 @@
+{
+  "map": "/apollo_workspace/data/map_data/ranger_parking_lab_v1",
+  "cases": [
+    {
+      "file": "parallel_w55_aisle120_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "parallel_w55_aisle120_front",
+        "style": "parallel",
+        "width_m": 0.55,
+        "length_m": 1.4,
+        "aisle_width_m": 1.2,
+        "entry": "front",
+        "goal": [
+          999.74,
+          2000.275,
+          0.0
+        ],
+        "area": [
+          [
+            1004.0,
+            2000.0
+          ],
+          [
+            1004.0,
+            1998.8
+          ],
+          [
+            996.0,
+            1998.8
+          ],
+          [
+            996.0,
+            2000.0
+          ],
+          [
+            999.3,
+            2000.0
+          ],
+          [
+            999.3,
+            2000.5500000000002
+          ],
+          [
+            1000.7,
+            2000.5500000000002
+          ],
+          [
+            1000.7,
+            2000.0
+          ]
+        ],
+        "slot": [
+          [
+            999.3,
+            2000.0
+          ],
+          [
+            1000.7,
+            2000.0
+          ],
+          [
+            1000.7,
+            2000.5500000000002
+          ],
+          [
+            999.3,
+            2000.5500000000002
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "parallel_w55_aisle120_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "parallel_w55_aisle120_rear",
+        "style": "parallel",
+        "width_m": 0.55,
+        "length_m": 1.4,
+        "aisle_width_m": 1.2,
+        "entry": "rear",
+        "goal": [
+          1015.26,
+          2000.275,
+          3.141592653589793
+        ],
+        "area": [
+          [
+            1019.0,
+            2000.0
+          ],
+          [
+            1019.0,
+            1998.8
+          ],
+          [
+            1011.0,
+            1998.8
+          ],
+          [
+            1011.0,
+            2000.0
+          ],
+          [
+            1014.3,
+            2000.0
+          ],
+          [
+            1014.3,
+            2000.5500000000002
+          ],
+          [
+            1015.7,
+            2000.5500000000002
+          ],
+          [
+            1015.7,
+            2000.0
+          ]
+        ],
+        "slot": [
+          [
+            1014.3,
+            2000.0
+          ],
+          [
+            1015.7,
+            2000.0
+          ],
+          [
+            1015.7,
+            2000.5500000000002
+          ],
+          [
+            1014.3,
+            2000.5500000000002
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "parallel_w55_aisle240_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "parallel_w55_aisle240_front",
+        "style": "parallel",
+        "width_m": 0.55,
+        "length_m": 1.4,
+        "aisle_width_m": 2.4,
+        "entry": "front",
+        "goal": [
+          1029.74,
+          2000.275,
+          0.0
+        ],
+        "area": [
+          [
+            1034.0,
+            2000.0
+          ],
+          [
+            1034.0,
+            1997.6
+          ],
+          [
+            1026.0,
+            1997.6
+          ],
+          [
+            1026.0,
+            2000.0
+          ],
+          [
+            1029.3,
+            2000.0
+          ],
+          [
+            1029.3,
+            2000.5500000000002
+          ],
+          [
+            1030.7,
+            2000.5500000000002
+          ],
+          [
+            1030.7,
+            2000.0
+          ]
+        ],
+        "slot": [
+          [
+            1029.3,
+            2000.0
+          ],
+          [
+            1030.7,
+            2000.0
+          ],
+          [
+            1030.7,
+            2000.5500000000002
+          ],
+          [
+            1029.3,
+            2000.5500000000002
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "parallel_w55_aisle240_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "parallel_w55_aisle240_rear",
+        "style": "parallel",
+        "width_m": 0.55,
+        "length_m": 1.4,
+        "aisle_width_m": 2.4,
+        "entry": "rear",
+        "goal": [
+          1045.26,
+          2000.275,
+          3.141592653589793
+        ],
+        "area": [
+          [
+            1049.0,
+            2000.0
+          ],
+          [
+            1049.0,
+            1997.6
+          ],
+          [
+            1041.0,
+            1997.6
+          ],
+          [
+            1041.0,
+            2000.0
+          ],
+          [
+            1044.3,
+            2000.0
+          ],
+          [
+            1044.3,
+            2000.5500000000002
+          ],
+          [
+            1045.7,
+            2000.5500000000002
+          ],
+          [
+            1045.7,
+            2000.0
+          ]
+        ],
+        "slot": [
+          [
+            1044.3,
+            2000.0
+          ],
+          [
+            1045.7,
+            2000.0
+          ],
+          [
+            1045.7,
+            2000.5500000000002
+          ],
+          [
+            1044.3,
+            2000.5500000000002
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "parallel_w60_aisle120_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "parallel_w60_aisle120_front",
+        "style": "parallel",
+        "width_m": 0.6,
+        "length_m": 1.4,
+        "aisle_width_m": 1.2,
+        "entry": "front",
+        "goal": [
+          1059.74,
+          2000.3,
+          0.0
+        ],
+        "area": [
+          [
+            1064.0,
+            2000.0
+          ],
+          [
+            1064.0,
+            1998.8
+          ],
+          [
+            1056.0,
+            1998.8
+          ],
+          [
+            1056.0,
+            2000.0
+          ],
+          [
+            1059.3,
+            2000.0
+          ],
+          [
+            1059.3,
+            2000.6
+          ],
+          [
+            1060.7,
+            2000.6
+          ],
+          [
+            1060.7,
+            2000.0
+          ]
+        ],
+        "slot": [
+          [
+            1059.3,
+            2000.0
+          ],
+          [
+            1060.7,
+            2000.0
+          ],
+          [
+            1060.7,
+            2000.6
+          ],
+          [
+            1059.3,
+            2000.6
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "parallel_w60_aisle120_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "parallel_w60_aisle120_rear",
+        "style": "parallel",
+        "width_m": 0.6,
+        "length_m": 1.4,
+        "aisle_width_m": 1.2,
+        "entry": "rear",
+        "goal": [
+          1075.26,
+          2000.3,
+          3.141592653589793
+        ],
+        "area": [
+          [
+            1079.0,
+            2000.0
+          ],
+          [
+            1079.0,
+            1998.8
+          ],
+          [
+            1071.0,
+            1998.8
+          ],
+          [
+            1071.0,
+            2000.0
+          ],
+          [
+            1074.3,
+            2000.0
+          ],
+          [
+            1074.3,
+            2000.6
+          ],
+          [
+            1075.7,
+            2000.6
+          ],
+          [
+            1075.7,
+            2000.0
+          ]
+        ],
+        "slot": [
+          [
+            1074.3,
+            2000.0
+          ],
+          [
+            1075.7,
+            2000.0
+          ],
+          [
+            1075.7,
+            2000.6
+          ],
+          [
+            1074.3,
+            2000.6
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "parallel_w60_aisle240_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "parallel_w60_aisle240_front",
+        "style": "parallel",
+        "width_m": 0.6,
+        "length_m": 1.4,
+        "aisle_width_m": 2.4,
+        "entry": "front",
+        "goal": [
+          999.74,
+          2015.3,
+          0.0
+        ],
+        "area": [
+          [
+            1004.0,
+            2015.0
+          ],
+          [
+            1004.0,
+            2012.6
+          ],
+          [
+            996.0,
+            2012.6
+          ],
+          [
+            996.0,
+            2015.0
+          ],
+          [
+            999.3,
+            2015.0
+          ],
+          [
+            999.3,
+            2015.6
+          ],
+          [
+            1000.7,
+            2015.6
+          ],
+          [
+            1000.7,
+            2015.0
+          ]
+        ],
+        "slot": [
+          [
+            999.3,
+            2015.0
+          ],
+          [
+            1000.7,
+            2015.0
+          ],
+          [
+            1000.7,
+            2015.6
+          ],
+          [
+            999.3,
+            2015.6
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "parallel_w60_aisle240_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "parallel_w60_aisle240_rear",
+        "style": "parallel",
+        "width_m": 0.6,
+        "length_m": 1.4,
+        "aisle_width_m": 2.4,
+        "entry": "rear",
+        "goal": [
+          1015.26,
+          2015.3,
+          3.141592653589793
+        ],
+        "area": [
+          [
+            1019.0,
+            2015.0
+          ],
+          [
+            1019.0,
+            2012.6
+          ],
+          [
+            1011.0,
+            2012.6
+          ],
+          [
+            1011.0,
+            2015.0
+          ],
+          [
+            1014.3,
+            2015.0
+          ],
+          [
+            1014.3,
+            2015.6
+          ],
+          [
+            1015.7,
+            2015.6
+          ],
+          [
+            1015.7,
+            2015.0
+          ]
+        ],
+        "slot": [
+          [
+            1014.3,
+            2015.0
+          ],
+          [
+            1015.7,
+            2015.0
+          ],
+          [
+            1015.7,
+            2015.6
+          ],
+          [
+            1014.3,
+            2015.6
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "parallel_w90_aisle120_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "parallel_w90_aisle120_front",
+        "style": "parallel",
+        "width_m": 0.9,
+        "length_m": 1.4,
+        "aisle_width_m": 1.2,
+        "entry": "front",
+        "goal": [
+          1029.74,
+          2015.45,
+          0.0
+        ],
+        "area": [
+          [
+            1034.0,
+            2015.0
+          ],
+          [
+            1034.0,
+            2013.8
+          ],
+          [
+            1026.0,
+            2013.8
+          ],
+          [
+            1026.0,
+            2015.0
+          ],
+          [
+            1029.3,
+            2015.0
+          ],
+          [
+            1029.3,
+            2015.9
+          ],
+          [
+            1030.7,
+            2015.9
+          ],
+          [
+            1030.7,
+            2015.0
+          ]
+        ],
+        "slot": [
+          [
+            1029.3,
+            2015.0
+          ],
+          [
+            1030.7,
+            2015.0
+          ],
+          [
+            1030.7,
+            2015.9
+          ],
+          [
+            1029.3,
+            2015.9
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "parallel_w90_aisle120_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "parallel_w90_aisle120_rear",
+        "style": "parallel",
+        "width_m": 0.9,
+        "length_m": 1.4,
+        "aisle_width_m": 1.2,
+        "entry": "rear",
+        "goal": [
+          1045.26,
+          2015.45,
+          3.141592653589793
+        ],
+        "area": [
+          [
+            1049.0,
+            2015.0
+          ],
+          [
+            1049.0,
+            2013.8
+          ],
+          [
+            1041.0,
+            2013.8
+          ],
+          [
+            1041.0,
+            2015.0
+          ],
+          [
+            1044.3,
+            2015.0
+          ],
+          [
+            1044.3,
+            2015.9
+          ],
+          [
+            1045.7,
+            2015.9
+          ],
+          [
+            1045.7,
+            2015.0
+          ]
+        ],
+        "slot": [
+          [
+            1044.3,
+            2015.0
+          ],
+          [
+            1045.7,
+            2015.0
+          ],
+          [
+            1045.7,
+            2015.9
+          ],
+          [
+            1044.3,
+            2015.9
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "parallel_w90_aisle240_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "parallel_w90_aisle240_front",
+        "style": "parallel",
+        "width_m": 0.9,
+        "length_m": 1.4,
+        "aisle_width_m": 2.4,
+        "entry": "front",
+        "goal": [
+          1059.74,
+          2015.45,
+          0.0
+        ],
+        "area": [
+          [
+            1064.0,
+            2015.0
+          ],
+          [
+            1064.0,
+            2012.6
+          ],
+          [
+            1056.0,
+            2012.6
+          ],
+          [
+            1056.0,
+            2015.0
+          ],
+          [
+            1059.3,
+            2015.0
+          ],
+          [
+            1059.3,
+            2015.9
+          ],
+          [
+            1060.7,
+            2015.9
+          ],
+          [
+            1060.7,
+            2015.0
+          ]
+        ],
+        "slot": [
+          [
+            1059.3,
+            2015.0
+          ],
+          [
+            1060.7,
+            2015.0
+          ],
+          [
+            1060.7,
+            2015.9
+          ],
+          [
+            1059.3,
+            2015.9
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "parallel_w90_aisle240_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "parallel_w90_aisle240_rear",
+        "style": "parallel",
+        "width_m": 0.9,
+        "length_m": 1.4,
+        "aisle_width_m": 2.4,
+        "entry": "rear",
+        "goal": [
+          1075.26,
+          2015.45,
+          3.141592653589793
+        ],
+        "area": [
+          [
+            1079.0,
+            2015.0
+          ],
+          [
+            1079.0,
+            2012.6
+          ],
+          [
+            1071.0,
+            2012.6
+          ],
+          [
+            1071.0,
+            2015.0
+          ],
+          [
+            1074.3,
+            2015.0
+          ],
+          [
+            1074.3,
+            2015.9
+          ],
+          [
+            1075.7,
+            2015.9
+          ],
+          [
+            1075.7,
+            2015.0
+          ]
+        ],
+        "slot": [
+          [
+            1074.3,
+            2015.0
+          ],
+          [
+            1075.7,
+            2015.0
+          ],
+          [
+            1075.7,
+            2015.9
+          ],
+          [
+            1074.3,
+            2015.9
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "perpendicular_w55_aisle120_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "perpendicular_w55_aisle120_front",
+        "style": "perpendicular",
+        "width_m": 0.55,
+        "length_m": 1.1,
+        "aisle_width_m": 1.2,
+        "entry": "front",
+        "goal": [
+          1000.0,
+          2030.29,
+          1.5707963267948966
+        ],
+        "area": [
+          [
+            1004.0,
+            2030.0
+          ],
+          [
+            1004.0,
+            2028.8
+          ],
+          [
+            996.0,
+            2028.8
+          ],
+          [
+            996.0,
+            2030.0
+          ],
+          [
+            999.725,
+            2030.0
+          ],
+          [
+            999.725,
+            2031.1
+          ],
+          [
+            1000.275,
+            2031.1
+          ],
+          [
+            1000.275,
+            2030.0
+          ]
+        ],
+        "slot": [
+          [
+            1000.275,
+            2030.0
+          ],
+          [
+            1000.275,
+            2031.1
+          ],
+          [
+            999.725,
+            2031.1
+          ],
+          [
+            999.725,
+            2030.0
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "perpendicular_w55_aisle120_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "perpendicular_w55_aisle120_rear",
+        "style": "perpendicular",
+        "width_m": 0.55,
+        "length_m": 1.1,
+        "aisle_width_m": 1.2,
+        "entry": "rear",
+        "goal": [
+          1015.0,
+          2030.81,
+          -1.5707963267948966
+        ],
+        "area": [
+          [
+            1019.0,
+            2030.0
+          ],
+          [
+            1019.0,
+            2028.8
+          ],
+          [
+            1011.0,
+            2028.8
+          ],
+          [
+            1011.0,
+            2030.0
+          ],
+          [
+            1014.725,
+            2030.0
+          ],
+          [
+            1014.725,
+            2031.1
+          ],
+          [
+            1015.275,
+            2031.1
+          ],
+          [
+            1015.275,
+            2030.0
+          ]
+        ],
+        "slot": [
+          [
+            1015.275,
+            2030.0
+          ],
+          [
+            1015.275,
+            2031.1
+          ],
+          [
+            1014.725,
+            2031.1
+          ],
+          [
+            1014.725,
+            2030.0
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "perpendicular_w55_aisle240_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "perpendicular_w55_aisle240_front",
+        "style": "perpendicular",
+        "width_m": 0.55,
+        "length_m": 1.1,
+        "aisle_width_m": 2.4,
+        "entry": "front",
+        "goal": [
+          1030.0,
+          2030.29,
+          1.5707963267948966
+        ],
+        "area": [
+          [
+            1034.0,
+            2030.0
+          ],
+          [
+            1034.0,
+            2027.6
+          ],
+          [
+            1026.0,
+            2027.6
+          ],
+          [
+            1026.0,
+            2030.0
+          ],
+          [
+            1029.725,
+            2030.0
+          ],
+          [
+            1029.725,
+            2031.1
+          ],
+          [
+            1030.275,
+            2031.1
+          ],
+          [
+            1030.275,
+            2030.0
+          ]
+        ],
+        "slot": [
+          [
+            1030.275,
+            2030.0
+          ],
+          [
+            1030.275,
+            2031.1
+          ],
+          [
+            1029.725,
+            2031.1
+          ],
+          [
+            1029.725,
+            2030.0
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "perpendicular_w55_aisle240_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "perpendicular_w55_aisle240_rear",
+        "style": "perpendicular",
+        "width_m": 0.55,
+        "length_m": 1.1,
+        "aisle_width_m": 2.4,
+        "entry": "rear",
+        "goal": [
+          1045.0,
+          2030.81,
+          -1.5707963267948966
+        ],
+        "area": [
+          [
+            1049.0,
+            2030.0
+          ],
+          [
+            1049.0,
+            2027.6
+          ],
+          [
+            1041.0,
+            2027.6
+          ],
+          [
+            1041.0,
+            2030.0
+          ],
+          [
+            1044.725,
+            2030.0
+          ],
+          [
+            1044.725,
+            2031.1
+          ],
+          [
+            1045.275,
+            2031.1
+          ],
+          [
+            1045.275,
+            2030.0
+          ]
+        ],
+        "slot": [
+          [
+            1045.275,
+            2030.0
+          ],
+          [
+            1045.275,
+            2031.1
+          ],
+          [
+            1044.725,
+            2031.1
+          ],
+          [
+            1044.725,
+            2030.0
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "perpendicular_w60_aisle120_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "perpendicular_w60_aisle120_front",
+        "style": "perpendicular",
+        "width_m": 0.6,
+        "length_m": 1.1,
+        "aisle_width_m": 1.2,
+        "entry": "front",
+        "goal": [
+          1060.0,
+          2030.29,
+          1.5707963267948966
+        ],
+        "area": [
+          [
+            1064.0,
+            2030.0
+          ],
+          [
+            1064.0,
+            2028.8
+          ],
+          [
+            1056.0,
+            2028.8
+          ],
+          [
+            1056.0,
+            2030.0
+          ],
+          [
+            1059.7,
+            2030.0
+          ],
+          [
+            1059.7,
+            2031.1
+          ],
+          [
+            1060.3,
+            2031.1
+          ],
+          [
+            1060.3,
+            2030.0
+          ]
+        ],
+        "slot": [
+          [
+            1060.3,
+            2030.0
+          ],
+          [
+            1060.3,
+            2031.1
+          ],
+          [
+            1059.7,
+            2031.1
+          ],
+          [
+            1059.7,
+            2030.0
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "perpendicular_w60_aisle120_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "perpendicular_w60_aisle120_rear",
+        "style": "perpendicular",
+        "width_m": 0.6,
+        "length_m": 1.1,
+        "aisle_width_m": 1.2,
+        "entry": "rear",
+        "goal": [
+          1075.0,
+          2030.81,
+          -1.5707963267948966
+        ],
+        "area": [
+          [
+            1079.0,
+            2030.0
+          ],
+          [
+            1079.0,
+            2028.8
+          ],
+          [
+            1071.0,
+            2028.8
+          ],
+          [
+            1071.0,
+            2030.0
+          ],
+          [
+            1074.7,
+            2030.0
+          ],
+          [
+            1074.7,
+            2031.1
+          ],
+          [
+            1075.3,
+            2031.1
+          ],
+          [
+            1075.3,
+            2030.0
+          ]
+        ],
+        "slot": [
+          [
+            1075.3,
+            2030.0
+          ],
+          [
+            1075.3,
+            2031.1
+          ],
+          [
+            1074.7,
+            2031.1
+          ],
+          [
+            1074.7,
+            2030.0
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "perpendicular_w60_aisle240_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "perpendicular_w60_aisle240_front",
+        "style": "perpendicular",
+        "width_m": 0.6,
+        "length_m": 1.1,
+        "aisle_width_m": 2.4,
+        "entry": "front",
+        "goal": [
+          1000.0,
+          2045.29,
+          1.5707963267948966
+        ],
+        "area": [
+          [
+            1004.0,
+            2045.0
+          ],
+          [
+            1004.0,
+            2042.6
+          ],
+          [
+            996.0,
+            2042.6
+          ],
+          [
+            996.0,
+            2045.0
+          ],
+          [
+            999.7,
+            2045.0
+          ],
+          [
+            999.7,
+            2046.1
+          ],
+          [
+            1000.3,
+            2046.1
+          ],
+          [
+            1000.3,
+            2045.0
+          ]
+        ],
+        "slot": [
+          [
+            1000.3,
+            2045.0
+          ],
+          [
+            1000.3,
+            2046.1
+          ],
+          [
+            999.7,
+            2046.1
+          ],
+          [
+            999.7,
+            2045.0
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "perpendicular_w60_aisle240_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "perpendicular_w60_aisle240_rear",
+        "style": "perpendicular",
+        "width_m": 0.6,
+        "length_m": 1.1,
+        "aisle_width_m": 2.4,
+        "entry": "rear",
+        "goal": [
+          1015.0,
+          2045.81,
+          -1.5707963267948966
+        ],
+        "area": [
+          [
+            1019.0,
+            2045.0
+          ],
+          [
+            1019.0,
+            2042.6
+          ],
+          [
+            1011.0,
+            2042.6
+          ],
+          [
+            1011.0,
+            2045.0
+          ],
+          [
+            1014.7,
+            2045.0
+          ],
+          [
+            1014.7,
+            2046.1
+          ],
+          [
+            1015.3,
+            2046.1
+          ],
+          [
+            1015.3,
+            2045.0
+          ]
+        ],
+        "slot": [
+          [
+            1015.3,
+            2045.0
+          ],
+          [
+            1015.3,
+            2046.1
+          ],
+          [
+            1014.7,
+            2046.1
+          ],
+          [
+            1014.7,
+            2045.0
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "perpendicular_w90_aisle120_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "perpendicular_w90_aisle120_front",
+        "style": "perpendicular",
+        "width_m": 0.9,
+        "length_m": 1.1,
+        "aisle_width_m": 1.2,
+        "entry": "front",
+        "goal": [
+          1030.0,
+          2045.29,
+          1.5707963267948966
+        ],
+        "area": [
+          [
+            1034.0,
+            2045.0
+          ],
+          [
+            1034.0,
+            2043.8
+          ],
+          [
+            1026.0,
+            2043.8
+          ],
+          [
+            1026.0,
+            2045.0
+          ],
+          [
+            1029.55,
+            2045.0
+          ],
+          [
+            1029.55,
+            2046.1
+          ],
+          [
+            1030.45,
+            2046.1
+          ],
+          [
+            1030.45,
+            2045.0
+          ]
+        ],
+        "slot": [
+          [
+            1030.45,
+            2045.0
+          ],
+          [
+            1030.45,
+            2046.1
+          ],
+          [
+            1029.55,
+            2046.1
+          ],
+          [
+            1029.55,
+            2045.0
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "perpendicular_w90_aisle120_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "perpendicular_w90_aisle120_rear",
+        "style": "perpendicular",
+        "width_m": 0.9,
+        "length_m": 1.1,
+        "aisle_width_m": 1.2,
+        "entry": "rear",
+        "goal": [
+          1045.0,
+          2045.81,
+          -1.5707963267948966
+        ],
+        "area": [
+          [
+            1049.0,
+            2045.0
+          ],
+          [
+            1049.0,
+            2043.8
+          ],
+          [
+            1041.0,
+            2043.8
+          ],
+          [
+            1041.0,
+            2045.0
+          ],
+          [
+            1044.55,
+            2045.0
+          ],
+          [
+            1044.55,
+            2046.1
+          ],
+          [
+            1045.45,
+            2046.1
+          ],
+          [
+            1045.45,
+            2045.0
+          ]
+        ],
+        "slot": [
+          [
+            1045.45,
+            2045.0
+          ],
+          [
+            1045.45,
+            2046.1
+          ],
+          [
+            1044.55,
+            2046.1
+          ],
+          [
+            1044.55,
+            2045.0
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "perpendicular_w90_aisle240_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "perpendicular_w90_aisle240_front",
+        "style": "perpendicular",
+        "width_m": 0.9,
+        "length_m": 1.1,
+        "aisle_width_m": 2.4,
+        "entry": "front",
+        "goal": [
+          1060.0,
+          2045.29,
+          1.5707963267948966
+        ],
+        "area": [
+          [
+            1064.0,
+            2045.0
+          ],
+          [
+            1064.0,
+            2042.6
+          ],
+          [
+            1056.0,
+            2042.6
+          ],
+          [
+            1056.0,
+            2045.0
+          ],
+          [
+            1059.55,
+            2045.0
+          ],
+          [
+            1059.55,
+            2046.1
+          ],
+          [
+            1060.45,
+            2046.1
+          ],
+          [
+            1060.45,
+            2045.0
+          ]
+        ],
+        "slot": [
+          [
+            1060.45,
+            2045.0
+          ],
+          [
+            1060.45,
+            2046.1
+          ],
+          [
+            1059.55,
+            2046.1
+          ],
+          [
+            1059.55,
+            2045.0
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "perpendicular_w90_aisle240_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "perpendicular_w90_aisle240_rear",
+        "style": "perpendicular",
+        "width_m": 0.9,
+        "length_m": 1.1,
+        "aisle_width_m": 2.4,
+        "entry": "rear",
+        "goal": [
+          1075.0,
+          2045.81,
+          -1.5707963267948966
+        ],
+        "area": [
+          [
+            1079.0,
+            2045.0
+          ],
+          [
+            1079.0,
+            2042.6
+          ],
+          [
+            1071.0,
+            2042.6
+          ],
+          [
+            1071.0,
+            2045.0
+          ],
+          [
+            1074.55,
+            2045.0
+          ],
+          [
+            1074.55,
+            2046.1
+          ],
+          [
+            1075.45,
+            2046.1
+          ],
+          [
+            1075.45,
+            2045.0
+          ]
+        ],
+        "slot": [
+          [
+            1075.45,
+            2045.0
+          ],
+          [
+            1075.45,
+            2046.1
+          ],
+          [
+            1074.55,
+            2046.1
+          ],
+          [
+            1074.55,
+            2045.0
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "diagonal45_w55_aisle120_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "diagonal45_w55_aisle120_front",
+        "style": "diagonal45",
+        "width_m": 0.55,
+        "length_m": 1.1,
+        "aisle_width_m": 1.2,
+        "entry": "front",
+        "goal": [
+          1000.2050609665441,
+          2060.3995153313704,
+          0.7853981633974483
+        ],
+        "area": [
+          [
+            1004.0,
+            2060.0
+          ],
+          [
+            1004.0,
+            2058.8
+          ],
+          [
+            996.0,
+            2058.8
+          ],
+          [
+            996.0,
+            2060.0
+          ],
+          [
+            999.4166369055208,
+            2060.0
+          ],
+          [
+            999.8055456351736,
+            2060.388908729653
+          ],
+          [
+            1000.5833630944788,
+            2061.166726188958
+          ],
+          [
+            1000.9722718241316,
+            2060.777817459305
+          ],
+          [
+            1000.1944543648264,
+            2060.0
+          ]
+        ],
+        "slot": [
+          [
+            1000.1944543648264,
+            2060.0
+          ],
+          [
+            1000.9722718241316,
+            2060.777817459305
+          ],
+          [
+            1000.5833630944788,
+            2061.166726188958
+          ],
+          [
+            999.8055456351736,
+            2060.388908729653
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "diagonal45_w55_aisle120_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "diagonal45_w55_aisle120_rear",
+        "style": "diagonal45",
+        "width_m": 0.55,
+        "length_m": 1.1,
+        "aisle_width_m": 1.2,
+        "entry": "rear",
+        "goal": [
+          1015.5727564927611,
+          2060.7672108575875,
+          -2.356194490192345
+        ],
+        "area": [
+          [
+            1019.0,
+            2060.0
+          ],
+          [
+            1019.0,
+            2058.8
+          ],
+          [
+            1011.0,
+            2058.8
+          ],
+          [
+            1011.0,
+            2060.0
+          ],
+          [
+            1014.4166369055208,
+            2060.0
+          ],
+          [
+            1014.8055456351736,
+            2060.388908729653
+          ],
+          [
+            1015.5833630944788,
+            2061.166726188958
+          ],
+          [
+            1015.9722718241316,
+            2060.777817459305
+          ],
+          [
+            1015.1944543648264,
+            2060.0
+          ]
+        ],
+        "slot": [
+          [
+            1015.1944543648264,
+            2060.0
+          ],
+          [
+            1015.9722718241316,
+            2060.777817459305
+          ],
+          [
+            1015.5833630944788,
+            2061.166726188958
+          ],
+          [
+            1014.8055456351736,
+            2060.388908729653
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "diagonal45_w55_aisle240_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "diagonal45_w55_aisle240_front",
+        "style": "diagonal45",
+        "width_m": 0.55,
+        "length_m": 1.1,
+        "aisle_width_m": 2.4,
+        "entry": "front",
+        "goal": [
+          1030.2050609665441,
+          2060.3995153313704,
+          0.7853981633974483
+        ],
+        "area": [
+          [
+            1034.0,
+            2060.0
+          ],
+          [
+            1034.0,
+            2057.6
+          ],
+          [
+            1026.0,
+            2057.6
+          ],
+          [
+            1026.0,
+            2060.0
+          ],
+          [
+            1029.416636905521,
+            2060.0
+          ],
+          [
+            1029.8055456351738,
+            2060.388908729653
+          ],
+          [
+            1030.5833630944792,
+            2061.166726188958
+          ],
+          [
+            1030.9722718241317,
+            2060.777817459305
+          ],
+          [
+            1030.1944543648262,
+            2060.0
+          ]
+        ],
+        "slot": [
+          [
+            1030.1944543648262,
+            2060.0
+          ],
+          [
+            1030.9722718241317,
+            2060.777817459305
+          ],
+          [
+            1030.5833630944792,
+            2061.166726188958
+          ],
+          [
+            1029.8055456351738,
+            2060.388908729653
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "diagonal45_w55_aisle240_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "diagonal45_w55_aisle240_rear",
+        "style": "diagonal45",
+        "width_m": 0.55,
+        "length_m": 1.1,
+        "aisle_width_m": 2.4,
+        "entry": "rear",
+        "goal": [
+          1045.5727564927613,
+          2060.7672108575875,
+          -2.356194490192345
+        ],
+        "area": [
+          [
+            1049.0,
+            2060.0
+          ],
+          [
+            1049.0,
+            2057.6
+          ],
+          [
+            1041.0,
+            2057.6
+          ],
+          [
+            1041.0,
+            2060.0
+          ],
+          [
+            1044.416636905521,
+            2060.0
+          ],
+          [
+            1044.8055456351738,
+            2060.388908729653
+          ],
+          [
+            1045.5833630944792,
+            2061.166726188958
+          ],
+          [
+            1045.9722718241317,
+            2060.777817459305
+          ],
+          [
+            1045.1944543648262,
+            2060.0
+          ]
+        ],
+        "slot": [
+          [
+            1045.1944543648262,
+            2060.0
+          ],
+          [
+            1045.9722718241317,
+            2060.777817459305
+          ],
+          [
+            1045.5833630944792,
+            2061.166726188958
+          ],
+          [
+            1044.8055456351738,
+            2060.388908729653
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "diagonal45_w60_aisle120_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "diagonal45_w60_aisle120_front",
+        "style": "diagonal45",
+        "width_m": 0.6,
+        "length_m": 1.1,
+        "aisle_width_m": 1.2,
+        "entry": "front",
+        "goal": [
+          1060.2050609665441,
+          2060.4171930009,
+          0.7853981633974483
+        ],
+        "area": [
+          [
+            1064.0,
+            2060.0
+          ],
+          [
+            1064.0,
+            2058.8
+          ],
+          [
+            1056.0,
+            2058.8
+          ],
+          [
+            1056.0,
+            2060.0
+          ],
+          [
+            1059.3636038969319,
+            2060.0
+          ],
+          [
+            1059.787867965644,
+            2060.424264068712
+          ],
+          [
+            1060.5656854249494,
+            2061.202081528017
+          ],
+          [
+            1060.9899494936615,
+            2060.7778174593054
+          ],
+          [
+            1060.212132034356,
+            2060.0000000000005
+          ],
+          [
+            1060.2121320343556,
+            2060.0
+          ]
+        ],
+        "slot": [
+          [
+            1060.212132034356,
+            2060.0000000000005
+          ],
+          [
+            1060.9899494936615,
+            2060.7778174593054
+          ],
+          [
+            1060.5656854249494,
+            2061.202081528017
+          ],
+          [
+            1059.787867965644,
+            2060.424264068712
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "diagonal45_w60_aisle120_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "diagonal45_w60_aisle120_rear",
+        "style": "diagonal45",
+        "width_m": 0.6,
+        "length_m": 1.1,
+        "aisle_width_m": 1.2,
+        "entry": "rear",
+        "goal": [
+          1075.5727564927613,
+          2060.7848885271173,
+          -2.356194490192345
+        ],
+        "area": [
+          [
+            1079.0,
+            2060.0
+          ],
+          [
+            1079.0,
+            2058.8
+          ],
+          [
+            1071.0,
+            2058.8
+          ],
+          [
+            1071.0,
+            2060.0
+          ],
+          [
+            1074.3636038969319,
+            2060.0
+          ],
+          [
+            1074.787867965644,
+            2060.424264068712
+          ],
+          [
+            1075.5656854249494,
+            2061.202081528017
+          ],
+          [
+            1075.9899494936615,
+            2060.7778174593054
+          ],
+          [
+            1075.212132034356,
+            2060.0000000000005
+          ],
+          [
+            1075.2121320343556,
+            2060.0
+          ]
+        ],
+        "slot": [
+          [
+            1075.212132034356,
+            2060.0000000000005
+          ],
+          [
+            1075.9899494936615,
+            2060.7778174593054
+          ],
+          [
+            1075.5656854249494,
+            2061.202081528017
+          ],
+          [
+            1074.787867965644,
+            2060.424264068712
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "diagonal45_w60_aisle240_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "diagonal45_w60_aisle240_front",
+        "style": "diagonal45",
+        "width_m": 0.6,
+        "length_m": 1.1,
+        "aisle_width_m": 2.4,
+        "entry": "front",
+        "goal": [
+          1000.2050609665441,
+          2075.4171930009,
+          0.7853981633974483
+        ],
+        "area": [
+          [
+            1004.0,
+            2075.0
+          ],
+          [
+            1004.0,
+            2072.6
+          ],
+          [
+            996.0,
+            2072.6
+          ],
+          [
+            996.0,
+            2075.0
+          ],
+          [
+            999.363603896932,
+            2075.0
+          ],
+          [
+            999.7878679656441,
+            2075.424264068712
+          ],
+          [
+            1000.5656854249493,
+            2076.202081528017
+          ],
+          [
+            1000.9899494936611,
+            2075.7778174593054
+          ],
+          [
+            1000.2121320343559,
+            2075.0000000000005
+          ],
+          [
+            1000.2121320343555,
+            2075.0
+          ]
+        ],
+        "slot": [
+          [
+            1000.2121320343559,
+            2075.0000000000005
+          ],
+          [
+            1000.9899494936611,
+            2075.7778174593054
+          ],
+          [
+            1000.5656854249493,
+            2076.202081528017
+          ],
+          [
+            999.7878679656441,
+            2075.424264068712
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "diagonal45_w60_aisle240_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "diagonal45_w60_aisle240_rear",
+        "style": "diagonal45",
+        "width_m": 0.6,
+        "length_m": 1.1,
+        "aisle_width_m": 2.4,
+        "entry": "rear",
+        "goal": [
+          1015.5727564927611,
+          2075.7848885271173,
+          -2.356194490192345
+        ],
+        "area": [
+          [
+            1019.0,
+            2075.0
+          ],
+          [
+            1019.0,
+            2072.6
+          ],
+          [
+            1011.0,
+            2072.6
+          ],
+          [
+            1011.0,
+            2075.0
+          ],
+          [
+            1014.363603896932,
+            2075.0
+          ],
+          [
+            1014.7878679656441,
+            2075.424264068712
+          ],
+          [
+            1015.5656854249493,
+            2076.202081528017
+          ],
+          [
+            1015.9899494936611,
+            2075.7778174593054
+          ],
+          [
+            1015.2121320343559,
+            2075.0000000000005
+          ],
+          [
+            1015.2121320343555,
+            2075.0
+          ]
+        ],
+        "slot": [
+          [
+            1015.2121320343559,
+            2075.0000000000005
+          ],
+          [
+            1015.9899494936611,
+            2075.7778174593054
+          ],
+          [
+            1015.5656854249493,
+            2076.202081528017
+          ],
+          [
+            1014.7878679656441,
+            2075.424264068712
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "diagonal45_w90_aisle120_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "diagonal45_w90_aisle120_front",
+        "style": "diagonal45",
+        "width_m": 0.9,
+        "length_m": 1.1,
+        "aisle_width_m": 1.2,
+        "entry": "front",
+        "goal": [
+          1030.2050609665441,
+          2075.523259018078,
+          0.7853981633974483
+        ],
+        "area": [
+          [
+            1034.0,
+            2075.0
+          ],
+          [
+            1034.0,
+            2073.8
+          ],
+          [
+            1026.0,
+            2073.8
+          ],
+          [
+            1026.0,
+            2075.0
+          ],
+          [
+            1029.045405845398,
+            2075.0
+          ],
+          [
+            1029.681801948466,
+            2075.636396103068
+          ],
+          [
+            1030.4596194077715,
+            2076.414213562373
+          ],
+          [
+            1031.0960155108394,
+            2075.7778174593054
+          ],
+          [
+            1030.318198051534,
+            2075.0000000000005
+          ],
+          [
+            1030.3181980515335,
+            2075.0
+          ]
+        ],
+        "slot": [
+          [
+            1030.318198051534,
+            2075.0000000000005
+          ],
+          [
+            1031.0960155108394,
+            2075.7778174593054
+          ],
+          [
+            1030.4596194077715,
+            2076.414213562373
+          ],
+          [
+            1029.681801948466,
+            2075.636396103068
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "diagonal45_w90_aisle120_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "diagonal45_w90_aisle120_rear",
+        "style": "diagonal45",
+        "width_m": 0.9,
+        "length_m": 1.1,
+        "aisle_width_m": 1.2,
+        "entry": "rear",
+        "goal": [
+          1045.5727564927613,
+          2075.8909545442953,
+          -2.356194490192345
+        ],
+        "area": [
+          [
+            1049.0,
+            2075.0
+          ],
+          [
+            1049.0,
+            2073.8
+          ],
+          [
+            1041.0,
+            2073.8
+          ],
+          [
+            1041.0,
+            2075.0
+          ],
+          [
+            1044.045405845398,
+            2075.0
+          ],
+          [
+            1044.681801948466,
+            2075.636396103068
+          ],
+          [
+            1045.4596194077715,
+            2076.414213562373
+          ],
+          [
+            1046.0960155108394,
+            2075.7778174593054
+          ],
+          [
+            1045.318198051534,
+            2075.0000000000005
+          ],
+          [
+            1045.3181980515335,
+            2075.0
+          ]
+        ],
+        "slot": [
+          [
+            1045.318198051534,
+            2075.0000000000005
+          ],
+          [
+            1046.0960155108394,
+            2075.7778174593054
+          ],
+          [
+            1045.4596194077715,
+            2076.414213562373
+          ],
+          [
+            1044.681801948466,
+            2075.636396103068
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "diagonal45_w90_aisle240_front.worldsim.scenario.json",
+      "parking": {
+        "space_id": "diagonal45_w90_aisle240_front",
+        "style": "diagonal45",
+        "width_m": 0.9,
+        "length_m": 1.1,
+        "aisle_width_m": 2.4,
+        "entry": "front",
+        "goal": [
+          1060.2050609665441,
+          2075.523259018078,
+          0.7853981633974483
+        ],
+        "area": [
+          [
+            1064.0,
+            2075.0
+          ],
+          [
+            1064.0,
+            2072.6
+          ],
+          [
+            1056.0,
+            2072.6
+          ],
+          [
+            1056.0,
+            2075.0
+          ],
+          [
+            1059.045405845398,
+            2075.0
+          ],
+          [
+            1059.681801948466,
+            2075.636396103068
+          ],
+          [
+            1060.4596194077715,
+            2076.414213562373
+          ],
+          [
+            1061.0960155108394,
+            2075.7778174593054
+          ],
+          [
+            1060.318198051534,
+            2075.0000000000005
+          ],
+          [
+            1060.3181980515335,
+            2075.0
+          ]
+        ],
+        "slot": [
+          [
+            1060.318198051534,
+            2075.0000000000005
+          ],
+          [
+            1061.0960155108394,
+            2075.7778174593054
+          ],
+          [
+            1060.4596194077715,
+            2076.414213562373
+          ],
+          [
+            1059.681801948466,
+            2075.636396103068
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    },
+    {
+      "file": "diagonal45_w90_aisle240_rear.worldsim.scenario.json",
+      "parking": {
+        "space_id": "diagonal45_w90_aisle240_rear",
+        "style": "diagonal45",
+        "width_m": 0.9,
+        "length_m": 1.1,
+        "aisle_width_m": 2.4,
+        "entry": "rear",
+        "goal": [
+          1075.5727564927613,
+          2075.8909545442953,
+          -2.356194490192345
+        ],
+        "area": [
+          [
+            1079.0,
+            2075.0
+          ],
+          [
+            1079.0,
+            2072.6
+          ],
+          [
+            1071.0,
+            2072.6
+          ],
+          [
+            1071.0,
+            2075.0
+          ],
+          [
+            1074.045405845398,
+            2075.0
+          ],
+          [
+            1074.681801948466,
+            2075.636396103068
+          ],
+          [
+            1075.4596194077715,
+            2076.414213562373
+          ],
+          [
+            1076.0960155108394,
+            2075.7778174593054
+          ],
+          [
+            1075.318198051534,
+            2075.0000000000005
+          ],
+          [
+            1075.3181980515335,
+            2075.0
+          ]
+        ],
+        "slot": [
+          [
+            1075.318198051534,
+            2075.0000000000005
+          ],
+          [
+            1076.0960155108394,
+            2075.7778174593054
+          ],
+          [
+            1075.4596194077715,
+            2076.414213562373
+          ],
+          [
+            1074.681801948466,
+            2075.636396103068
+          ]
+        ]
+      },
+      "validity": {
+        "status": "VALID",
+        "reason": "Independent polygon sweep of kinematic witness"
+      }
+    }
+  ]
+}

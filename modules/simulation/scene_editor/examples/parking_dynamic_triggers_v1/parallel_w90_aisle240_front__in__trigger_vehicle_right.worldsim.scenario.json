@@ -1,0 +1,122 @@
+{
+  "id": "parallel_w90_aisle240_front__in__trigger_vehicle_right",
+  "name": "parallel_w90_aisle240_front__in__trigger_vehicle_right",
+  "mapId": "ranger_parking_lab_v1",
+  "duration": 120,
+  "description": "泊车动作开始后进入位置触发区，启动动态交通；清空后仍须完成泊车任务。",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 1058,
+      "y": 2013.8,
+      "z": 0
+    },
+    "heading": 0,
+    "vehicleProfile": "ranger_mini_v3",
+    "parkingSpaceId": "parallel_w90_aisle240_front",
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "approach",
+    "routes": [
+      {
+        "id": "approach",
+        "waypoints": [
+          {
+            "position": {
+              "x": 1060,
+              "y": 2013.8,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ],
+    "parkingOperation": "in"
+  },
+  "agents": [
+    {
+      "id": "vehicle_right",
+      "name": "vehicle_right",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 1063.6,
+        "y": 2014.7,
+        "z": 0
+      },
+      "heading": 3.141592653589793,
+      "speed": 0.45,
+      "size": {
+        "x": 0.72,
+        "y": 0.5,
+        "z": 0.66
+      },
+      "enabled": false,
+      "activeRouteId": "vehicle_right-route",
+      "routes": [
+        {
+          "id": "vehicle_right-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "position": {
+                "x": 1063.6,
+                "y": 2014.7,
+                "z": 0
+              },
+              "speed": 0.45
+            },
+            {
+              "position": {
+                "x": 1056.4,
+                "y": 2014.7,
+                "z": 0
+              },
+              "speed": 0.45
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "ego-maneuver-zone",
+      "name": "泊车途中启动动态交通",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "targetAgentId": "ego",
+      "center": {
+        "x": 1058.2562315930245,
+        "y": 2013.8309964646298,
+        "z": 0
+      },
+      "radius": 0.06,
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "vehicle_right"
+        }
+      ]
+    },
+    {
+      "id": "vehicle_right-clear",
+      "name": "驶离干扰区并清场",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "targetAgentId": "vehicle_right",
+      "center": {
+        "x": 1056.4,
+        "y": 2014.7,
+        "z": 0
+      },
+      "radius": 0.35,
+      "actions": [
+        {
+          "kind": "ACTION_DISABLE",
+          "targetAgentId": "vehicle_right"
+        }
+      ]
+    }
+  ]
+}

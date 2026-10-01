@@ -1,0 +1,17 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "50fe3f0a680c1b3fa218fe2ae95f94488e45ec42b9c7701a6b45d7f10dcb6cca",
+  "expectation": "reach_goal",
+  "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+  "validity": {
+    "status": "VALID",
+    "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+  },
+  "audit": {
+    "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/clear.worldsim.scenario.json",
+    "speed_scale": 1.15,
+    "longitudinal_shift_m": 0.3,
+    "scope": "Necessary scene validity; successful execution remains a separate model test"
+  }
+}

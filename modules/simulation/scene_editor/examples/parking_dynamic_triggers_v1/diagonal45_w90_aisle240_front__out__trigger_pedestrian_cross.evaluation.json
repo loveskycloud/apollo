@@ -1,0 +1,103 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "71d6662162cd2bd31b632f37cfbb19e2ffdebcaf46531fde4c260f8d223afe94",
+  "expectation": "park",
+  "reason": "Motion-triggered clearing hazards: yield safely and complete the original parking mission",
+  "parking": {
+    "space_id": "diagonal45_w90_aisle240_front",
+    "style": "diagonal45",
+    "width_m": 0.9,
+    "length_m": 1.1,
+    "aisle_width_m": 2.4,
+    "entry": "front",
+    "goal": [
+      1062.0,
+      2073.8,
+      0
+    ],
+    "area": [
+      [
+        1064.0,
+        2075.0
+      ],
+      [
+        1064.0,
+        2072.6
+      ],
+      [
+        1056.0,
+        2072.6
+      ],
+      [
+        1056.0,
+        2075.0
+      ],
+      [
+        1059.045405845398,
+        2075.0
+      ],
+      [
+        1059.681801948466,
+        2075.636396103068
+      ],
+      [
+        1060.4596194077715,
+        2076.414213562373
+      ],
+      [
+        1061.0960155108394,
+        2075.7778174593054
+      ],
+      [
+        1060.318198051534,
+        2075.0000000000005
+      ],
+      [
+        1060.3181980515335,
+        2075.0
+      ]
+    ],
+    "slot": [
+      [
+        1060.318198051534,
+        2075.0000000000005
+      ],
+      [
+        1061.0960155108394,
+        2075.7778174593054
+      ],
+      [
+        1060.4596194077715,
+        2076.414213562373
+      ],
+      [
+        1059.681801948466,
+        2075.636396103068
+      ]
+    ],
+    "operation": "out",
+    "variant": "trigger_pedestrian_cross",
+    "park_goal": [
+      1060.2050609665441,
+      2075.523259018078,
+      0.7853981633974483
+    ],
+    "witness_length_m": 6.866802705027842
+  },
+  "validity": {
+    "status": "VALID",
+    "reason": "Successful baseline; actor sweeps within driveable area; trigger pose has 0.18 m stopping buffer clear of each sequential actor sweep; sweeps intersect future ego path. This geometry audit does not certify dynamic control."
+  },
+  "parking_dynamic": {
+    "version": 1,
+    "pattern": "pedestrian_cross",
+    "actor_ids": [
+      "pedestrian"
+    ],
+    "minimum_activation_displacement_m": 0.15,
+    "minimum_activation_speed_mps": 0.05,
+    "reference_trigger_s": 2.0,
+    "expectation": "All actors must activate and clear after ego motion; then finish the original parking mission"
+  }
+}

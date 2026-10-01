@@ -1,0 +1,108 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "0f36abd5be9285ffd1739f78de902bd6a81ce31f18d02ea48d096c08b46a54f7",
+  "expectation": "park",
+  "reason": "Non-blocking vehicle remains beside the bay or aisle; disappearance cannot pass this case",
+  "parking": {
+    "space_id": "parallel_w90_aisle240_front",
+    "style": "parallel",
+    "width_m": 0.9,
+    "length_m": 1.4,
+    "aisle_width_m": 2.4,
+    "entry": "front",
+    "goal": [
+      1059.74,
+      2015.45,
+      0.0
+    ],
+    "area": [
+      [
+        1064.0,
+        2015.0
+      ],
+      [
+        1064.0,
+        2012.6
+      ],
+      [
+        1056.0,
+        2012.6
+      ],
+      [
+        1056.0,
+        2015.0
+      ],
+      [
+        1059.3,
+        2015.0
+      ],
+      [
+        1059.3,
+        2015.9
+      ],
+      [
+        1060.7,
+        2015.9
+      ],
+      [
+        1060.7,
+        2015.0
+      ]
+    ],
+    "slot": [
+      [
+        1059.3,
+        2015.0
+      ],
+      [
+        1060.7,
+        2015.0
+      ],
+      [
+        1060.7,
+        2015.9
+      ],
+      [
+        1059.3,
+        2015.9
+      ]
+    ],
+    "operation": "in",
+    "variant": "trigger_persistent_bay_side",
+    "park_goal": [
+      1059.74,
+      2015.45,
+      0.0
+    ],
+    "witness_length_m": 3.7704930320282224
+  },
+  "validity": {
+    "status": "VALID",
+    "stationary_body_gap_to_baseline_m": 0.33316360334242745,
+    "reason": "Unchanged successful baseline; stopped vehicle clears entire baseline body sweep by >=0.12 m before 0.025 m stop-zone tolerance; approach sweep inside area and outside ego 0.18 m stopping buffer."
+  },
+  "parking_dynamic": {
+    "version": 2,
+    "pattern": "persistent_bay_side",
+    "actor_ids": [
+      "retained_vehicle"
+    ],
+    "minimum_activation_displacement_m": 0.15,
+    "minimum_activation_speed_mps": 0.05,
+    "reference_trigger_s": 2.0,
+    "actor_end_states": {
+      "retained_vehicle": {
+        "kind": "stopped_visible",
+        "position": {
+          "x": 1061.53125,
+          "y": 2014.7,
+          "z": 0
+        },
+        "tolerance_m": 0.04,
+        "minimum_stationary_s": 2
+      }
+    },
+    "expectation": "Actor moves, stops nearby and remains visible through completion; ego resumes and completes original mission"
+  }
+}

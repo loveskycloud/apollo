@@ -113,7 +113,7 @@ def run(spec):
             from driving_quality import analyze_trace
             result["web_driving_quality"]=analyze_trace(directory/"policy.csv")
             result["passed"] &= (result["native"]["passed"] and result["quality"]["final_speed_mps"]<.05
-                                 and result["web_driving_quality"]["status"]=="PASS")
+                                 and result["web_driving_quality"]["status"]!="FAIL")
         except Exception as exc:
             result.update(passed=False,quality_error=str(exc))
     (directory/"result.json").write_text(json.dumps(result,indent=2)+"\n")

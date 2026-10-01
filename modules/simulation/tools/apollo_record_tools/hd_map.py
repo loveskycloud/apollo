@@ -141,4 +141,38 @@ def build_map_meshes(data, origin):
         for boundary in (left, right):
             append_mesh(result["/hdmap/lane_boundaries"], *ribbon(boundary, 0.07, 0.04))
         append_mesh(result["/hdmap/lane_centerlines"], *ribbon(center, 0.04, 0.035))
+    def polygon_points(polygon):
+        points = []
+        for p in polygon.point:
+            if not p.HasField("x") or not p.HasField("y"):
+                raise ValueError("HD map polygon point has no x/y")
+            point = np.array([p.x, p.y, p.z if p.HasField("z") else origin[2]]) - origin
+            if not np.isfinite(point).all():
+                raise ValueError("HD map polygon has non-finite coordinates")
+            if not points or np.linalg.norm(point-points[-1]) > 1e-8:
+                points.append(point)
+        if len(points)>1 and np.linalg.norm(points[0]-points[-1])<1e-8:
+            points.pop()
+        if len(points)<3:
+            raise ValueError("HD map polygon needs at least three distinct points")
+        return np.array(points, dtype=np.float64)
+
+    for area in data.ad_area:
+        if area.type != 1:
+            continue  # Only explicitly Driveable map geometry is road surface.
+        polygon = polygon_points(area.polygon)
+        triangles = mapbox_earcut.triangulate_float64(polygon[:, :2].copy(), np.array([len(polygon)], dtype=np.uint32))
+        if not len(triangles):
+            raise ValueError(f"Driveable area {area.id.id} has no triangulatable surface")
+        # Below the lane mesh to avoid coplanar overlap inside approach lanes.
+        polygon[:, 2] += .005
+        append_mesh(result["/hdmap/road_surface"], polygon, triangles)
+    if data.parking_space:
+        markings = result["/hdmap/parking_spaces"] = MapMesh(rgba=0xE6D690FF)
+        for space in data.parking_space:
+            polygon = polygon_points(space.polygon)
+            # Independent closed edges avoid ribbon tangent artefacts at the
+            # start/end corner; line width is display styling, not bay size.
+            for a, b in zip(polygon, np.roll(polygon, -1, axis=0)):
+                append_mesh(markings, *ribbon(np.array([a,b]), .01, .045))
     return result

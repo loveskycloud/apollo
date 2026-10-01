@@ -1,0 +1,20 @@
+{
+  "kind": "worldsim-suite",
+  "version": 1,
+  "name": "泊车途中动态触发 V1 · vehicle_left",
+  "mapId": "ranger_parking_lab_v1",
+  "scenarios": [
+    "parallel_w90_aisle240_front__in__trigger_vehicle_left.worldsim.scenario.json",
+    "parallel_w90_aisle240_front__out__trigger_vehicle_left.worldsim.scenario.json",
+    "parallel_w90_aisle240_rear__in__trigger_vehicle_left.worldsim.scenario.json",
+    "parallel_w90_aisle240_rear__out__trigger_vehicle_left.worldsim.scenario.json",
+    "perpendicular_w90_aisle240_front__in__trigger_vehicle_left.worldsim.scenario.json",
+    "perpendicular_w90_aisle240_front__out__trigger_vehicle_left.worldsim.scenario.json",
+    "perpendicular_w90_aisle240_rear__in__trigger_vehicle_left.worldsim.scenario.json",
+    "perpendicular_w90_aisle240_rear__out__trigger_vehicle_left.worldsim.scenario.json",
+    "diagonal45_w90_aisle240_front__in__trigger_vehicle_left.worldsim.scenario.json",
+    "diagonal45_w90_aisle240_front__out__trigger_vehicle_left.worldsim.scenario.json",
+    "diagonal45_w90_aisle240_rear__in__trigger_vehicle_left.worldsim.scenario.json",
+    "diagonal45_w90_aisle240_rear__out__trigger_vehicle_left.worldsim.scenario.json"
+  ]
+}

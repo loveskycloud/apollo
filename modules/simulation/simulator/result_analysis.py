@@ -8,6 +8,7 @@ import sys
 import time
 from pathlib import Path
 from planning_continuity import PlanningContinuity
+from quality_metrics import evaluate as evaluate_quality
 from task_service import (MODULES, analyze_trace, atomic_json, collision_summary,
                           compare, evaluate_record, load_evaluation, messages)
 
@@ -77,9 +78,11 @@ def analyze(request):
             goal = route["waypoints"][-1]["position"]
             analysis["goal_distance_m"] = (math.dist(last_pose, (goal["x"], goal["y"]))
                                            if last_pose is not None else None)
-    if "ML_PLANNING" in config["modules"]:
+    parking = config['kind']=='world' and bool(json.loads(source.read_text()).get('ego',{}).get('parkingSpaceId'))
+    if "ML_PLANNING" in config["modules"] and not parking:
         quality = [analyze_trace(job_dir / f"run-{i+1}" / "policy.csv") for i in range(config["repeat"])]
-        analysis["driving_quality"] = {"status": "PASS" if all(q["status"] == "PASS" for q in quality) else "FAIL", "runs": quality}
+        analysis["driving_quality"] = {"status": "FAIL" if any(q["status"] == "FAIL" for q in quality) else
+            "PASS" if all(q["status"] == "PASS" for q in quality) else "NOT_EVALUATED", "runs": quality}
     if config["kind"] == "world" and {"PLANNING", "ML_PLANNING"}.intersection(config["modules"]):
         checks = [continuity.result()]
         for output in outputs[1:]:
@@ -95,9 +98,20 @@ def analyze(request):
             "runs": checks}
         expectation = load_evaluation(source)
         outcomes = [evaluate_record(output, json.loads(source.read_text()), expectation) for output in outputs]
+        # Parking's routing endpoint is only the approach lane. The visible
+        # goal distance must refer to the audited parking pose instead.
+        if parking:
+            analysis['goal_distance_m'] = outcomes[0]['goal_distance_m']
         analysis["scenario_expectation"] = {
             "expectation": expectation["expectation"], "reason": expectation["reason"],
             "status": "PASS" if all(r["status"] == "PASS" for r in outcomes) else "FAIL", "runs": outcomes}
+        metrics = [evaluate_quality(output, json.loads(source.read_text()), job_dir / 'map',
+                                   job_dir / 'vehicle/vehicle_param.pb.txt', job_dir / f'run-{i+1}/policy.csv', expectation)
+                   for i, output in enumerate(outputs)]
+        analysis['quality_metrics'] = {
+            'version': 'closed-loop-v1',
+            'status': 'PASS' if all(m['status']=='PASS' for m in metrics) and analysis['scenario_expectation']['status']=='PASS' else 'FAIL',
+            'runs': metrics}
     return analysis
 
 

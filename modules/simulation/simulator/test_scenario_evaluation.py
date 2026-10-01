@@ -27,6 +27,25 @@ class ScenarioEvaluationTests(unittest.TestCase):
         for mode in ('reach_goal','yield_then_proceed'):
             self.assertEqual(evaluate_motion(self.poses(), {'x':20,'y':0}, {'expectation':mode})['status'],'FAIL')
             self.assertEqual(evaluate_motion(self.poses(x=19.8), {'x':20,'y':0}, {'expectation':mode})['status'],'PASS')
+            self.assertEqual(evaluate_motion(self.poses(x=19.8,speed=.2), {'x':20,'y':0}, {'expectation':mode})['status'],'FAIL')
+
+    def test_parking_requires_precision_and_a_stop(self):
+        for x, speed, expected in [(2.01,0,'PASS'),(2.04,0,'FAIL'),(2.01,.1,'FAIL')]:
+            self.assertEqual(evaluate_motion(self.poses(x=x,speed=speed), {'x':2,'y':0},
+                                            {'expectation':'park'})['status'], expected)
+
+    def test_parking_audit_must_match_command(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source=Path(directory)/'case.worldsim.scenario.json'
+            source.write_text(json.dumps({'ego':{'parkingSpaceId':'bay'}}))
+            value=dict(kind='worldsim-evaluation',version=1,reason='Audited parking',expectation='park',
+                       scenario_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
+                       parking={'space_id':'bay','entry':'rear','goal':[0,0,0]})
+            evaluation_path(source).write_text(json.dumps(value))
+            self.assertEqual(load_evaluation(source)['expectation'],'park')
+            value['parking']['space_id']='wrong'
+            evaluation_path(source).write_text(json.dumps(value))
+            with self.assertRaisesRegex(ValueError,'matching space ID'):load_evaluation(source)
 
     def test_reviewed_narrow_bend_expects_a_stop(self):
         source=Path(__file__).resolve().parents[1]/'scene_editor/examples/beijing_zongyuan_1haolou/coverage_Lane_60_reverse_mixed.worldsim.scenario.json'
@@ -59,6 +78,44 @@ class ScenarioEvaluationTests(unittest.TestCase):
         proven=root/'coverage_Lane_65_static_right.worldsim.scenario.json'
         self.assertIn(proven.name,manifest['scenarios'])
         self.assertEqual(load_evaluation(proven)['expectation'],'reach_goal')
+
+    def test_persistent_actor_contract_rejects_cleanup_and_invalid_targets(self):
+        root=Path(__file__).resolve().parents[1]/'scene_editor/examples/parking_persistent_traffic_v1'
+        original=next(root.glob('*.worldsim.scenario.json'))
+        contract=load_evaluation(original)
+        self.assertEqual(contract['parking_dynamic']['version'],2)
+        with tempfile.TemporaryDirectory() as directory:
+            source=Path(directory)/original.name
+            scene=json.loads(original.read_text())
+            scene['triggers'][-1]['actions'].append({'kind':'ACTION_DISABLE','targetAgentId':'retained_vehicle'})
+            source.write_text(json.dumps(scene))
+            contract['scenario_sha256']=hashlib.sha256(source.read_bytes()).hexdigest()
+            evaluation_path(source).write_text(json.dumps(contract))
+            with self.assertRaisesRegex(ValueError,'without being disabled'):load_evaluation(source)
+            source.write_bytes(original.read_bytes())
+            contract=load_evaluation(original)
+            contract['parking_dynamic']['actor_end_states']['retained_vehicle']['position']['x']=float('nan')
+            evaluation_path(source).write_text(json.dumps(contract))
+            with self.assertRaisesRegex(ValueError,'finite stop point'):load_evaluation(source)
+            contract=load_evaluation(original);contract['parking_dynamic']['actor_end_states']={}
+            evaluation_path(source).write_text(json.dumps(contract))
+            with self.assertRaisesRegex(ValueError,'every actor'):load_evaluation(source)
+
+    def test_unrelated_motion_requires_retained_actors_and_efficiency_budget(self):
+        root=Path(__file__).resolve().parents[1]/'scene_editor/examples/parking_relevance_v1'
+        original=next(root.glob('*__trigger_relevance_crowd_present.worldsim.scenario.json'))
+        value=load_evaluation(original)
+        self.assertEqual(len(value['parking_interaction']['background_actor_ids']),8)
+        with tempfile.TemporaryDirectory() as directory:
+            source=Path(directory)/original.name;source.write_bytes(original.read_bytes())
+            value['parking_interaction']['maximum_extra_duration_s']=None
+            evaluation_path(source).write_text(json.dumps(value))
+            with self.assertRaisesRegex(ValueError,'completion-time budget'):load_evaluation(source)
+            value=load_evaluation(original);scene=json.loads(source.read_text())
+            scene['triggers']=[{'actions':[{'kind':'ACTION_DISABLE','targetAgentId':'bystander_0'}]}]
+            source.write_text(json.dumps(scene));value['scenario_sha256']=hashlib.sha256(source.read_bytes()).hexdigest()
+            evaluation_path(source).write_text(json.dumps(value))
+            with self.assertRaisesRegex(ValueError,'remain visible'):load_evaluation(source)
 
 
 if __name__ == '__main__':

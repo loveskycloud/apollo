@@ -2,6 +2,12 @@
 
 ## Data source and rendering
 
+semantic-mcap-v17 adds explicit HDMap Driveable area surfaces and 2 cm display
+ribbons along the actual ParkingSpace polygon edges.
+Parking outlines use `/hdmap/parking_spaces`, available under Layers → map.
+The display ribbon does not change the physical bay dimensions or evaluation geometry.
+Reopen the original record to generate the v17 cache.
+
 The migration follows `simulation/scene_editor/src/map/loaders/apolloBaseMap*.ts`
 and `src/scene3d/mapRoadViz.ts`: Apollo lane boundaries define the asphalt polygon,
 white 14 cm boundary ribbons and green 8 cm logical centerlines.

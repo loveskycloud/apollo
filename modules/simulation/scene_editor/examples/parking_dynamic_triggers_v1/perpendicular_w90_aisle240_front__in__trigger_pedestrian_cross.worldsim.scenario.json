@@ -1,0 +1,122 @@
+{
+  "id": "perpendicular_w90_aisle240_front__in__trigger_pedestrian_cross",
+  "name": "perpendicular_w90_aisle240_front__in__trigger_pedestrian_cross",
+  "mapId": "ranger_parking_lab_v1",
+  "duration": 120,
+  "description": "泊车动作开始后进入位置触发区，启动动态交通；清空后仍须完成泊车任务。",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 1058,
+      "y": 2043.8,
+      "z": 0
+    },
+    "heading": 0,
+    "vehicleProfile": "ranger_mini_v3",
+    "parkingSpaceId": "perpendicular_w90_aisle240_front",
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "approach",
+    "routes": [
+      {
+        "id": "approach",
+        "waypoints": [
+          {
+            "position": {
+              "x": 1060,
+              "y": 2043.8,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ],
+    "parkingOperation": "in"
+  },
+  "agents": [
+    {
+      "id": "pedestrian",
+      "name": "pedestrian",
+      "type": "AGENT_TYPE_PEDESTRIAN",
+      "position": {
+        "x": 1059.3266866973179,
+        "y": 2042.81,
+        "z": 0
+      },
+      "heading": 1.5707963267948966,
+      "speed": 0.65,
+      "size": {
+        "x": 0.4,
+        "y": 0.4,
+        "z": 1.7
+      },
+      "enabled": false,
+      "activeRouteId": "pedestrian-route",
+      "routes": [
+        {
+          "id": "pedestrian-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "position": {
+                "x": 1059.3266866973179,
+                "y": 2042.81,
+                "z": 0
+              },
+              "speed": 0.65
+            },
+            {
+              "position": {
+                "x": 1059.3266866973179,
+                "y": 2044.79,
+                "z": 0
+              },
+              "speed": 0.65
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "ego-maneuver-zone",
+      "name": "泊车途中启动动态交通",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "targetAgentId": "ego",
+      "center": {
+        "x": 1058.256429649953,
+        "y": 2043.831400096323,
+        "z": 0
+      },
+      "radius": 0.06,
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "pedestrian"
+        }
+      ]
+    },
+    {
+      "id": "pedestrian-clear",
+      "name": "驶离干扰区并清场",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "targetAgentId": "pedestrian",
+      "center": {
+        "x": 1059.3266866973179,
+        "y": 2044.79,
+        "z": 0
+      },
+      "radius": 0.03,
+      "actions": [
+        {
+          "kind": "ACTION_DISABLE",
+          "targetAgentId": "pedestrian"
+        }
+      ]
+    }
+  ]
+}

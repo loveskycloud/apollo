@@ -1,0 +1,95 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "064f633c538ce258a01fc85f243f31a2004c4e614b02cfdea55b09f0945acd4b",
+  "expectation": "park",
+  "reason": "Persistent unrelated motion must not stall parking; real crossing remains a safety test",
+  "parking": {
+    "space_id": "perpendicular_w90_aisle240_rear",
+    "style": "perpendicular",
+    "width_m": 0.9,
+    "length_m": 1.1,
+    "aisle_width_m": 2.4,
+    "entry": "rear",
+    "goal": [
+      1075.0,
+      2045.81,
+      -1.5707963267948966
+    ],
+    "area": [
+      [
+        1079.0,
+        2045.0
+      ],
+      [
+        1079.0,
+        2042.6
+      ],
+      [
+        1071.0,
+        2042.6
+      ],
+      [
+        1071.0,
+        2045.0
+      ],
+      [
+        1074.55,
+        2045.0
+      ],
+      [
+        1074.55,
+        2046.1
+      ],
+      [
+        1075.45,
+        2046.1
+      ],
+      [
+        1075.45,
+        2045.0
+      ]
+    ],
+    "slot": [
+      [
+        1075.45,
+        2045.0
+      ],
+      [
+        1075.45,
+        2046.1
+      ],
+      [
+        1074.55,
+        2046.1
+      ],
+      [
+        1074.55,
+        2045.0
+      ]
+    ],
+    "operation": "in",
+    "variant": "trigger_relevance_vehicle_passing",
+    "park_goal": [
+      1075.0,
+      2045.81,
+      -1.5707963267948966
+    ],
+    "witness_length_m": 3.7955748421356397
+  },
+  "validity": {
+    "status": "VALID",
+    "reason": "Unchanged successful ego path and area; background swept bodies clear full baseline body corridor by >0.20 m; crossing uses audited separated activation."
+  },
+  "parking_interaction": {
+    "version": 1,
+    "background_actor_ids": [
+      "unrelated_vehicle"
+    ],
+    "crossing_actor_id": null,
+    "minimum_moving_fraction": 0.9,
+    "minimum_concurrent_motion_s": 1.0,
+    "baseline_duration_s": 21.5,
+    "maximum_extra_duration_s": 0.5
+  }
+}

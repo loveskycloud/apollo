@@ -1,0 +1,120 @@
+{
+  "id": "parallel_w90_aisle240_front__in__trigger_persistent_bay_side",
+  "name": "parallel_w90_aisle240_front__in__trigger_persistent_bay_side",
+  "mapId": "ranger_parking_lab_v1",
+  "duration": 120,
+  "description": "泊车途中触发来车，停在车位旁/通道旁并持续保留；主车须在其可见时恢复并完成任务。",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 1058,
+      "y": 2013.8,
+      "z": 0
+    },
+    "heading": 0,
+    "vehicleProfile": "ranger_mini_v3",
+    "parkingSpaceId": "parallel_w90_aisle240_front",
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "approach",
+    "routes": [
+      {
+        "id": "approach",
+        "waypoints": [
+          {
+            "position": {
+              "x": 1060,
+              "y": 2013.8,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ],
+    "parkingOperation": "in"
+  },
+  "agents": [
+    {
+      "id": "retained_vehicle",
+      "name": "retained_vehicle",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 1062.53125,
+        "y": 2014.7,
+        "z": 0
+      },
+      "heading": 3.141592653589793,
+      "speed": 0.45,
+      "size": {
+        "x": 0.72,
+        "y": 0.5,
+        "z": 0.66
+      },
+      "enabled": false,
+      "activeRouteId": "retained_vehicle-route",
+      "routes": [
+        {
+          "id": "retained_vehicle-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "position": {
+                "x": 1062.53125,
+                "y": 2014.7,
+                "z": 0
+              },
+              "speed": 0.45
+            },
+            {
+              "position": {
+                "x": 1061.03125,
+                "y": 2014.7,
+                "z": 0
+              },
+              "speed": 0.45
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "ego-maneuver-zone",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "targetAgentId": "ego",
+      "center": {
+        "x": 1058.2562315930245,
+        "y": 2013.8309964646298,
+        "z": 0
+      },
+      "radius": 0.06,
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "retained_vehicle"
+        }
+      ]
+    },
+    {
+      "id": "vehicle-stop-and-remain",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "targetAgentId": "retained_vehicle",
+      "center": {
+        "x": 1061.53125,
+        "y": 2014.7,
+        "z": 0
+      },
+      "radius": 0.025,
+      "actions": [
+        {
+          "kind": "ACTION_STOP",
+          "targetAgentId": "retained_vehicle"
+        }
+      ]
+    }
+  ]
+}

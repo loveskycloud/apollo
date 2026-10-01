@@ -56,7 +56,7 @@ def analyze_trace(path):
             turns = [t for t in turns if stamp-t <= 10]
             max_turns = max(max_turns, len(turns))
     maximum = max(offsets, default=0)
-    return {"status": "PASS" if maximum <= .15 and max_turns < 3 else "FAIL",
+    return {"status": "FAIL" if maximum > .15 or max_turns >= 3 else "PASS" if offsets else "NOT_EVALUATED",
             "clear_straight_samples": len(offsets),
             "max_clear_straight_offset_m": maximum,
             "max_lateral_reversals_10s": max_turns,

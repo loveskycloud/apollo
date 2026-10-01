@@ -1,0 +1,341 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "file": "parallel_w90_aisle240_front__in__trigger_pedestrian_cross.worldsim.scenario.json",
+      "pattern": "pedestrian_cross",
+      "operation": "in",
+      "style": "parallel",
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle240_front__in__trigger_vehicle_left.worldsim.scenario.json",
+      "pattern": "vehicle_left",
+      "operation": "in",
+      "style": "parallel",
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle240_front__in__trigger_vehicle_right.worldsim.scenario.json",
+      "pattern": "vehicle_right",
+      "operation": "in",
+      "style": "parallel",
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle240_front__in__trigger_pedestrian_then_vehicles.worldsim.scenario.json",
+      "pattern": "pedestrian_then_vehicles",
+      "operation": "in",
+      "style": "parallel",
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle240_front__out__trigger_pedestrian_cross.worldsim.scenario.json",
+      "pattern": "pedestrian_cross",
+      "operation": "out",
+      "style": "parallel",
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle240_front__out__trigger_vehicle_left.worldsim.scenario.json",
+      "pattern": "vehicle_left",
+      "operation": "out",
+      "style": "parallel",
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle240_front__out__trigger_vehicle_right.worldsim.scenario.json",
+      "pattern": "vehicle_right",
+      "operation": "out",
+      "style": "parallel",
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle240_front__out__trigger_pedestrian_then_vehicles.worldsim.scenario.json",
+      "pattern": "pedestrian_then_vehicles",
+      "operation": "out",
+      "style": "parallel",
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle240_rear__in__trigger_pedestrian_cross.worldsim.scenario.json",
+      "pattern": "pedestrian_cross",
+      "operation": "in",
+      "style": "parallel",
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle240_rear__in__trigger_vehicle_left.worldsim.scenario.json",
+      "pattern": "vehicle_left",
+      "operation": "in",
+      "style": "parallel",
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle240_rear__in__trigger_vehicle_right.worldsim.scenario.json",
+      "pattern": "vehicle_right",
+      "operation": "in",
+      "style": "parallel",
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle240_rear__in__trigger_pedestrian_then_vehicles.worldsim.scenario.json",
+      "pattern": "pedestrian_then_vehicles",
+      "operation": "in",
+      "style": "parallel",
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle240_rear__out__trigger_pedestrian_cross.worldsim.scenario.json",
+      "pattern": "pedestrian_cross",
+      "operation": "out",
+      "style": "parallel",
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle240_rear__out__trigger_vehicle_left.worldsim.scenario.json",
+      "pattern": "vehicle_left",
+      "operation": "out",
+      "style": "parallel",
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle240_rear__out__trigger_vehicle_right.worldsim.scenario.json",
+      "pattern": "vehicle_right",
+      "operation": "out",
+      "style": "parallel",
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle240_rear__out__trigger_pedestrian_then_vehicles.worldsim.scenario.json",
+      "pattern": "pedestrian_then_vehicles",
+      "operation": "out",
+      "style": "parallel",
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_front__in__trigger_pedestrian_cross.worldsim.scenario.json",
+      "pattern": "pedestrian_cross",
+      "operation": "in",
+      "style": "perpendicular",
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_front__in__trigger_vehicle_left.worldsim.scenario.json",
+      "pattern": "vehicle_left",
+      "operation": "in",
+      "style": "perpendicular",
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_front__in__trigger_vehicle_right.worldsim.scenario.json",
+      "pattern": "vehicle_right",
+      "operation": "in",
+      "style": "perpendicular",
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_front__in__trigger_pedestrian_then_vehicles.worldsim.scenario.json",
+      "pattern": "pedestrian_then_vehicles",
+      "operation": "in",
+      "style": "perpendicular",
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_front__out__trigger_pedestrian_cross.worldsim.scenario.json",
+      "pattern": "pedestrian_cross",
+      "operation": "out",
+      "style": "perpendicular",
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_front__out__trigger_vehicle_left.worldsim.scenario.json",
+      "pattern": "vehicle_left",
+      "operation": "out",
+      "style": "perpendicular",
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_front__out__trigger_vehicle_right.worldsim.scenario.json",
+      "pattern": "vehicle_right",
+      "operation": "out",
+      "style": "perpendicular",
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_front__out__trigger_pedestrian_then_vehicles.worldsim.scenario.json",
+      "pattern": "pedestrian_then_vehicles",
+      "operation": "out",
+      "style": "perpendicular",
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_rear__in__trigger_pedestrian_cross.worldsim.scenario.json",
+      "pattern": "pedestrian_cross",
+      "operation": "in",
+      "style": "perpendicular",
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_rear__in__trigger_vehicle_left.worldsim.scenario.json",
+      "pattern": "vehicle_left",
+      "operation": "in",
+      "style": "perpendicular",
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_rear__in__trigger_vehicle_right.worldsim.scenario.json",
+      "pattern": "vehicle_right",
+      "operation": "in",
+      "style": "perpendicular",
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_rear__in__trigger_pedestrian_then_vehicles.worldsim.scenario.json",
+      "pattern": "pedestrian_then_vehicles",
+      "operation": "in",
+      "style": "perpendicular",
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_rear__out__trigger_pedestrian_cross.worldsim.scenario.json",
+      "pattern": "pedestrian_cross",
+      "operation": "out",
+      "style": "perpendicular",
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_rear__out__trigger_vehicle_left.worldsim.scenario.json",
+      "pattern": "vehicle_left",
+      "operation": "out",
+      "style": "perpendicular",
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_rear__out__trigger_vehicle_right.worldsim.scenario.json",
+      "pattern": "vehicle_right",
+      "operation": "out",
+      "style": "perpendicular",
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_rear__out__trigger_pedestrian_then_vehicles.worldsim.scenario.json",
+      "pattern": "pedestrian_then_vehicles",
+      "operation": "out",
+      "style": "perpendicular",
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_front__in__trigger_pedestrian_cross.worldsim.scenario.json",
+      "pattern": "pedestrian_cross",
+      "operation": "in",
+      "style": "diagonal45",
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_front__in__trigger_vehicle_left.worldsim.scenario.json",
+      "pattern": "vehicle_left",
+      "operation": "in",
+      "style": "diagonal45",
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_front__in__trigger_vehicle_right.worldsim.scenario.json",
+      "pattern": "vehicle_right",
+      "operation": "in",
+      "style": "diagonal45",
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_front__in__trigger_pedestrian_then_vehicles.worldsim.scenario.json",
+      "pattern": "pedestrian_then_vehicles",
+      "operation": "in",
+      "style": "diagonal45",
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_front__out__trigger_pedestrian_cross.worldsim.scenario.json",
+      "pattern": "pedestrian_cross",
+      "operation": "out",
+      "style": "diagonal45",
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_front__out__trigger_vehicle_left.worldsim.scenario.json",
+      "pattern": "vehicle_left",
+      "operation": "out",
+      "style": "diagonal45",
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_front__out__trigger_vehicle_right.worldsim.scenario.json",
+      "pattern": "vehicle_right",
+      "operation": "out",
+      "style": "diagonal45",
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_front__out__trigger_pedestrian_then_vehicles.worldsim.scenario.json",
+      "pattern": "pedestrian_then_vehicles",
+      "operation": "out",
+      "style": "diagonal45",
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_rear__in__trigger_pedestrian_cross.worldsim.scenario.json",
+      "pattern": "pedestrian_cross",
+      "operation": "in",
+      "style": "diagonal45",
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_rear__in__trigger_vehicle_left.worldsim.scenario.json",
+      "pattern": "vehicle_left",
+      "operation": "in",
+      "style": "diagonal45",
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_rear__in__trigger_vehicle_right.worldsim.scenario.json",
+      "pattern": "vehicle_right",
+      "operation": "in",
+      "style": "diagonal45",
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_rear__in__trigger_pedestrian_then_vehicles.worldsim.scenario.json",
+      "pattern": "pedestrian_then_vehicles",
+      "operation": "in",
+      "style": "diagonal45",
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_rear__out__trigger_pedestrian_cross.worldsim.scenario.json",
+      "pattern": "pedestrian_cross",
+      "operation": "out",
+      "style": "diagonal45",
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_rear__out__trigger_vehicle_left.worldsim.scenario.json",
+      "pattern": "vehicle_left",
+      "operation": "out",
+      "style": "diagonal45",
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_rear__out__trigger_vehicle_right.worldsim.scenario.json",
+      "pattern": "vehicle_right",
+      "operation": "out",
+      "style": "diagonal45",
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_rear__out__trigger_pedestrian_then_vehicles.worldsim.scenario.json",
+      "pattern": "pedestrian_then_vehicles",
+      "operation": "out",
+      "style": "diagonal45",
+      "entry": "rear"
+    }
+  ]
+}

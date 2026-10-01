@@ -1,7 +1,99 @@
 #include "modules/simulation/ml_planning/planner.h"
 #include "modules/simulation/ml_planning/reference_line.h"
+#include "modules/simulation/ml_planning/parking_planner.h"
+#include "modules/simulation/ml_planning/parking_motion.h"
 #include "gtest/gtest.h"
 namespace apollo::simulation::ml {
+TEST(MLPlanning, ParkingUnrelatedMotionNeverEntersTrackedConflicts) {
+  ParkingGeometry g;g.area={{-4,-4},{4,-4},{4,4},{-4,4}};
+  std::set<int> active;
+  for(int gear:{-1,1}) {
+    const std::vector<ParkingPose> path{{0,0,0,gear},{gear*2.,0,0,gear}};
+    EXPECT_FALSE(ParkingTrafficRelevant(path,g,{{{0,1.2,0,.4,.4},.03,0,1},{{0,-1.2,0,.72,.5},.4,0,2}},&active));
+    EXPECT_TRUE(active.empty());
+    EXPECT_TRUE(ParkingTrafficRelevant(path,g,{{{gear*1.,1.,0,.4,.4},0,-.5,3}},&active));
+    EXPECT_EQ(active,std::set<int>({3}));active.clear();
+  }
+}
+TEST(MLPlanning, ParkingTrackedCrossingCannotBeReleasedInSameManeuverArea) {
+  ParkingGeometry g;g.area={{-4,-4},{4,-4},{4,4},{-4,4}};
+  std::vector<ParkingPose> path{{0,0,0,1},{2,0,0,1}};std::set<int> active;
+  EXPECT_TRUE(ParkingTrafficRelevant(path,g,{{{1,1,0,.4,.4},0,-.5,5}},&active));
+  EXPECT_TRUE(ParkingTrafficRelevant(path,g,{{{1,-2,0,.4,.4},0,-.5,5},{{1,2,0,.4,.4},.03,0,6}},&active));
+  EXPECT_EQ(active,std::set<int>({5}));
+  EXPECT_FALSE(ParkingTrafficRelevant(path,g,{{{1,-5,0,.4,.4},0,-.5,5},{{1,2,0,.4,.4},.03,0,6}},&active));
+  EXPECT_TRUE(active.empty());
+  active.insert(5);EXPECT_FALSE(ParkingTrafficRelevant(path,g,{},&active));EXPECT_TRUE(active.empty());
+}
+TEST(MLPlanning, ParkingBodySwayIsNotExtrapolatedAcrossWholeManeuver) {
+  ParkingGeometry g;g.area={{-4,-4},{4,-4},{4,4},{-4,4}};
+  const std::vector<ParkingPose> hold{{0,0,0,1}};
+  EXPECT_FALSE(ParkingTrafficRelevant(hold,g,{{{.2,.75,0,.4,.4},0,-.03}}));
+  EXPECT_TRUE(ParkingTrafficRelevant(hold,g,{{{.2,.5,0,.4,.4},0,-.03}}));
+  EXPECT_TRUE(ParkingTrafficRelevant(hold,g,{{{.2,.75,0,.4,.4},0,-.2}}));
+  EXPECT_TRUE(ParkingTrafficRelevant(hold,g,{{{.2,10,0,.1,.1},0,-100}}));
+  EXPECT_TRUE(ParkingTrafficRelevant({{0,0,0,1},{0,0,M_PI/2,1}},g,{{{.5,.5,0,.05,.05},.02,0}}));
+}
+TEST(MLPlanning, ParkingStopDeceleratesWithoutTeleportingForwardOrReverse) {
+  for(int gear:{1,-1}) {
+    const auto stop=StopParking({{0,0,0,gear},{.2*gear,0,0,gear},{.5*gear,0,0,gear}},.2*gear);
+    ASSERT_EQ(stop.samples.size(),81u);
+    EXPECT_DOUBLE_EQ(stop.samples.front().speed,.2*gear);
+    EXPECT_NEAR(stop.samples.back().pose.x,.05*gear,1e-10);
+    EXPECT_DOUBLE_EQ(stop.samples.back().speed,0);
+    ASSERT_GE(stop.remainder.size(),2u);
+    EXPECT_NEAR(stop.remainder.front().x,stop.samples.back().pose.x,1e-10);
+    EXPECT_NEAR(stop.remainder.back().x,.5*gear,1e-10);
+    for(size_t i=1;i<stop.samples.size();++i) {
+      EXPECT_EQ(stop.samples[i].pose.gear,gear);
+      EXPECT_LE(std::abs(stop.samples[i].speed),std::abs(stop.samples[i-1].speed));
+      EXPECT_LE(std::abs(stop.samples[i].speed-stop.samples[i-1].speed),.040000001);
+      EXPECT_GE((stop.samples[i].pose.x-stop.samples[i-1].pose.x)*gear,0);
+    }
+  }
+}
+TEST(MLPlanning, ParkingStopCannotCrossAGearCuspWithNonzeroSpeed) {
+  EXPECT_TRUE(StopParking({{0,0,0,1},{.02,0,0,1},{-.2,0,0,-1}},.2).samples.empty());
+  EXPECT_TRUE(StopParking({{0,0,0,1},{50,0,0,1}},4).samples.empty());
+  EXPECT_TRUE(StopParking({{0,0,0,1},{1,0,0,1}},.2,std::numeric_limits<double>::infinity()).samples.empty());
+}
+TEST(MLPlanning, ParkingTrafficCheckIncludesFutureMotionAndStoppedTail) {
+  ParkingGeometry geometry;geometry.area={{-4,-4},{4,-4},{4,4},{-4,4}};
+  auto stop=StopParking({{0,0,0,1},{1,0,0,1}},.2);
+  ASSERT_FALSE(stop.samples.empty());
+  EXPECT_TRUE(ParkingMotionSafe(stop.samples,geometry,{}));
+  EXPECT_FALSE(ParkingMotionSafe(stop.samples,geometry,{{{.2,1,0,.4,.4},0,-.5}}));
+  EXPECT_TRUE(ParkingMotionSafe(stop.samples,geometry,{{{.2,1,0,.4,.4},0,-.5}},.7));
+  EXPECT_FALSE(ParkingMotionSafe(stop.samples,geometry,{{{.2,.5,0,.4,.4},0,-.5}},.7));
+  EXPECT_TRUE(ParkingMotionSafe(stop.samples,geometry,{{{1.5,1,0,.4,.4},0,-.5}}));
+  geometry.area={{-.2,-.3},{.64,-.3},{.64,.3},{-.2,.3}};
+  EXPECT_FALSE(ParkingMotionSafe(stop.samples,geometry,{}));
+}
+TEST(MLPlanning, ParkingTrafficCheckRejectsCollisionBetweenTrajectoryKnots) {
+  ParkingGeometry geometry;geometry.area={{-4,-4},{4,-4},{4,4},{-4,4}};
+  // Actor crosses completely between the 0 and 100 ms knots.
+  EXPECT_FALSE(ParkingMotionSafe({{{0,0,0,1},0},{{0,0,0,1},0}},geometry,
+                                {{{.2,1,0,.1,.1},0,-20}}));
+}
+TEST(MLPlanning, ParkingConnectionCannotHideAHeadingFlipOrCusp) {
+  ParkingPlanner planner;planner.expansion_limit=10000;
+  ParkingGeometry geometry;geometry.area={{-3,-3},{3,-3},{3,3},{-3,3}};
+  auto path=planner.Plan({0,0,0,1},{-.8,0,0,-1},[&](const auto& p){return geometry.Valid(p);});
+  ASSERT_GT(path.size(),2u);
+  EXPECT_NEAR(path.back().x,-.8,1e-6);EXPECT_NEAR(path.back().y,0,1e-6);
+  EXPECT_EQ(path.back().gear,-1);
+  for(size_t i=1;i<path.size();++i) {
+    const double ds=std::hypot(path[i].x-path[i-1].x,path[i].y-path[i-1].y);
+    EXPECT_LE(std::abs(WrapParking(path[i].yaw-path[i-1].yaw)),planner.curvature*ds+.001);
+  }
+}
+TEST(MLPlanning, ParkingRejectsBodyOutsideNarrowBayAndObstacleContact) {
+  ParkingGeometry geometry;geometry.area={{-1,-.275},{1,-.275},{1,.275},{-1,.275}};
+  EXPECT_TRUE(geometry.Valid({0,0,0,1}));
+  EXPECT_FALSE(geometry.Valid({0,.03,0,1}));
+  geometry.obstacles={{.4,0,0,.2,.2}};
+  EXPECT_FALSE(geometry.Valid({0,0,0,1}));
+}
 TEST(MLPlanning, FiveCentimeterMarginKeepsPhysicalBoxesAndRejectsContact) {
   EXPECT_NEAR(BoxSeparation(0,0,0,.36,.25,0,.38,0,.2,.05),.08,1e-12);
   EXPECT_GT(BoxSeparation(0,0,0,.36,.25,0,.38,0,.2,.05),.05);

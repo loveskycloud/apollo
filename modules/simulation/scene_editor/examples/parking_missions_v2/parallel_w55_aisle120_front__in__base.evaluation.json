@@ -1,0 +1,84 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "f2ef239754d60a5fdadd06d6527855c42d1fc786ffe891dedf5d520820282c92",
+  "expectation": "park",
+  "reason": "Execute reviewed parking mission, including full-body alignment / departure as applicable",
+  "parking": {
+    "space_id": "parallel_w55_aisle120_front",
+    "style": "parallel",
+    "width_m": 0.55,
+    "length_m": 1.4,
+    "aisle_width_m": 1.2,
+    "entry": "front",
+    "goal": [
+      999.74,
+      2000.275,
+      0.0
+    ],
+    "area": [
+      [
+        1004.0,
+        2000.0
+      ],
+      [
+        1004.0,
+        1998.8
+      ],
+      [
+        996.0,
+        1998.8
+      ],
+      [
+        996.0,
+        2000.0
+      ],
+      [
+        999.3,
+        2000.0
+      ],
+      [
+        999.3,
+        2000.5500000000002
+      ],
+      [
+        1000.7,
+        2000.5500000000002
+      ],
+      [
+        1000.7,
+        2000.0
+      ]
+    ],
+    "slot": [
+      [
+        999.3,
+        2000.0
+      ],
+      [
+        1000.7,
+        2000.0
+      ],
+      [
+        1000.7,
+        2000.5500000000002
+      ],
+      [
+        999.3,
+        2000.5500000000002
+      ]
+    ],
+    "operation": "in",
+    "variant": "base",
+    "park_goal": [
+      999.74,
+      2000.275,
+      0.0
+    ],
+    "witness_length_m": 3.3973418835020612
+  },
+  "validity": {
+    "status": "VALID",
+    "reason": "Independently swept kinematic witness; original vehicle and area unchanged"
+  }
+}

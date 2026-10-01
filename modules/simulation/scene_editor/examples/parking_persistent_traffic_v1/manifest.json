@@ -1,0 +1,173 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "file": "diagonal45_w90_aisle240_front__in__trigger_persistent_bay_side.worldsim.scenario.json",
+      "placement": "bay_side",
+      "operation": "in",
+      "style": "diagonal45",
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_front__in__trigger_persistent_aisle_side.worldsim.scenario.json",
+      "placement": "aisle_side",
+      "operation": "in",
+      "style": "diagonal45",
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_front__out__trigger_persistent_bay_side.worldsim.scenario.json",
+      "placement": "bay_side",
+      "operation": "out",
+      "style": "diagonal45",
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_front__out__trigger_persistent_aisle_side.worldsim.scenario.json",
+      "placement": "aisle_side",
+      "operation": "out",
+      "style": "diagonal45",
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_rear__in__trigger_persistent_bay_side.worldsim.scenario.json",
+      "placement": "bay_side",
+      "operation": "in",
+      "style": "diagonal45",
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_rear__in__trigger_persistent_aisle_side.worldsim.scenario.json",
+      "placement": "aisle_side",
+      "operation": "in",
+      "style": "diagonal45",
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_rear__out__trigger_persistent_bay_side.worldsim.scenario.json",
+      "placement": "bay_side",
+      "operation": "out",
+      "style": "diagonal45",
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_rear__out__trigger_persistent_aisle_side.worldsim.scenario.json",
+      "placement": "aisle_side",
+      "operation": "out",
+      "style": "diagonal45",
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle240_front__in__trigger_persistent_bay_side.worldsim.scenario.json",
+      "placement": "bay_side",
+      "operation": "in",
+      "style": "parallel",
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle240_front__in__trigger_persistent_aisle_side.worldsim.scenario.json",
+      "placement": "aisle_side",
+      "operation": "in",
+      "style": "parallel",
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle240_front__out__trigger_persistent_bay_side.worldsim.scenario.json",
+      "placement": "bay_side",
+      "operation": "out",
+      "style": "parallel",
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle240_front__out__trigger_persistent_aisle_side.worldsim.scenario.json",
+      "placement": "aisle_side",
+      "operation": "out",
+      "style": "parallel",
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle240_rear__in__trigger_persistent_bay_side.worldsim.scenario.json",
+      "placement": "bay_side",
+      "operation": "in",
+      "style": "parallel",
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle240_rear__in__trigger_persistent_aisle_side.worldsim.scenario.json",
+      "placement": "aisle_side",
+      "operation": "in",
+      "style": "parallel",
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle240_rear__out__trigger_persistent_bay_side.worldsim.scenario.json",
+      "placement": "bay_side",
+      "operation": "out",
+      "style": "parallel",
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle240_rear__out__trigger_persistent_aisle_side.worldsim.scenario.json",
+      "placement": "aisle_side",
+      "operation": "out",
+      "style": "parallel",
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_front__in__trigger_persistent_bay_side.worldsim.scenario.json",
+      "placement": "bay_side",
+      "operation": "in",
+      "style": "perpendicular",
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_front__in__trigger_persistent_aisle_side.worldsim.scenario.json",
+      "placement": "aisle_side",
+      "operation": "in",
+      "style": "perpendicular",
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_front__out__trigger_persistent_bay_side.worldsim.scenario.json",
+      "placement": "bay_side",
+      "operation": "out",
+      "style": "perpendicular",
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_front__out__trigger_persistent_aisle_side.worldsim.scenario.json",
+      "placement": "aisle_side",
+      "operation": "out",
+      "style": "perpendicular",
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_rear__in__trigger_persistent_bay_side.worldsim.scenario.json",
+      "placement": "bay_side",
+      "operation": "in",
+      "style": "perpendicular",
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_rear__in__trigger_persistent_aisle_side.worldsim.scenario.json",
+      "placement": "aisle_side",
+      "operation": "in",
+      "style": "perpendicular",
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_rear__out__trigger_persistent_bay_side.worldsim.scenario.json",
+      "placement": "bay_side",
+      "operation": "out",
+      "style": "perpendicular",
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_rear__out__trigger_persistent_aisle_side.worldsim.scenario.json",
+      "placement": "aisle_side",
+      "operation": "out",
+      "style": "perpendicular",
+      "entry": "rear"
+    }
+  ]
+}

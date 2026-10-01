@@ -8,3 +8,14 @@ message MLPlanningConfig {
   // Moving/unknown actors retain the 0.12 m clearance.
   optional double static_obstacle_clearance_m = 2 [default = 0.05];
 }
+
+// Explicit extension for parking departure and a park-then-depart mission.
+// Transported as PlanningCommand.custom_command; standard parking stays valid.
+message ParkingManeuverCommand {
+  required string parking_spot_id = 1;
+  enum Operation { EXIT = 1; PARK_AND_EXIT = 2; }
+  required Operation operation = 2;
+  required double exit_x = 3;
+  required double exit_y = 4;
+  required double exit_heading = 5;
+}

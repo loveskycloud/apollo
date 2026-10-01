@@ -1,0 +1,4 @@
+# Independent closed-loop metrics, validated with Apollo's Python 3.10.
+# Apollo Cyber/protobuf bindings come from the container's installed packages.
+numpy==2.1.3
+shapely==2.0.6

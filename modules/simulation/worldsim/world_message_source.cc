@@ -15,6 +15,7 @@
 #include "modules/common_msgs/localization_msgs/localization.pb.h"
 #include "modules/common_msgs/perception_msgs/perception_obstacle.pb.h"
 #include "modules/common_msgs/planning_msgs/planning_command.pb.h"
+#include "modules/simulation/ml_planning/proto/ml_planning_config.pb.h"
 #include "modules/common_msgs/routing_msgs/routing.pb.h"
 #include "modules/simulation/simulator/message_consumer.h"
 #include "modules/simulation/worldsim/core/scenario_loader.h"
@@ -97,6 +98,21 @@ bool WorldMessageSource::Open(const SourceConfig& cfg) {
         *command.mutable_header() = msg->header();
         command.set_command_id(1); command.set_is_motion_command(true);
         *command.mutable_lane_follow_command() = *msg;
+        const auto& ego=world_.ego()->config();
+        if(!ego.parking_space_id().empty()) {
+          if(ego.parking_operation()=="in")
+            command.mutable_parking_command()->set_parking_spot_id(ego.parking_space_id());
+          else {
+            if((ego.parking_operation()!="out" && ego.parking_operation()!="in_out") ||
+               !ego.has_parking_exit() || !ego.parking_exit().has_heading()) {callback_failed_=true;return;}
+            apollo::simulation::ml::ParkingManeuverCommand maneuver;
+            maneuver.set_parking_spot_id(ego.parking_space_id());
+            maneuver.set_operation(ego.parking_operation()=="out"?apollo::simulation::ml::ParkingManeuverCommand::EXIT:
+                apollo::simulation::ml::ParkingManeuverCommand::PARK_AND_EXIT);
+            maneuver.set_exit_x(ego.parking_exit().position().x());maneuver.set_exit_y(ego.parking_exit().position().y());
+            maneuver.set_exit_heading(ego.parking_exit().heading());command.mutable_custom_command()->PackFrom(maneuver);
+          }
+        }
         route_ready_ = Send(config_.consumer, "/apollo/planning/command", command);
         callback_failed_ = !route_ready_;
       }));
@@ -134,6 +150,10 @@ bool WorldMessageSource::SendRoute(uint64_t now) {
   auto* start = request.add_waypoint();
   start->mutable_pose()->set_x(x_); start->mutable_pose()->set_y(y_);
   start->set_heading(heading_);
+  // A parked car can be perpendicular to the approach lane. Routing resolves
+  // its nearest lane without a lane-follow heading constraint; localization
+  // and the open-space maneuver still start at the actual parked pose.
+  if(world_.ego()->config().parking_operation()=="out")start->clear_heading();
   const auto points = world_.ego()->GetRoutingWaypoints();
   if (points.empty()) { AERROR << "World ego has no active routing waypoints"; return false; }
   for (const auto& point : points) {
@@ -185,7 +205,7 @@ bool WorldMessageSource::AdvanceEgo(uint64_t now) {
     return true;
   }
   if (!planning_ || planning_->trajectory_point_size() == 0) { return true; }
-  if (planning_->gear() == canbus::Chassis::GEAR_REVERSE) {
+  if (planning_->gear() == canbus::Chassis::GEAR_REVERSE && world_.ego()->config().parking_space_id().empty()) {
     AERROR << "perfect_planning currently supports forward driving only";
     return false;
   }
@@ -265,11 +285,11 @@ bool WorldMessageSource::TryFinishMissionStop(uint64_t now) {
   constexpr double kStopSpeedMps = 0.1;
   // Simulated chassis: once ego is stopped after mission_complete, engage EPB
   // if control has not already requested parking_brake.
-  if (speed_ <= kStopSpeedMps) {
+  if (std::abs(speed_) <= kStopSpeedMps) {
     parking_brake_ = true;
   }
   // End only when planning says done AND chassis parking_brake is latched while stopped.
-  if (!parking_brake_ || speed_ > kStopSpeedMps) {
+  if (!parking_brake_ || std::abs(speed_) > kStopSpeedMps) {
     return true;
   }
   AWARN << "mission_complete + chassis.parking_brake — ending world sim at t="
@@ -296,7 +316,7 @@ bool WorldMessageSource::Step(uint64_t now) {
       // After mission_complete, tolerate a dead control while we coast/stop and
       // wait for parking_brake; hard-fail only if still moving.
       constexpr double kStopSpeedMps = 0.1;
-      if (!(pending_mission_end_ && speed_ <= kStopSpeedMps)) {
+      if (!(pending_mission_end_ && std::abs(speed_) <= kStopSpeedMps)) {
         return false;
       }
       last_ns_ = now;
@@ -310,7 +330,7 @@ bool WorldMessageSource::Step(uint64_t now) {
     return false;
   }
   const double yaw_rate = dt > 0 ? Angle(heading_ - previous_heading) / dt : 0;
-  if (config_.ego_model == "perfect_planning" && speed_ > 1e-4) {
+  if (config_.ego_model == "perfect_planning" && std::abs(speed_) > 1e-4) {
     const auto& vehicle = common::VehicleConfigHelper::GetConfig().vehicle_param();
     if (vehicle.wheel_base() <= 0 || vehicle.steer_ratio() <= 0 || vehicle.max_steer_angle() <= 0) {
       AERROR << "Perfect trajectory chassis feedback requires valid vehicle steering geometry";
@@ -328,10 +348,11 @@ bool WorldMessageSource::Step(uint64_t now) {
   if (!CheckCollisions(now)) return false;
   canbus::Chassis chassis;
   Header(&chassis, now, sequence);
-  chassis.set_engine_started(true); chassis.set_speed_mps(speed_);
+  chassis.set_engine_started(true); chassis.set_speed_mps(std::abs(speed_));
   chassis.set_driving_mode(canbus::Chassis::COMPLETE_AUTO_DRIVE);
   chassis.set_gear_location(
-      parking_brake_ ? canbus::Chassis::GEAR_PARKING : canbus::Chassis::GEAR_DRIVE);
+      parking_brake_ ? canbus::Chassis::GEAR_PARKING :
+      planning_ && planning_->gear()==canbus::Chassis::GEAR_REVERSE ? canbus::Chassis::GEAR_REVERSE : canbus::Chassis::GEAR_DRIVE);
   chassis.set_parking_brake(parking_brake_);
   chassis.set_steering_percentage(steering_);
   localization::LocalizationEstimate localization;

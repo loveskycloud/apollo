@@ -6,6 +6,13 @@
 
 ## 当前任务
 
+- 2026-10-01：新增感知结果阶段质量指标及36种泊车地图/场景，指标随Sim任务保存在Full result analysis。
+  泊车36/36、交互扰动24/24、原有场景26/26通过；Lane_67_reverse_mixed两次42.51 s完成且确定性PASS。
+  正式API任务353c3c6dc9744e1f两次窄路45°尾入库通过。
+  semantic-mcap-v17补充Driveable区域及真实ParkingSpace边框，7项地图测试、真实录包转换、native Clippy与release构建通过，9090服务端已更新。
+  此次收益来自规划器改进，V5权重未重新训练；首次泊车搜索最大约32.6 s，未做Control/实车验收。
+  设计和证据见[质量与泊车结果](../ml_planning/QUALITY_PARKING_RESULTS.md)。
+
 - 2026-10-01：回放车辆与轨迹升级 semantic-mcap-v16：仿真读取校验过的车辆快照，普通录包读取当前配置；GLB 按长宽高及四边距缩放/平移，保持后轴定位参考点；规划改为实际车宽的 Mesh3D 色带，按规划减速度与 latest-at 实际刹车反馈从绿渐变至红，缺少力度信息显示灰色。缓存键包含车辆配置。Ranger 真实录包 48,681 个横截面均为 0.50 m；33 项 Python 测试、车模尺寸/参考点 Rust 测试、native/wasm Clippy 与发布构建通过，正式 9090 播放/暂停/双向跳转、轨迹可见性和时间戳验证通过。按用户要求删除根目录 `tools/apollo_record_tools`，移除旧路径候选，转换/调试/浏览器测试均使用 `modules/simulation/tools/apollo_record_tools` 的独立 `.venv`；删除后真实转换及新环境浏览器验证通过，10 条历史任务保持不变。证据：容器 `/tmp/wm-tools-tests.log`、`/tmp/wm-vehicle-rust-tests.log`、`/tmp/wm-vehicle-browser/`；当前服务 PID 474697。刷新页面并重新打开录包/任务回放可生成新版本缓存。
 - 2026-10-01：将 `1haolou_202608241047qh` 完整资源统一到 `data/map_data/`，清除 `modules/map/data` 和 Scene Editor public 下的同名副本；同步脚本、示例清单和编辑器资源引用。catalog 按文件系统设备号/inode 合并挂载别名，优先展示 workspace data 路径（容器 `/apollo/modules/map/data` 是 data/map_data 的 bind mount，不能作为独立副本删除）。提交前检查 base_map 与 sim_map，缺失时不创建任务。27 项 Python 回归、编辑器构建通过；正式服务空地图覆盖自动匹配唯一资源，重跑 `390b357e71cc47c5` completed：60 秒、6001 帧碰撞检查、601 帧有效规划，碰撞/连续性/到达终点均 PASS。原失败任务保留。证据：容器 `/tmp/wm-map-tests.log`、`/tmp/wm-map-real-result.json`。
 - 2026-10-01：按用户要求清空本地仿真记录和包：64 条任务、`data/simulation` 下所有运行产物及 44 份仿真 MCAP/对应缓存已删除；82 个原始输入 record 与 12 份原始录包回放缓存保留，任务页为 0。任务更多菜单新增“删除任务”，可删除排队/结束任务及私有目录和关联缓存，运行中需先取消；文件错误显式返回，SSE 全量快照同步删除到所有页面。排序改为发起时间倒序（新任务 created_at，历史 queued.wall_time），独立任务可穿插场景集，批次同时间保留清单顺序。25 项 Python 回归、Wasm Clippy、发布构建、乱序 ID/状态界面检查及正式双页面真实删除验证通过，最终空任务页无浏览器异常。证据：容器 `/tmp/wm-delete-cleanup-result.json`、`/tmp/wm-delete-real/`、`/tmp/wm-delete-empty.png`。

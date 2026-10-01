@@ -1,0 +1,76 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "6ec2cf2629381d7d21229cb671b0ee143cd78a91f40b70b3608b4a9d9d298130",
+  "expectation": "park",
+  "reason": "Full vehicle inside the specified HDMap space; heading error <=2 degrees; stopped.",
+  "parking": {
+    "space_id": "parallel_w90_aisle240_front",
+    "style": "parallel",
+    "width_m": 0.9,
+    "length_m": 1.4,
+    "aisle_width_m": 2.4,
+    "entry": "front",
+    "goal": [
+      1059.74,
+      2015.45,
+      0.0
+    ],
+    "area": [
+      [
+        1064.0,
+        2015.0
+      ],
+      [
+        1064.0,
+        2012.6
+      ],
+      [
+        1056.0,
+        2012.6
+      ],
+      [
+        1056.0,
+        2015.0
+      ],
+      [
+        1059.3,
+        2015.0
+      ],
+      [
+        1059.3,
+        2015.9
+      ],
+      [
+        1060.7,
+        2015.9
+      ],
+      [
+        1060.7,
+        2015.0
+      ]
+    ],
+    "slot": [
+      [
+        1059.3,
+        2015.0
+      ],
+      [
+        1060.7,
+        2015.0
+      ],
+      [
+        1060.7,
+        2015.9
+      ],
+      [
+        1059.3,
+        2015.9
+      ]
+    ]
+  },
+  "validity": {
+    "status": "VALID",
+    "reason": "Independent polygon sweep of kinematic witness"
+  }
+}

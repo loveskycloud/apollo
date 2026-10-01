@@ -14,6 +14,20 @@ from hd_map import map_pb2, load_map, resolve_map, build_map_meshes, ribbon, Map
 
 
 class MapTests(unittest.TestCase):
+    def test_parking_outline_preserves_real_narrow_bay_and_origin(self):
+        data = self.fixture()
+        space = data.parking_space.add();space.id.id = "narrow"
+        for x,y in [(0,0),(1.1,0),(1.1,.55),(0,.55)]:
+            space.polygon.point.add(x=500000+x,y=4000000+y)
+        meshes = build_map_meshes(data,[500000,4000000,7])
+        outline = meshes['/hdmap/parking_spaces']
+        vertices = np.array(outline.xyz).reshape(-1,3)
+        self.assertEqual(len(vertices),16)
+        np.testing.assert_allclose(vertices[:,2],.045)
+        # Mean of each edge's paired ribbon vertices is the actual map edge.
+        np.testing.assert_allclose(vertices[8:12,:2].mean(axis=0),[.55,.55],atol=1e-8)
+        self.assertEqual(len(outline.triangle_indices),24)
+
     def fixture(self):
         data = map_pb2.Map()
         lane = data.lane.add()

@@ -1,0 +1,95 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "b859ab7c7f13582270b9f857c0f9b2d04eb2852ea501a495765a69b5b0c163ad",
+  "expectation": "park",
+  "reason": "Motion-triggered clearing hazards: yield safely and complete the original parking mission",
+  "parking": {
+    "space_id": "perpendicular_w90_aisle240_rear",
+    "style": "perpendicular",
+    "width_m": 0.9,
+    "length_m": 1.1,
+    "aisle_width_m": 2.4,
+    "entry": "rear",
+    "goal": [
+      1075.0,
+      2045.81,
+      -1.5707963267948966
+    ],
+    "area": [
+      [
+        1079.0,
+        2045.0
+      ],
+      [
+        1079.0,
+        2042.6
+      ],
+      [
+        1071.0,
+        2042.6
+      ],
+      [
+        1071.0,
+        2045.0
+      ],
+      [
+        1074.55,
+        2045.0
+      ],
+      [
+        1074.55,
+        2046.1
+      ],
+      [
+        1075.45,
+        2046.1
+      ],
+      [
+        1075.45,
+        2045.0
+      ]
+    ],
+    "slot": [
+      [
+        1075.45,
+        2045.0
+      ],
+      [
+        1075.45,
+        2046.1
+      ],
+      [
+        1074.55,
+        2046.1
+      ],
+      [
+        1074.55,
+        2045.0
+      ]
+    ],
+    "operation": "in",
+    "variant": "trigger_vehicle_left",
+    "park_goal": [
+      1075.0,
+      2045.81,
+      -1.5707963267948966
+    ],
+    "witness_length_m": 3.7955748421356397
+  },
+  "validity": {
+    "status": "VALID",
+    "reason": "Successful baseline; actor sweeps within driveable area; trigger pose has 0.18 m stopping buffer clear of each sequential actor sweep; sweeps intersect future ego path. This geometry audit does not certify dynamic control."
+  },
+  "parking_dynamic": {
+    "version": 1,
+    "pattern": "vehicle_left",
+    "actor_ids": [
+      "vehicle_left"
+    ],
+    "minimum_activation_displacement_m": 0.15,
+    "minimum_activation_speed_mps": 0.05,
+    "reference_trigger_s": 2.0,
+    "expectation": "All actors must activate and clear after ego motion; then finish the original parking mission"
+  }
+}

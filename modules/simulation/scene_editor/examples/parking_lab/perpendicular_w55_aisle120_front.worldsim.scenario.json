@@ -1,0 +1,40 @@
+{
+  "id": "perpendicular_w55_aisle120_front",
+  "name": "perpendicular_w55_aisle120_front",
+  "mapId": "ranger_parking_lab_v1",
+  "duration": 90,
+  "description": "Parking lab: perpendicular, width=0.55m, aisle=1.2m, front entry. Full-body containment required.",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 998,
+      "y": 2029.4,
+      "z": 0
+    },
+    "heading": 0,
+    "vehicleProfile": "ranger_mini_v3",
+    "parkingSpaceId": "perpendicular_w55_aisle120_front",
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "approach",
+    "routes": [
+      {
+        "id": "approach",
+        "waypoints": [
+          {
+            "position": {
+              "x": 1000,
+              "y": 2029.4,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "agents": [],
+  "triggers": []
+}

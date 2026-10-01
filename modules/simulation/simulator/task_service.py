@@ -40,6 +40,14 @@ def collision_summary(runs):
             "INCOMPLETE" if runs else "NOT_EVALUATED",
             "collision_count": count, "runs": runs}
 
+
+def execution_failure(error):
+    text = str(error)
+    resource = 'CUDA out of memory' in text or 'Cannot allocate memory' in text
+    return {'status': 'FAIL', 'failure_class': 'RESOURCE_EXHAUSTED' if resource else 'ALGORITHM_OR_RUNTIME_FAILURE',
+            'behavior_evaluation': 'NOT_EVALUATED' if resource else 'SEE_ANALYSIS',
+            'reason': text[:1000]}
+
 def _dedupe_dirs(paths):
     """Keep both bind-mount aliases (e.g. /apollo_workspace vs host checkout)."""
     ordered = []
@@ -572,6 +580,15 @@ class TaskService:
         action = request.get("action")
         if action == "subscribe":
             return {"status": "ok"}
+        if action == "parking_scorecard":
+            from parking_scorecard import scorecard
+            if not request.get('suite_id'):
+                raise ValueError('parking_scorecard requires a suite_id')
+            with self.lock:
+                jobs=copy.deepcopy([j for j in self.jobs.values() if j.get('suite_id')==request['suite_id']])
+            if not jobs:
+                raise ValueError('Unknown suite_id')
+            return {"status":"ok","scorecard":scorecard(jobs)}
         if action == "catalog":
             value = catalog()
             value["max_concurrency"] = self.worker_count
@@ -745,7 +762,7 @@ class TaskService:
             except InterruptedError as error:
                 self.update(job_id, stage="cancelled", error=str(error))
             except Exception as error:
-                self.update(job_id, stage="failed", error=str(error))
+                self.update(job_id, stage="failed", error=str(error), execution=execution_failure(error))
             finally:
                 with self.lock:
                     child = self.children.pop(job_id, None)
@@ -1039,6 +1056,16 @@ class TaskService:
                     # the planner/simulator to stop before normal completion.
                     partial = [output] if output.is_file() else sorted(run_dir.glob("simulation.record.*"))
                     self.update(job_id, outputs=outputs + [str(p) for p in partial])
+                    dynamic=config.get('evaluation',{}).get('parking_dynamic')
+                    if dynamic and partial and config['kind']=='world':
+                        from parking_trigger_metrics import evaluate_record as evaluate_triggers
+                        try:
+                            early_analysis['parking_dynamic']=evaluate_triggers(
+                                partial[0],json.loads(source.read_text()),dynamic)
+                        except Exception as error:
+                            early_analysis['parking_dynamic']={'status':'NOT_EVALUATED','error':str(error)}
+                        atomic_json(job_dir / 'analysis.json',early_analysis)
+                        self.update(job_id,analysis=early_analysis)
                     with log.open("rb") as tail:
                         tail.seek(max(0, log.stat().st_size - 4000))
                         detail = tail.read().decode(errors="replace")
@@ -1067,6 +1094,8 @@ class TaskService:
         if analysis.get("scenario_expectation", {}).get("status") == "FAIL":
             raise RuntimeError("Scenario expectation failed: " + analysis["scenario_expectation"]["expectation"] +
                                "; replay evidence retained")
+        if analysis.get("quality_metrics", {}).get("status") == "FAIL":
+            raise RuntimeError("Closed-loop quality failed: executed road boundary, kinematics or parking goal; see quality_metrics")
         if analysis["missing_module_outputs"]:
             raise RuntimeError("Selected modules produced no output: " + ", ".join(analysis["missing_module_outputs"]))
         if {"PLANNING", "ML_PLANNING"}.intersection(config["modules"]) and analysis["valid_planning_frames"] == 0:
@@ -1081,7 +1110,8 @@ class TaskService:
             raise RuntimeError("Algorithm model inputs changed during task execution")
         if any(digest(job_dir / path) != value for path, value in manifests.items() if path != "simulator_binary"):
             raise RuntimeError("Task input/config snapshots changed during execution")
-        self.update(job_id, stage="completed", progress=100)
+        self.update(job_id, stage="completed", progress=100,
+                    execution={'status':'PASS','failure_class':None,'behavior_evaluation':'SEE_ANALYSIS'})
 
     def analyze_results(self, job_id, request):
         job_dir = Path(request["job_dir"])

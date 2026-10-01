@@ -1,0 +1,108 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "288cb54a84e832e18ed59fa9613b07b44d46e1ff1fa5c6e20194e7a23c41d94e",
+  "expectation": "park",
+  "reason": "Non-blocking vehicle remains beside the bay or aisle; disappearance cannot pass this case",
+  "parking": {
+    "space_id": "perpendicular_w90_aisle240_front",
+    "style": "perpendicular",
+    "width_m": 0.9,
+    "length_m": 1.1,
+    "aisle_width_m": 2.4,
+    "entry": "front",
+    "goal": [
+      1060.0,
+      2045.29,
+      1.5707963267948966
+    ],
+    "area": [
+      [
+        1064.0,
+        2045.0
+      ],
+      [
+        1064.0,
+        2042.6
+      ],
+      [
+        1056.0,
+        2042.6
+      ],
+      [
+        1056.0,
+        2045.0
+      ],
+      [
+        1059.55,
+        2045.0
+      ],
+      [
+        1059.55,
+        2046.1
+      ],
+      [
+        1060.45,
+        2046.1
+      ],
+      [
+        1060.45,
+        2045.0
+      ]
+    ],
+    "slot": [
+      [
+        1060.45,
+        2045.0
+      ],
+      [
+        1060.45,
+        2046.1
+      ],
+      [
+        1059.55,
+        2046.1
+      ],
+      [
+        1059.55,
+        2045.0
+      ]
+    ],
+    "operation": "in",
+    "variant": "trigger_persistent_aisle_side",
+    "park_goal": [
+      1060.0,
+      2045.29,
+      1.5707963267948966
+    ],
+    "witness_length_m": 2.6508499300171287
+  },
+  "validity": {
+    "status": "VALID",
+    "stationary_body_gap_to_baseline_m": 0.5282402973798626,
+    "reason": "Unchanged successful baseline; stopped vehicle clears entire baseline body sweep by >=0.12 m before 0.025 m stop-zone tolerance; approach sweep inside area and outside ego 0.18 m stopping buffer."
+  },
+  "parking_dynamic": {
+    "version": 2,
+    "pattern": "persistent_aisle_side",
+    "actor_ids": [
+      "retained_vehicle"
+    ],
+    "minimum_activation_displacement_m": 0.15,
+    "minimum_activation_speed_mps": 0.05,
+    "reference_trigger_s": 2.0,
+    "actor_end_states": {
+      "retained_vehicle": {
+        "kind": "stopped_visible",
+        "position": {
+          "x": 1059.34375,
+          "y": 2042.8999999999999,
+          "z": 0
+        },
+        "tolerance_m": 0.04,
+        "minimum_stationary_s": 2
+      }
+    },
+    "expectation": "Actor moves, stops nearby and remains visible through completion; ego resumes and completes original mission"
+  }
+}

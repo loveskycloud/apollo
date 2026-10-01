@@ -1,0 +1,55 @@
+{
+  "id": "nudge_left_slow",
+  "name": "Quality regression · nudge_left_slow",
+  "duration": 120,
+  "mapId": "1haolou_202608241047qh",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 10001.631126230091,
+      "y": 9000005.198574401,
+      "z": 0
+    },
+    "heading": 3.1065732939952384,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "route",
+    "routes": [
+      {
+        "id": "route",
+        "waypoints": [
+          {
+            "position": {
+              "x": 9976.646454106765,
+              "y": 9000006.073879428,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ],
+    "vehicleProfile": "ranger_mini_v3"
+  },
+  "agents": [
+    {
+      "id": "actor-0",
+      "type": "AGENT_TYPE_STATIC",
+      "position": {
+        "x": 9991.925869542063,
+        "y": 9000005.218388949,
+        "z": 0
+      },
+      "heading": 3.106573295856742,
+      "speed": 0.0,
+      "size": {
+        "x": 0.5,
+        "y": 0.22,
+        "z": 0.7
+      }
+    }
+  ],
+  "triggers": []
+}

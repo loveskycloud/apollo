@@ -1,0 +1,22 @@
+{
+  "kind": "worldsim-suite",
+  "version": 1,
+  "name": "原有直行弯道与超车回归 · 14 场景",
+  "mapId": "1haolou_202608241047qh",
+  "scenarios": [
+    "crossing_vehicle.worldsim.scenario.json",
+    "moving_lead.worldsim.scenario.json",
+    "pedestrian_left.worldsim.scenario.json",
+    "pedestrian_right.worldsim.scenario.json",
+    "pedestrian_sudden.worldsim.scenario.json",
+    "static_slalom.worldsim.scenario.json",
+    "straight_centered.worldsim.scenario.json",
+    "straight_clear.worldsim.scenario.json",
+    "straight_obstacle.worldsim.scenario.json",
+    "turn_clear.worldsim.scenario.json",
+    "turn_obstacle.worldsim.scenario.json",
+    "turn_obstacle_right.worldsim.scenario.json",
+    "user_multibend.worldsim.scenario.json",
+    "user_overtake.worldsim.scenario.json"
+  ]
+}

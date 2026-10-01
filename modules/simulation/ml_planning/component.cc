@@ -2,13 +2,18 @@
 #include "modules/simulation/ml_planning/model_config.h"
 #include "modules/simulation/ml_planning/proto/ml_planning_config.pb.h"
 #include "modules/simulation/ml_planning/reference_line.h"
+#include "modules/simulation/ml_planning/parking_planner.h"
+#include "modules/simulation/ml_planning/parking_motion.h"
 
 #include <cstdlib>
+#include <chrono>
 #include <iomanip>
 #include <memory>
 #include <mutex>
 #include <utility>
 #include "cyber/component/component.h"
+#include "cyber/common/file.h"
+#include "modules/common/configs/config_gflags.h"
 #include "cyber/time/clock.h"
 #include "modules/common/configs/vehicle_config_helper.h"
 #include "modules/common_msgs/localization_msgs/localization.pb.h"
@@ -73,7 +78,7 @@ class MLPlanning final : public cyber::Component<perception::PerceptionObstacles
       trace_.open(trace); trace_ << std::setprecision(15)
         << "timestamp,s,l,yaw,speed,action_l,action_v,shield,obstacles,curvature,remaining,brake,pass_hold";
       for(size_t i=0;i<Observation{}.size();++i) trace_ << ",obs" << i;
-      trace_ << ",approach_l,approach_v,unsafe_reason,unsafe_s,oncoming_ttc_s\n";
+      trace_ << ",approach_l,approach_v,unsafe_reason,unsafe_s,oncoming_ttc_s,recovery_status\n";
     }
     return pose_reader_ && command_reader_ && pad_reader_ && writer_ &&
            status_writer_ && offset_status_writer_;
@@ -81,10 +86,13 @@ class MLPlanning final : public cyber::Component<perception::PerceptionObstacles
 
   bool Proc(const std::shared_ptr<perception::PerceptionObstacles>& perception) override {
     std::lock_guard<std::mutex> lock(mutex_);
+    proc_started_=std::chrono::steady_clock::now();
+    parking_search_ms_=-1;
     const double now=cyber::Clock::NowInSeconds();
     if(!pose_ || !route_ready_) return Fail(now,route_error_.empty()?"Localization/PlanningCommand not ready":route_error_);
     if(std::abs(now-pose_->header().timestamp_sec())>.2 || std::abs(now-perception->header().timestamp_sec())>.2)
       return Fail(now,"Stale localization/perception input");
+    if(parking_mode_) return ProcParking(now,*perception);
     const auto& pose=pose_->pose();
     double s,l;
     if(!reference_.Project(pose.position().x(),pose.position().y(),&s,&l,
@@ -113,6 +121,7 @@ class MLPlanning final : public cyber::Component<perception::PerceptionObstacles
     int unsafe_reason=0;
     double unsafe_s=0;
     const bool shield=!Safe(states,*perception,&unsafe_reason,&unsafe_s);
+    int recovery_status=0;  // 0 unused, 1 accepted, -1 no path, -2 rejected.
     bool brake=requested_stop;
     if(shield && !requested_stop) {
       // Project the actor proposal onto feasible trajectories in the same action
@@ -197,6 +206,15 @@ class MLPlanning final : public cyber::Component<perception::PerceptionObstacles
           }
         }
       }
+      if((road_constraint || unsafe_reason==5) && initial.v<.25 &&
+         states.back().s-initial.s<.1 && now-last_recovery_attempt_>=2.) {
+        last_recovery_attempt_=now;
+        auto recovery=RoadRecovery(initial,*perception);
+        recovery_status=recovery.empty()?-1:-2;
+        if(!recovery.empty() && recovery.back().s>states.back().s+.1 && Safe(recovery,*perception)) {
+          best=0;states=std::move(recovery);recovery_status=1;
+        }
+      }
       if(!std::isfinite(best)) {
         brake=true;
         const Action stopped{0,-8};
@@ -239,7 +257,7 @@ class MLPlanning final : public cyber::Component<perception::PerceptionObstacles
       complete->mutable_stop_point()->set_y(destination.y);
       complete->set_stop_heading(destination.heading);
     }
-    out.set_total_path_length(distance); out.set_total_path_time(8); writer_->Write(out);
+    out.set_total_path_length(distance); out.set_total_path_time(8); SetLatency(&out); writer_->Write(out);
     PublishStatus(now,cleared_ ? external_command::ERROR :
         (finished_ ? external_command::FINISHED : external_command::RUNNING),
         cleared_ ? "Planning cleared; a new motion command is required" : "");
@@ -248,12 +266,228 @@ class MLPlanning final : public cyber::Component<perception::PerceptionObstacles
       trace_<<now<<','<<s<<','<<l<<','<<initial.yaw<<','<<initial.v<<','<<actor_action[0]<<','<<actor_action[1]<<','<<shield<<','<<obstacles.size()<<','<<ref.curvature<<','<<goal_-s<<','<<brake<<','<<pass_hold;
       for(double value:observation) trace_<<','<<value;
       trace_<<','<<action[0]<<','<<action[1]<<','<<unsafe_reason<<','<<unsafe_s
-            <<','<<OncomingTtc(initial,obstacles,std::max(ref.left,ref.right))<<'\n';
+            <<','<<OncomingTtc(initial,obstacles,std::max(ref.left,ref.right))<<','<<recovery_status<<'\n';
     }
     return true;
   }
 
  private:
+  void SetLatency(planning::ADCTrajectory* out) {
+    out->mutable_latency_stats()->set_total_time_ms(std::chrono::duration<double,std::milli>(
+        std::chrono::steady_clock::now()-proc_started_).count());
+    if(parking_mode_ && parking_search_ms_>=0) {
+      auto* task=out->mutable_latency_stats()->add_task_stats();
+      task->set_name("parking_search");task->set_time_ms(parking_search_ms_);
+    }
+  }
+  std::vector<State> RoadRecovery(const State& initial,const perception::PerceptionObstacles& obs) {
+    const auto r=reference_.At(initial.s),end=reference_.At(std::min(goal_,initial.s+2.5));
+    ParkingPose start{r.x-initial.l*std::sin(r.heading),r.y+initial.l*std::cos(r.heading),r.heading+initial.yaw,1};
+    ParkingPose goal{end.x,end.y,end.heading,1};
+    ParkingPlanner planner;planner.curvature=std::min(1.8,max_k_);planner.allow_reverse=false;planner.expansion_limit=20000;
+    auto path=planner.Plan(start,goal,[&](const ParkingPose& p){
+      double s,l;if(!reference_.Project(p.x,p.y,&s,&l,std::max(0.,initial.s-.5),std::min(reference_.length(),initial.s+4)))return false;
+      if(s<initial.s-.1 || s>initial.s+3.5)return false;
+      for(double u:{-back_,front_})for(double v:{-half_,half_})
+        if(!reference_.ContainsRoad(p.x+u*std::cos(p.yaw)-v*std::sin(p.yaw),p.y+u*std::sin(p.yaw)+v*std::cos(p.yaw),.02))return false;
+      const double x=p.x+(front_-back_)/2*std::cos(p.yaw),y=p.y+(front_-back_)/2*std::sin(p.yaw);
+      for(const auto& o:obs.perception_obstacle()) {
+        const double margin=o.type()==perception::PerceptionObstacle::UNKNOWN_UNMOVABLE && std::hypot(o.velocity().x(),o.velocity().y())<.01?static_clearance_:.12;
+        // Reserve 5 mm for time-knot interpolation; a search node exactly on
+        // the clearance limit can cut inside it between published poses.
+        // Safe still independently checks the original margin every 10 ms.
+        if(BoxSeparation(x,y,p.yaw,(front_+back_)/2,half_,o.position().x(),o.position().y(),o.theta(),o.length()/2,o.width()/2)<=margin+.005)return false;
+      }
+      return true;
+    });
+    if(path.size()<2)return {};
+    std::vector<double> arc{0};for(size_t i=1;i<path.size();++i)arc.push_back(arc.back()+std::hypot(path[i].x-path[i-1].x,path[i].y-path[i-1].y));
+    std::vector<State> states{initial};double travelled=0,v=initial.v;
+    for(int j=1;j<=80;++j) {
+      const double target=std::min({.2,speed_limit_,std::sqrt(std::max(0.,arc.back()-travelled-.02))});
+      const double next=std::max(0.,v+std::clamp(target-v,-.1,.06));travelled=std::min(arc.back(),travelled+(v+next)*.05);v=next;
+      const size_t i=std::min(static_cast<size_t>(std::upper_bound(arc.begin(),arc.end(),travelled)-arc.begin()-1),arc.size()-2);
+      const double u=(travelled-arc[i])/std::max(1e-9,arc[i+1]-arc[i]);const auto &a=path[i],&b=path[i+1];
+      const double x=a.x+u*(b.x-a.x),y=a.y+u*(b.y-a.y),yaw=WrapParking(a.yaw+u*WrapParking(b.yaw-a.yaw));
+      double s,l;if(!reference_.Project(x,y,&s,&l,std::max(0.,initial.s-.5),std::min(reference_.length(),initial.s+4)))return {};
+      states.push_back({s,l,WrapParking(yaw-reference_.At(s).heading),v});
+    }
+    return states;
+  }
+  void LoadParking(const std::string& id) {
+    hdmap::Map map;
+    if(!cyber::common::GetProtoFromFile(FLAGS_map_dir+"/base_map.bin",&map))
+      throw std::runtime_error("Parking requires readable HDMap base_map.bin");
+    const hdmap::ParkingSpace* spot=nullptr;
+    for(const auto& p:map.parking_space())if(p.id().id()==id)spot=&p;
+    if(!spot || spot->polygon().point_size()!=4 || !spot->has_heading())
+      throw std::runtime_error("Parking space missing rectangle/heading: "+id);
+    double cx=0,cy=0;for(const auto& p:spot->polygon().point()){cx+=p.x()/4;cy+=p.y()/4;}
+    parking_goal_={cx-(front_-back_)/2*std::cos(spot->heading()),
+                   cy-(front_-back_)/2*std::sin(spot->heading()),spot->heading(),1};
+    parking_geometry_={};parking_geometry_.front=front_;parking_geometry_.back=back_;parking_geometry_.half=half_;
+    for(const auto& area:map.ad_area()) {
+      if(area.type()!=hdmap::Area::Driveable)continue;
+      ParkingPolygon polygon;for(const auto& p:area.polygon().point())polygon.emplace_back(p.x(),p.y());
+      if(ParkingInside(cx,cy,polygon)){parking_geometry_.area=std::move(polygon);break;}
+    }
+    if(parking_geometry_.area.empty())throw std::runtime_error("Parking requires explicit HDMap driveable area enclosing the space");
+    double best=1e100,lx=0,ly=0,lheading=0;
+    for(const auto& lane:map.lane())for(const auto& seg:lane.central_curve().segment()) {
+      const auto& points=seg.line_segment().point();
+      for(int i=1;i<points.size();++i) {
+        const auto& a=points[i-1];const auto& b=points[i];const double dx=b.x()-a.x(),dy=b.y()-a.y(),n=dx*dx+dy*dy;
+        if(n<1e-9)continue;
+        const double t=std::clamp(((cx-a.x())*dx+(cy-a.y())*dy)/n,0.,1.),x=a.x()+t*dx,y=a.y()+t*dy;
+        if(std::hypot(x-cx,y-cy)<best){best=std::hypot(x-cx,y-cy);lx=x;ly=y;lheading=std::atan2(dy,dx);}
+      }
+    }
+    if(best==1e100)throw std::runtime_error("Parking space has no approach lane");
+    const double normal=(cx-lx)*std::cos(spot->heading())+(cy-ly)*std::sin(spot->heading());
+    parking_goal_.gear=(std::abs(normal)>.05?normal:std::cos(spot->heading()-lheading))>0?1:-1;
+    if(!parking_geometry_.Valid(parking_goal_))throw std::runtime_error("Vehicle cannot fit inside parking driveable area");
+  }
+  void TimeParking(const std::vector<ParkingPose>& path) {parking_timed_=TimeParkingPath(path);}
+  bool SearchParkingPath(double now) {
+    if(now<parking_hold_until_)return false;
+    ParkingPlanner planner;planner.curvature=std::min(1.8,max_k_);
+    const auto& p=pose_->pose();
+    const auto started=std::chrono::steady_clock::now();
+    const auto path=planner.Plan({p.position().x(),p.position().y(),p.heading(),1},parking_goal_,
+                                [&](const auto& state){return parking_geometry_.Valid(state);});
+    parking_search_ms_=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-started).count();
+    if(path.empty()){parking_hold_until_=now+1.;return false;}
+    TimeParking(path);parking_started_=now;return true;
+  }
+  bool ProcParking(double now,const perception::PerceptionObstacles& obs) {
+    if(pad_stop_||cleared_||temporary_stop_)return Fail(now,"Parking STOP/CLEAR requested; resubmit a new parking command after stopping");
+    parking_geometry_.obstacles.clear();
+    parking_traffic_.clear();
+    for(const auto& o:obs.perception_obstacle()) {
+      if(!(o.length()>0 && o.width()>0) || !std::isfinite(o.position().x()+o.position().y()+o.theta()+o.velocity().x()+o.velocity().y()))
+        return Fail(now,"Invalid parking obstacle geometry/velocity");
+      if(std::hypot(o.velocity().x(),o.velocity().y())>.01) {
+        parking_traffic_.push_back({{o.position().x(),o.position().y(),o.theta(),o.length(),o.width()},o.velocity().x(),o.velocity().y(),o.id()});
+      } else {
+        parking_geometry_.obstacles.push_back({o.position().x(),o.position().y(),o.theta(),o.length(),o.width()});
+      }
+    }
+    const auto& measured=pose_->pose();
+    const double measured_speed=measured.linear_velocity().x()*std::cos(measured.heading())+
+                                measured.linear_velocity().y()*std::sin(measured.heading());
+    // Obtain a real maneuver corridor even when traffic is already present
+    // at startup. Moving actors remain in parking_traffic_ for safety checks.
+    if(parking_timed_.empty() && !parking_yielding_ && !SearchParkingPath(now))
+      return ParkingHold(now,"No feasible parking path / dwell; holding safely");
+    std::vector<ParkingPose> corridor{{measured.position().x(),measured.position().y(),measured.heading(),1}};
+    if(parking_yielding_)corridor.insert(corridor.end(),parking_remainder_.begin(),parking_remainder_.end());
+    else if(!parking_timed_.empty()) {
+      const size_t index=std::min(static_cast<size_t>(std::max(0.,std::round((now-parking_started_)/.1))),parking_timed_.size()-1);
+      for(size_t i=index;i<parking_timed_.size();++i)corridor.push_back(parking_timed_[i].pose);
+    }
+    const bool conflicting_traffic=ParkingTrafficRelevant(corridor,parking_geometry_,parking_traffic_,&parking_conflict_ids_);
+    if(conflicting_traffic) {
+      parking_clear_since_=-1;
+      if(!parking_yielding_) {
+        parking_yielding_=true;parking_remainder_.clear();
+        if(std::abs(measured_speed)>.005) {
+          if(parking_timed_.empty()){parking_yielding_=false;return Fail(now,"Cannot brake parking without a committed path");}
+          const size_t current=std::min(static_cast<size_t>(std::max(0.,std::round((now-parking_started_)/.1))),parking_timed_.size()-1);
+          std::vector<ParkingPose> remaining{{measured.position().x(),measured.position().y(),measured.heading(),measured_speed<0?-1:1}};
+          for(size_t i=current+1;i<parking_timed_.size();++i)remaining.push_back(parking_timed_[i].pose);
+          auto stop=StopParking(remaining,measured_speed);
+          if(stop.samples.empty() || !ParkingMotionSafe(stop.samples,parking_geometry_,parking_traffic_,std::abs(measured_speed)/.4+.2)) {
+            parking_yielding_=false;
+            return Fail(now,"No safe parking braking trajectory for observed traffic");
+          }
+          parking_remainder_=std::move(stop.remainder);parking_timed_=std::move(stop.samples);
+          parking_started_=now;parking_braking_=true;
+        } else {
+          if(!parking_timed_.empty()) {
+            const size_t current=std::min(static_cast<size_t>(std::max(0.,std::round((now-parking_started_)/.1))),parking_timed_.size()-1);
+            parking_remainder_.push_back({measured.position().x(),measured.position().y(),measured.heading(),parking_timed_[current].pose.gear});
+            for(size_t i=current+1;i<parking_timed_.size();++i)parking_remainder_.push_back(parking_timed_[i].pose);
+          }
+          parking_timed_.clear();
+        }
+      }
+    }
+    if(parking_yielding_ && parking_braking_ && std::abs(measured_speed)<.005 && now>parking_started_+.1) {
+      parking_braking_=false;parking_timed_.clear();
+    }
+    if(parking_yielding_ && !parking_braking_) {
+      if(conflicting_traffic)return ParkingHold(now,"Parking yielding: waiting for conflicting traffic");
+      if(parking_clear_since_<0)parking_clear_since_=now;
+      if(now-parking_clear_since_<.5)return ParkingHold(now,"Parking yielding: confirming clearance");
+      parking_yielding_=false;parking_clear_since_=-1;
+      // Re-time the unexecuted geometry from rest; never restart the old clock.
+      // If a stopped actor blocks it, fall back to a new geometry search.
+      if(!parking_remainder_.empty() &&
+         std::hypot(measured.position().x()-parking_remainder_.front().x,measured.position().y()-parking_remainder_.front().y)<1e-6 &&
+         std::abs(WrapParking(measured.heading()-parking_remainder_.front().yaw))<1e-6 &&
+         std::all_of(parking_remainder_.begin(),parking_remainder_.end(),[&](const auto& p){return parking_geometry_.Valid(p);})) {
+        parking_remainder_.front()={measured.position().x(),measured.position().y(),measured.heading(),parking_remainder_.front().gear};
+        TimeParking(parking_remainder_);parking_started_=now;
+      }
+      parking_remainder_.clear();
+    }
+    if(parking_timed_.empty() && !SearchParkingPath(now))
+      return ParkingHold(now,"No feasible parking path / dwell; holding safely");
+    const size_t current=std::min(static_cast<size_t>(std::max(0.,std::round((now-parking_started_)/.1))),parking_timed_.size()-1);
+    const auto& actual=pose_->pose();const auto& expected=parking_timed_[current].pose;
+    if(std::hypot(actual.position().x()-expected.x,actual.position().y()-expected.y)>.04 ||
+       std::abs(WrapParking(actual.heading()-expected.yaw))>.05)return Fail(now,"Parking tracking deviation exceeds certified path tolerance");
+    planning::ADCTrajectory out;Header(now,&out);
+    out.set_gear(expected.gear<0?canbus::Chassis::GEAR_REVERSE:canbus::Chassis::GEAR_DRIVE);
+    auto sample=parking_timed_[current];double distance=0;bool gear_end=false;
+    std::vector<ParkingSample> published;
+    for(int i=0;i<=80;++i) {
+      const auto& next=parking_timed_[std::min(current+i,parking_timed_.size()-1)];
+      if(next.pose.gear!=expected.gear)gear_end=true;
+      if(!gear_end)sample=next;else sample.speed=0;
+      published.push_back(sample);
+      if(!parking_geometry_.Valid(sample.pose))return Fail(now,"Parking trajectory invalidated by observed obstacle");
+      auto* p=out.add_trajectory_point();p->set_relative_time(i*.1);p->set_v(sample.speed);
+      auto* xy=p->mutable_path_point();xy->set_x(sample.pose.x);xy->set_y(sample.pose.y);xy->set_theta(sample.pose.yaw);xy->set_z(actual.position().z());
+      if(i)distance+=std::hypot(xy->x()-out.trajectory_point(i-1).path_point().x(),xy->y()-out.trajectory_point(i-1).path_point().y());
+      xy->set_s(expected.gear*distance);
+    }
+    for(int i=0;i<80;++i) {
+      auto* a=out.mutable_trajectory_point(i);const auto& b=out.trajectory_point(i+1);const double ds=b.path_point().s()-a->path_point().s();
+      a->set_a((b.v()-a->v())/.1);a->mutable_path_point()->set_kappa(std::abs(ds)>1e-6?WrapParking(b.path_point().theta()-a->path_point().theta())/ds:0);
+    }
+    // Predict through the complete remaining stop plus two perception periods.
+    // A distant constant-velocity collision after stopping must not discard
+    // the safe braking action. Waiting positions are rechecked every cycle.
+    if(!ParkingMotionSafe(published,parking_geometry_,parking_traffic_,std::abs(measured_speed)/.4+.2))
+      return Fail(now,"Parking motion conflicts with predicted traffic or boundary");
+    if(!parking_yielding_ && current==parking_timed_.size()-1 && std::hypot(actual.linear_velocity().x(),actual.linear_velocity().y())<.02) {
+      if(parking_depart_after_) {
+        parking_depart_after_=false;parking_goal_=parking_exit_;
+        parking_timed_.clear();parking_hold_until_=now+2.;
+      } else {
+        finished_=true;out.mutable_decision()->mutable_main_decision()->mutable_mission_complete();
+      }
+    }
+    out.set_total_path_time(8);out.set_total_path_length(distance);SetLatency(&out);writer_->Write(out);
+    PublishStatus(now,finished_?external_command::FINISHED:external_command::RUNNING,
+                  parking_braking_?"Parking yielding: braking":"");return true;
+  }
+  bool ParkingHold(double now,const std::string& reason) {
+    if(std::hypot(pose_->pose().linear_velocity().x(),pose_->pose().linear_velocity().y())>.005)
+      return Fail(now,"Parking hold requires a stopped vehicle");
+    planning::ADCTrajectory out;Header(now,&out);out.set_gear(canbus::Chassis::GEAR_DRIVE);
+    const auto& pose=pose_->pose();
+    const std::vector<ParkingSample> hold(81,{{pose.position().x(),pose.position().y(),pose.heading(),1},0});
+    if(!ParkingMotionSafe(hold,parking_geometry_,parking_traffic_,.2))return Fail(now,"Parking hold conflicts with predicted traffic or boundary");
+    for(int i=0;i<=80;++i) {
+      auto* p=out.add_trajectory_point();p->set_relative_time(i*.1);p->set_v(0);p->set_a(0);
+      auto* xy=p->mutable_path_point();xy->set_x(pose.position().x());xy->set_y(pose.position().y());
+      xy->set_z(pose.position().z());xy->set_theta(pose.heading());xy->set_s(0);xy->set_kappa(0);
+    }
+    out.set_total_path_time(8);SetLatency(&out);writer_->Write(out);
+    PublishStatus(now,external_command::RUNNING,reason);return true;
+  }
   // All callbacks and Proc share the lock: routes cannot change midway through
   // trajectory generation in real Cyber, unlike the synchronous simulator.
   bool StopRequested() const {
@@ -277,6 +511,27 @@ class MLPlanning final : public cyber::Component<perception::PerceptionObstacles
     PublishStatus(cyber::Clock::NowInSeconds(),external_command::ERROR,reason);
   }
   void OnCommand(const planning::PlanningCommand& command) {
+    if(command.has_custom_command() && command.custom_command().Is<ParkingManeuverCommand>()) {
+      ParkingManeuverCommand maneuver;
+      if(!command.custom_command().UnpackTo(&maneuver) || !maneuver.IsInitialized() ||
+         !command.is_motion_command() || !std::isfinite(maneuver.exit_x()+maneuver.exit_y()+maneuver.exit_heading())) {
+        RejectCommand(command,"Invalid parking maneuver command");return;
+      }
+      if(parking_mode_ && command.command_id()==command_.command_id() &&
+         command.custom_command().SerializeAsString()==command_.custom_command().SerializeAsString())return;
+      command_=command;has_command_=true;finished_=cleared_=pad_stop_=temporary_stop_=false;
+      parking_mode_=true;parking_timed_.clear();parking_hold_until_=0;route_ready_=false;
+      parking_yielding_=parking_braking_=false;parking_clear_since_=-1;parking_remainder_.clear();parking_conflict_ids_.clear();
+      try {
+        LoadParking(maneuver.parking_spot_id());
+        parking_exit_={maneuver.exit_x(),maneuver.exit_y(),maneuver.exit_heading(),1};
+        if(!parking_geometry_.Valid(parking_exit_))throw std::runtime_error("Exit pose is outside driveable parking area");
+        parking_depart_after_=maneuver.operation()==ParkingManeuverCommand::PARK_AND_EXIT;
+        if(!parking_depart_after_)parking_goal_=parking_exit_;
+        route_ready_=true;
+      }catch(const std::exception& e){route_error_=e.what();PublishStatus(cyber::Clock::NowInSeconds(),external_command::ERROR,route_error_);}
+      return;
+    }
     // Temporarily disabled: TemporaryStopCommand requires external-command-proto.
     // if(command.has_custom_command() &&
     //    command.custom_command().Is<external_command::TemporaryStopCommand>()) {
@@ -291,7 +546,19 @@ class MLPlanning final : public cyber::Component<perception::PerceptionObstacles
     //   AINFO << "ML Planning temporary_stop=" << temporary_stop_;
     //   return;  // Preserve the route and its command_id, as standard Planning does.
     // }
-    if(command.has_custom_command() || command.has_parking_command()) {
+    if(command.has_parking_command()) {
+      if(!command.IsInitialized() || !command.is_motion_command()) {RejectCommand(command,"Invalid parking command");return;}
+      if(parking_mode_ && has_command_ && command.command_id()==command_.command_id() &&
+         command.parking_command().SerializeAsString()==command_.parking_command().SerializeAsString())return;
+      command_=command;has_command_=true;finished_=cleared_=pad_stop_=temporary_stop_=false;
+      parking_mode_=true;parking_timed_.clear();route_ready_=false;
+      parking_yielding_=parking_braking_=false;parking_clear_since_=-1;parking_remainder_.clear();parking_conflict_ids_.clear();
+      parking_depart_after_=false;parking_hold_until_=0;
+      try {LoadParking(command.parking_command().parking_spot_id());route_ready_=true;}
+      catch(const std::exception& e){route_error_=e.what();PublishStatus(cyber::Clock::NowInSeconds(),external_command::ERROR,route_error_);}
+      return;
+    }
+    if(command.has_custom_command()) {
       const std::string reason="ML Planning does not support this custom/parking command";
       RejectCommand(command,reason);
       // Temporarily disabled: ReferenceLineOffsetCommand requires the same package.
@@ -316,7 +583,7 @@ class MLPlanning final : public cyber::Component<perception::PerceptionObstacles
     const auto key=identity.SerializeAsString();
     if(key==last_motion_key_) return;
     last_motion_key_=key;
-    command_=command;has_command_=true;cleared_=false;finished_=false;
+    command_=command;has_command_=true;cleared_=false;finished_=false;parking_mode_=false;
     speed_limit_=command.has_target_speed() ? std::min(1.,command.target_speed()) : 1.;
     BuildRoute(command.lane_follow_command());
     PublishStatus(cyber::Clock::NowInSeconds(),route_ready_ ? external_command::RUNNING : external_command::ERROR,route_error_);
@@ -530,6 +797,22 @@ class MLPlanning final : public cyber::Component<perception::PerceptionObstacles
     return true;  // Invalid runtime input is reported; the component keeps running.
   }
   std::mutex mutex_;
+  std::chrono::steady_clock::time_point proc_started_;
+  bool parking_mode_=false;
+  ParkingGeometry parking_geometry_;
+  ParkingPose parking_goal_;
+  ParkingPose parking_exit_;
+  bool parking_depart_after_=false;
+  double parking_hold_until_=0;
+  double parking_search_ms_=-1;
+  std::vector<ParkingSample> parking_timed_;
+  double parking_started_=0;
+  std::set<int> parking_conflict_ids_;
+  bool parking_yielding_=false,parking_braking_=false;
+  double parking_clear_since_=-1;
+  std::vector<ParkingPose> parking_remainder_;
+  std::vector<ParkingTraffic> parking_traffic_;
+  double last_recovery_attempt_=-1e9;
   planning::PlanningCommand command_;
   std::string last_motion_key_;
   bool has_command_=false,pad_stop_=false,temporary_stop_=false,cleared_=false,finished_=false;

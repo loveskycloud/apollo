@@ -1,0 +1,410 @@
+[
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "8e1d58b121005b1adba66d0aa20359fd81cb7fce4215197cada8e838642af4f3",
+    "expectation": "reach_goal",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/clear.worldsim.scenario.json",
+      "speed_scale": 0.85,
+      "longitudinal_shift_m": -0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "50fe3f0a680c1b3fa218fe2ae95f94488e45ec42b9c7701a6b45d7f10dcb6cca",
+    "expectation": "reach_goal",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/clear.worldsim.scenario.json",
+      "speed_scale": 1.15,
+      "longitudinal_shift_m": 0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "0f61f56729947a4f590f49b41bb57f2ae1513da53bc6be4f75ff78e493c925f8",
+    "expectation": "yield_then_proceed",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/lead.worldsim.scenario.json",
+      "speed_scale": 0.85,
+      "longitudinal_shift_m": -0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "757a7cb7922b6824f6ba5bc520d02c32da2e0cc349238be461c9a05a98792769",
+    "expectation": "yield_then_proceed",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/lead.worldsim.scenario.json",
+      "speed_scale": 1.15,
+      "longitudinal_shift_m": 0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "caebf9cca4e0d69c7ab005da4bfb878adf89825328e5a0660cc7a28d71714a9c",
+    "expectation": "yield_then_proceed",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/meeting_fast.worldsim.scenario.json",
+      "speed_scale": 0.85,
+      "longitudinal_shift_m": -0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "3d401f91fa35cf0586f04e7d65555200f601af553782a5d4d86b5acc843adc68",
+    "expectation": "yield_then_proceed",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/meeting_fast.worldsim.scenario.json",
+      "speed_scale": 1.15,
+      "longitudinal_shift_m": 0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "8e89c0f23705602144a1e4899cba99092c532fc1a077410c2f075425bbdbe480",
+    "expectation": "yield_then_proceed",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/meeting_nudge_late.worldsim.scenario.json",
+      "speed_scale": 0.85,
+      "longitudinal_shift_m": -0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "266541fd4dbd98f6a1a7bde5d21535abe9a79376a4da5daa17531c03e88d2583",
+    "expectation": "yield_then_proceed",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/meeting_nudge_late.worldsim.scenario.json",
+      "speed_scale": 1.15,
+      "longitudinal_shift_m": 0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "cf07c9d7b1aa79ebaa6d6e4d8520269f3838947d1057a769af6ece06a2e82870",
+    "expectation": "yield_then_proceed",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/meeting_nudge_left.worldsim.scenario.json",
+      "speed_scale": 0.85,
+      "longitudinal_shift_m": -0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "100f2426413f480bb958d45ead23a60f72f5663e1c77857a1ca6381c40027459",
+    "expectation": "yield_then_proceed",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/meeting_nudge_left.worldsim.scenario.json",
+      "speed_scale": 1.15,
+      "longitudinal_shift_m": 0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "5f3f4b3eb96d43741461b2c2d4ec012e475351468837694f535f37f3c5469ac3",
+    "expectation": "yield_then_proceed",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/meeting_nudge_right.worldsim.scenario.json",
+      "speed_scale": 0.85,
+      "longitudinal_shift_m": -0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "986444fdc7d913ce92d07a8ab4ee854b07c5321036a05863f618b8a825f81784",
+    "expectation": "yield_then_proceed",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/meeting_nudge_right.worldsim.scenario.json",
+      "speed_scale": 1.15,
+      "longitudinal_shift_m": 0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "c4e6d95f4723b3bd6567397175a72df4e47e83c6c702a24f1111ba5fdf66add5",
+    "expectation": "yield_then_proceed",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/meeting_offset.worldsim.scenario.json",
+      "speed_scale": 0.85,
+      "longitudinal_shift_m": -0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "14036162bd7edea0e8d780b2a201b985425258438c0e9f4d93ca8b75258487a6",
+    "expectation": "yield_then_proceed",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/meeting_offset.worldsim.scenario.json",
+      "speed_scale": 1.15,
+      "longitudinal_shift_m": 0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "39d862d3dab7786e3504865694c1ca1d28542d3aad60f3693dad1552742e0dde",
+    "expectation": "yield_then_proceed",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/meeting_slow.worldsim.scenario.json",
+      "speed_scale": 0.85,
+      "longitudinal_shift_m": -0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "c9f5a568d7cd87cb43389a8c25a85b1ce81604fbfbf49e05620fcb5a44ad7121",
+    "expectation": "yield_then_proceed",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/meeting_slow.worldsim.scenario.json",
+      "speed_scale": 1.15,
+      "longitudinal_shift_m": 0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "376b8f78e9191ec52bf7110414d32185a912cb3340748f4af26a5c0985bf4c93",
+    "expectation": "reach_goal",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/nudge_alternating.worldsim.scenario.json",
+      "speed_scale": 0.85,
+      "longitudinal_shift_m": -0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "13b2a778d8611ff8e36330b3a7c5679a55dcc0cf062bd12aa582918bc25a530e",
+    "expectation": "reach_goal",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/nudge_alternating.worldsim.scenario.json",
+      "speed_scale": 1.15,
+      "longitudinal_shift_m": 0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "239ab697146858b265569d96baa435e6c2a54c470ec6c6e7eb293dfa90724df3",
+    "expectation": "reach_goal",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/nudge_left.worldsim.scenario.json",
+      "speed_scale": 0.85,
+      "longitudinal_shift_m": -0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "88afc08f66665125e231849f95fdec6f5b997b1864bbbf0b6eac7c19f2df7d5f",
+    "expectation": "reach_goal",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/nudge_left.worldsim.scenario.json",
+      "speed_scale": 1.15,
+      "longitudinal_shift_m": 0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "a8689fad5c7ee4716c1978cc319bb63fbd4aa0c55d94d3be43f5b8bae5481c6d",
+    "expectation": "reach_goal",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/nudge_right.worldsim.scenario.json",
+      "speed_scale": 0.85,
+      "longitudinal_shift_m": -0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "35fee559853a4c7c8a076b3b9b6e026d3cacf43b998fbe25d0c1c8a4bb323a4b",
+    "expectation": "reach_goal",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/nudge_right.worldsim.scenario.json",
+      "speed_scale": 1.15,
+      "longitudinal_shift_m": 0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "595922b183f4f106665fc5fa8911d6d7c1e249f97351b16c815538ef1c55d2d9",
+    "expectation": "yield_then_proceed",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/successive_meeting.worldsim.scenario.json",
+      "speed_scale": 0.85,
+      "longitudinal_shift_m": -0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  },
+  {
+    "kind": "worldsim-evaluation",
+    "version": 1,
+    "scenario_sha256": "ca1a21f4dc43ba7e1ca0744e1262e1c16ee6dbab805923077faee1ddeea6f0ce",
+    "expectation": "yield_then_proceed",
+    "reason": "Perturbed audited straight-road interaction: all obstacles must be passed without collision and the goal reached.",
+    "validity": {
+      "status": "VALID",
+      "reason": "Strict protobuf, ego inside drivable road, no initial contact; original lateral passage retained"
+    },
+    "audit": {
+      "source": "/apollo_workspace/modules/simulation/scene_editor/examples/phase1_interaction/successive_meeting.worldsim.scenario.json",
+      "speed_scale": 1.15,
+      "longitudinal_shift_m": 0.3,
+      "scope": "Necessary scene validity; successful execution remains a separate model test"
+    }
+  }
+]

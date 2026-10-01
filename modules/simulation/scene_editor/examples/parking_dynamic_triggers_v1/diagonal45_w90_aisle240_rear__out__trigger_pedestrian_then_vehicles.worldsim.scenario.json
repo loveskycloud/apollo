@@ -1,0 +1,260 @@
+{
+  "id": "diagonal45_w90_aisle240_rear__out__trigger_pedestrian_then_vehicles",
+  "name": "diagonal45_w90_aisle240_rear__out__trigger_pedestrian_then_vehicles",
+  "mapId": "ranger_parking_lab_v1",
+  "duration": 120,
+  "description": "泊车动作开始后进入位置触发区，启动动态交通；清空后仍须完成泊车任务。",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 1075.5727564927613,
+      "y": 2075.8909545442953,
+      "z": 0
+    },
+    "heading": -2.356194490192345,
+    "vehicleProfile": "ranger_mini_v3",
+    "parkingSpaceId": "diagonal45_w90_aisle240_rear",
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "approach",
+    "routes": [
+      {
+        "id": "approach",
+        "waypoints": [
+          {
+            "position": {
+              "x": 1077.0,
+              "y": 2073.8,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ],
+    "parkingOperation": "out",
+    "parkingExit": {
+      "position": {
+        "x": 1077.0,
+        "y": 2073.8,
+        "z": 0
+      },
+      "heading": 0
+    }
+  },
+  "agents": [
+    {
+      "id": "pedestrian",
+      "name": "pedestrian",
+      "type": "AGENT_TYPE_PEDESTRIAN",
+      "position": {
+        "x": 1075.5232453370559,
+        "y": 2072.81,
+        "z": 0
+      },
+      "heading": 1.5707963267948966,
+      "speed": 0.65,
+      "size": {
+        "x": 0.4,
+        "y": 0.4,
+        "z": 1.7
+      },
+      "enabled": false,
+      "activeRouteId": "pedestrian-route",
+      "routes": [
+        {
+          "id": "pedestrian-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "position": {
+                "x": 1075.5232453370559,
+                "y": 2072.81,
+                "z": 0
+              },
+              "speed": 0.65
+            },
+            {
+              "position": {
+                "x": 1075.5232453370559,
+                "y": 2074.79,
+                "z": 0
+              },
+              "speed": 0.65
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vehicle_left",
+      "name": "vehicle_left",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 1071.4,
+        "y": 2074.45,
+        "z": 0
+      },
+      "heading": 0.0,
+      "speed": 0.45,
+      "size": {
+        "x": 0.72,
+        "y": 0.5,
+        "z": 0.66
+      },
+      "enabled": false,
+      "activeRouteId": "vehicle_left-route",
+      "routes": [
+        {
+          "id": "vehicle_left-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "position": {
+                "x": 1071.4,
+                "y": 2074.45,
+                "z": 0
+              },
+              "speed": 0.45
+            },
+            {
+              "position": {
+                "x": 1078.6,
+                "y": 2074.45,
+                "z": 0
+              },
+              "speed": 0.45
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vehicle_right",
+      "name": "vehicle_right",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 1078.6,
+        "y": 2074.45,
+        "z": 0
+      },
+      "heading": 3.141592653589793,
+      "speed": 0.45,
+      "size": {
+        "x": 0.72,
+        "y": 0.5,
+        "z": 0.66
+      },
+      "enabled": false,
+      "activeRouteId": "vehicle_right-route",
+      "routes": [
+        {
+          "id": "vehicle_right-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "position": {
+                "x": 1078.6,
+                "y": 2074.45,
+                "z": 0
+              },
+              "speed": 0.45
+            },
+            {
+              "position": {
+                "x": 1071.4,
+                "y": 2074.45,
+                "z": 0
+              },
+              "speed": 0.45
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "ego-maneuver-zone",
+      "name": "泊车途中启动动态交通",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "targetAgentId": "ego",
+      "center": {
+        "x": 1075.3898007455173,
+        "y": 2075.707998797052,
+        "z": 0
+      },
+      "radius": 0.06,
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "pedestrian"
+        }
+      ]
+    },
+    {
+      "id": "pedestrian-clear",
+      "name": "驶离干扰区并清场",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "targetAgentId": "pedestrian",
+      "center": {
+        "x": 1075.5232453370559,
+        "y": 2074.79,
+        "z": 0
+      },
+      "radius": 0.03,
+      "actions": [
+        {
+          "kind": "ACTION_DISABLE",
+          "targetAgentId": "pedestrian"
+        },
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "vehicle_left"
+        }
+      ]
+    },
+    {
+      "id": "vehicle_left-clear",
+      "name": "驶离干扰区并清场",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "targetAgentId": "vehicle_left",
+      "center": {
+        "x": 1078.6,
+        "y": 2074.45,
+        "z": 0
+      },
+      "radius": 0.35,
+      "actions": [
+        {
+          "kind": "ACTION_DISABLE",
+          "targetAgentId": "vehicle_left"
+        },
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "vehicle_right"
+        }
+      ]
+    },
+    {
+      "id": "vehicle_right-clear",
+      "name": "驶离干扰区并清场",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "targetAgentId": "vehicle_right",
+      "center": {
+        "x": 1071.4,
+        "y": 2074.45,
+        "z": 0
+      },
+      "radius": 0.35,
+      "actions": [
+        {
+          "kind": "ACTION_DISABLE",
+          "targetAgentId": "vehicle_right"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "kind": "worldsim-suite",
+  "version": 1,
+  "name": "质量指标复测 · 会车/nudge/组合 · 24 扰动场景",
+  "mapId": "1haolou_202608241047qh",
+  "scenarios": [
+    "clear_slow.worldsim.scenario.json",
+    "clear_fast.worldsim.scenario.json",
+    "lead_slow.worldsim.scenario.json",
+    "lead_fast.worldsim.scenario.json",
+    "meeting_fast_slow.worldsim.scenario.json",
+    "meeting_fast_fast.worldsim.scenario.json",
+    "meeting_nudge_late_slow.worldsim.scenario.json",
+    "meeting_nudge_late_fast.worldsim.scenario.json",
+    "meeting_nudge_left_slow.worldsim.scenario.json",
+    "meeting_nudge_left_fast.worldsim.scenario.json",
+    "meeting_nudge_right_slow.worldsim.scenario.json",
+    "meeting_nudge_right_fast.worldsim.scenario.json",
+    "meeting_offset_slow.worldsim.scenario.json",
+    "meeting_offset_fast.worldsim.scenario.json",
+    "meeting_slow_slow.worldsim.scenario.json",
+    "meeting_slow_fast.worldsim.scenario.json",
+    "nudge_alternating_slow.worldsim.scenario.json",
+    "nudge_alternating_fast.worldsim.scenario.json",
+    "nudge_left_slow.worldsim.scenario.json",
+    "nudge_left_fast.worldsim.scenario.json",
+    "nudge_right_slow.worldsim.scenario.json",
+    "nudge_right_fast.worldsim.scenario.json",
+    "successive_meeting_slow.worldsim.scenario.json",
+    "successive_meeting_fast.worldsim.scenario.json"
+  ]
+}

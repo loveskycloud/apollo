@@ -1,0 +1,95 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "21eebef1c135f8c89350b35ff78f4cd2bcd33a283d692961da477f30b52cc0fe",
+  "expectation": "park",
+  "reason": "Motion-triggered clearing hazards: yield safely and complete the original parking mission",
+  "parking": {
+    "space_id": "parallel_w90_aisle240_front",
+    "style": "parallel",
+    "width_m": 0.9,
+    "length_m": 1.4,
+    "aisle_width_m": 2.4,
+    "entry": "front",
+    "goal": [
+      1059.74,
+      2015.45,
+      0.0
+    ],
+    "area": [
+      [
+        1064.0,
+        2015.0
+      ],
+      [
+        1064.0,
+        2012.6
+      ],
+      [
+        1056.0,
+        2012.6
+      ],
+      [
+        1056.0,
+        2015.0
+      ],
+      [
+        1059.3,
+        2015.0
+      ],
+      [
+        1059.3,
+        2015.9
+      ],
+      [
+        1060.7,
+        2015.9
+      ],
+      [
+        1060.7,
+        2015.0
+      ]
+    ],
+    "slot": [
+      [
+        1059.3,
+        2015.0
+      ],
+      [
+        1060.7,
+        2015.0
+      ],
+      [
+        1060.7,
+        2015.9
+      ],
+      [
+        1059.3,
+        2015.9
+      ]
+    ],
+    "operation": "in",
+    "variant": "trigger_pedestrian_cross",
+    "park_goal": [
+      1059.74,
+      2015.45,
+      0.0
+    ],
+    "witness_length_m": 3.7704930320282224
+  },
+  "validity": {
+    "status": "VALID",
+    "reason": "Successful baseline; actor sweeps within driveable area; trigger pose has 0.18 m stopping buffer clear of each sequential actor sweep; sweeps intersect future ego path. This geometry audit does not certify dynamic control."
+  },
+  "parking_dynamic": {
+    "version": 1,
+    "pattern": "pedestrian_cross",
+    "actor_ids": [
+      "pedestrian"
+    ],
+    "minimum_activation_displacement_m": 0.15,
+    "minimum_activation_speed_mps": 0.05,
+    "reference_trigger_s": 2.0,
+    "expectation": "All actors must activate and clear after ego motion; then finish the original parking mission"
+  }
+}

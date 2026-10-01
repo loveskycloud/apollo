@@ -1,0 +1,1247 @@
+{
+  "version": 2,
+  "cases": [
+    {
+      "file": "parallel_w55_aisle120_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w55_aisle120_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w55_aisle120_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w55_aisle120_front__in__pose_offset.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "pose_offset",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w55_aisle120_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w55_aisle120_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w55_aisle120_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w55_aisle120_rear__in__pose_offset.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "pose_offset",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w55_aisle120_rear__in__static_end.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "static_end",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w55_aisle120_rear__in__occupied.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "occupied",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w55_aisle120_rear__in__moving_aisle.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "moving_aisle",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w55_aisle240_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w55_aisle240_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w55_aisle240_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w55_aisle240_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w55_aisle240_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w55_aisle240_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w60_aisle120_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w60_aisle120_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w60_aisle120_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w60_aisle120_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w60_aisle120_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w60_aisle120_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w60_aisle240_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w60_aisle240_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w60_aisle240_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w60_aisle240_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w60_aisle240_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w60_aisle240_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle120_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle120_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle120_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle120_front__in__pose_offset.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "pose_offset",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle120_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle120_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle120_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle120_rear__in__pose_offset.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "pose_offset",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle120_rear__in__static_end.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "static_end",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle120_rear__in__occupied.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "occupied",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle120_rear__in__moving_aisle.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "moving_aisle",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle240_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle240_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle240_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "parallel_w90_aisle240_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle240_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "parallel_w90_aisle240_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "parallel",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w55_aisle120_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w55_aisle120_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w55_aisle120_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w55_aisle120_front__in__pose_offset.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "pose_offset",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w55_aisle120_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w55_aisle120_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w55_aisle120_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w55_aisle120_rear__in__pose_offset.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "pose_offset",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w55_aisle120_rear__in__static_end.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "static_end",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w55_aisle120_rear__in__occupied.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "occupied",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w55_aisle120_rear__in__moving_aisle.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "moving_aisle",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w55_aisle240_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w55_aisle240_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w55_aisle240_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w55_aisle240_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w55_aisle240_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w55_aisle240_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w60_aisle120_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w60_aisle120_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w60_aisle120_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w60_aisle120_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w60_aisle120_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w60_aisle120_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w60_aisle240_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w60_aisle240_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w60_aisle240_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w60_aisle240_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w60_aisle240_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w60_aisle240_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle120_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle120_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle120_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle120_front__in__pose_offset.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "pose_offset",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle120_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle120_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle120_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle120_rear__in__pose_offset.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "pose_offset",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle120_rear__in__static_end.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "static_end",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle120_rear__in__occupied.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "occupied",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle120_rear__in__moving_aisle.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "moving_aisle",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "perpendicular_w90_aisle240_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "perpendicular",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w55_aisle120_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w55_aisle120_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w55_aisle120_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w55_aisle120_front__in__pose_offset.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "pose_offset",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w55_aisle120_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w55_aisle120_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w55_aisle120_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w55_aisle120_rear__in__pose_offset.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "pose_offset",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w55_aisle120_rear__in__static_end.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "static_end",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w55_aisle120_rear__in__occupied.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "occupied",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w55_aisle120_rear__in__moving_aisle.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "moving_aisle",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w55_aisle240_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w55_aisle240_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w55_aisle240_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w55_aisle240_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w55_aisle240_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w55_aisle240_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.55,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w60_aisle120_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w60_aisle120_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w60_aisle120_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w60_aisle120_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w60_aisle120_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w60_aisle120_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.6,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w60_aisle240_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w60_aisle240_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w60_aisle240_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w60_aisle240_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w60_aisle240_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w60_aisle240_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.6,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle120_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle120_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle120_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle120_front__in__pose_offset.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "pose_offset",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle120_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle120_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle120_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle120_rear__in__pose_offset.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "pose_offset",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle120_rear__in__static_end.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "static_end",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle120_rear__in__occupied.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "occupied",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle120_rear__in__moving_aisle.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "moving_aisle",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 1.2,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_front__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_front__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_front__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "front"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_rear__in__base.worldsim.scenario.json",
+      "operation": "in",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_rear__out__base.worldsim.scenario.json",
+      "operation": "out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    },
+    {
+      "file": "diagonal45_w90_aisle240_rear__in_out__base.worldsim.scenario.json",
+      "operation": "in_out",
+      "variant": "base",
+      "style": "diagonal45",
+      "width_m": 0.9,
+      "aisle_width_m": 2.4,
+      "entry": "rear"
+    }
+  ]
+}

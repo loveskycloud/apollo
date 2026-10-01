@@ -1,0 +1,105 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "184ca77e8d06ef442a4af7664a1c5d8e2ab34dcffabdb16930cfd133c604a9fc",
+  "expectation": "park",
+  "reason": "Motion-triggered clearing hazards: yield safely and complete the original parking mission",
+  "parking": {
+    "space_id": "diagonal45_w90_aisle240_rear",
+    "style": "diagonal45",
+    "width_m": 0.9,
+    "length_m": 1.1,
+    "aisle_width_m": 2.4,
+    "entry": "rear",
+    "goal": [
+      1075.5727564927613,
+      2075.8909545442953,
+      -2.356194490192345
+    ],
+    "area": [
+      [
+        1079.0,
+        2075.0
+      ],
+      [
+        1079.0,
+        2072.6
+      ],
+      [
+        1071.0,
+        2072.6
+      ],
+      [
+        1071.0,
+        2075.0
+      ],
+      [
+        1074.045405845398,
+        2075.0
+      ],
+      [
+        1074.681801948466,
+        2075.636396103068
+      ],
+      [
+        1075.4596194077715,
+        2076.414213562373
+      ],
+      [
+        1076.0960155108394,
+        2075.7778174593054
+      ],
+      [
+        1075.318198051534,
+        2075.0000000000005
+      ],
+      [
+        1075.3181980515335,
+        2075.0
+      ]
+    ],
+    "slot": [
+      [
+        1075.318198051534,
+        2075.0000000000005
+      ],
+      [
+        1076.0960155108394,
+        2075.7778174593054
+      ],
+      [
+        1075.4596194077715,
+        2076.414213562373
+      ],
+      [
+        1074.681801948466,
+        2075.636396103068
+      ]
+    ],
+    "operation": "in",
+    "variant": "trigger_pedestrian_then_vehicles",
+    "park_goal": [
+      1075.5727564927613,
+      2075.8909545442953,
+      -2.356194490192345
+    ],
+    "witness_length_m": 4.130812835790056
+  },
+  "validity": {
+    "status": "VALID",
+    "reason": "Successful baseline; actor sweeps within driveable area; trigger pose has 0.18 m stopping buffer clear of each sequential actor sweep; sweeps intersect future ego path. This geometry audit does not certify dynamic control."
+  },
+  "parking_dynamic": {
+    "version": 1,
+    "pattern": "pedestrian_then_vehicles",
+    "actor_ids": [
+      "pedestrian",
+      "vehicle_left",
+      "vehicle_right"
+    ],
+    "minimum_activation_displacement_m": 0.15,
+    "minimum_activation_speed_mps": 0.05,
+    "reference_trigger_s": 2.0,
+    "expectation": "All actors must activate and clear after ego motion; then finish the original parking mission"
+  }
+}

@@ -4,6 +4,8 @@
 
 用户确认的顺序：第一期感知结果；第二期点云；第三期结合图像。
 本期只读取定位、地图/路线、车辆状态及 PerceptionObstacles 的位置、朝向、尺寸、速度。
+本期新增的版本化质量指标、24个交互扰动复测及36种泊车组合见 [QUALITY_PARKING.md](QUALITY_PARKING.md)。
+泊车途中动态障碍的制动、等待、恢复及 48 个 trigger 场景验收见 [PARKING_DYNAMIC_FIX.md](PARKING_DYNAMIC_FIX.md)，本次无需重训 V5。
 不订阅点云/图像，不向策略泄露场景名称、演员脚本或未来真值轨迹。
 目标车辆为 Ranger Mini V3，最高 1 m/s，保持原车身尺寸和道路边界。
 

@@ -1,0 +1,111 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "c59df3c76680fc3e6a5664f5077dd0081f3505000ba7f6537e75ee205d8beb91",
+  "expectation": "park",
+  "reason": "Persistent unrelated motion must not stall parking; real crossing remains a safety test",
+  "parking": {
+    "space_id": "diagonal45_w90_aisle240_rear",
+    "style": "diagonal45",
+    "width_m": 0.9,
+    "length_m": 1.1,
+    "aisle_width_m": 2.4,
+    "entry": "rear",
+    "goal": [
+      1075.5727564927613,
+      2075.8909545442953,
+      -2.356194490192345
+    ],
+    "area": [
+      [
+        1079.0,
+        2075.0
+      ],
+      [
+        1079.0,
+        2072.6
+      ],
+      [
+        1071.0,
+        2072.6
+      ],
+      [
+        1071.0,
+        2075.0
+      ],
+      [
+        1074.045405845398,
+        2075.0
+      ],
+      [
+        1074.681801948466,
+        2075.636396103068
+      ],
+      [
+        1075.4596194077715,
+        2076.414213562373
+      ],
+      [
+        1076.0960155108394,
+        2075.7778174593054
+      ],
+      [
+        1075.318198051534,
+        2075.0000000000005
+      ],
+      [
+        1075.3181980515335,
+        2075.0
+      ]
+    ],
+    "slot": [
+      [
+        1075.318198051534,
+        2075.0000000000005
+      ],
+      [
+        1076.0960155108394,
+        2075.7778174593054
+      ],
+      [
+        1075.4596194077715,
+        2076.414213562373
+      ],
+      [
+        1074.681801948466,
+        2075.636396103068
+      ]
+    ],
+    "operation": "in",
+    "variant": "trigger_relevance_crowd_and_vehicle",
+    "park_goal": [
+      1075.5727564927613,
+      2075.8909545442953,
+      -2.356194490192345
+    ],
+    "witness_length_m": 4.130812835790056
+  },
+  "validity": {
+    "status": "VALID",
+    "reason": "Unchanged successful ego path and area; background swept bodies clear full baseline body corridor by >0.20 m; crossing uses audited separated activation."
+  },
+  "parking_interaction": {
+    "version": 1,
+    "background_actor_ids": [
+      "bystander_0",
+      "bystander_1",
+      "bystander_2",
+      "bystander_3",
+      "bystander_4",
+      "bystander_5",
+      "bystander_6",
+      "bystander_7",
+      "unrelated_vehicle"
+    ],
+    "crossing_actor_id": null,
+    "minimum_moving_fraction": 0.9,
+    "minimum_concurrent_motion_s": 1.0,
+    "baseline_duration_s": 23.1,
+    "maximum_extra_duration_s": 0.5
+  }
+}

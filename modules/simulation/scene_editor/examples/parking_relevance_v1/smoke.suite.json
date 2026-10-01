@@ -1,0 +1,12 @@
+{
+  "kind": "worldsim-suite",
+  "version": 1,
+  "name": "泊车无关运动与围观 V1 · smoke",
+  "mapId": "ranger_parking_lab_v1",
+  "scenarios": [
+    "parallel_w90_aisle240_front__in__trigger_relevance_crowd_present.worldsim.scenario.json",
+    "perpendicular_w90_aisle240_front__out__trigger_relevance_vehicle_passing.worldsim.scenario.json",
+    "diagonal45_w90_aisle240_front__in__trigger_relevance_crowd_and_vehicle.worldsim.scenario.json",
+    "diagonal45_w90_aisle240_front__out__trigger_relevance_crowd_and_crossing.worldsim.scenario.json"
+  ]
+}

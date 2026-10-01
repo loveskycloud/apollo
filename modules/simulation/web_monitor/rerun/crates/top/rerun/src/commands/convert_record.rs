@@ -8,7 +8,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use parking_lot::Mutex;
 
-const CONVERTER_VERSION: &str = "semantic-mcap-v16";
+const CONVERTER_VERSION: &str = "semantic-mcap-v17";
 
 #[derive(Clone, Debug)]
 pub struct ConvertJob {

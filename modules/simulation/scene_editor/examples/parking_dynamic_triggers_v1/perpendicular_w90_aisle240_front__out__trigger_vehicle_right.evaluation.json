@@ -1,0 +1,95 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "66ae6fa55c4029bceaaec9690ef256dd339b54e3f91c420a645e2fec5c016c36",
+  "expectation": "park",
+  "reason": "Motion-triggered clearing hazards: yield safely and complete the original parking mission",
+  "parking": {
+    "space_id": "perpendicular_w90_aisle240_front",
+    "style": "perpendicular",
+    "width_m": 0.9,
+    "length_m": 1.1,
+    "aisle_width_m": 2.4,
+    "entry": "front",
+    "goal": [
+      1062.0,
+      2043.8,
+      0
+    ],
+    "area": [
+      [
+        1064.0,
+        2045.0
+      ],
+      [
+        1064.0,
+        2042.6
+      ],
+      [
+        1056.0,
+        2042.6
+      ],
+      [
+        1056.0,
+        2045.0
+      ],
+      [
+        1059.55,
+        2045.0
+      ],
+      [
+        1059.55,
+        2046.1
+      ],
+      [
+        1060.45,
+        2046.1
+      ],
+      [
+        1060.45,
+        2045.0
+      ]
+    ],
+    "slot": [
+      [
+        1060.45,
+        2045.0
+      ],
+      [
+        1060.45,
+        2046.1
+      ],
+      [
+        1059.55,
+        2046.1
+      ],
+      [
+        1059.55,
+        2045.0
+      ]
+    ],
+    "operation": "out",
+    "variant": "trigger_vehicle_right",
+    "park_goal": [
+      1060.0,
+      2045.29,
+      1.5707963267948966
+    ],
+    "witness_length_m": 6.650849930017129
+  },
+  "validity": {
+    "status": "VALID",
+    "reason": "Successful baseline; actor sweeps within driveable area; trigger pose has 0.18 m stopping buffer clear of each sequential actor sweep; sweeps intersect future ego path. This geometry audit does not certify dynamic control."
+  },
+  "parking_dynamic": {
+    "version": 1,
+    "pattern": "vehicle_right",
+    "actor_ids": [
+      "vehicle_right"
+    ],
+    "minimum_activation_displacement_m": 0.15,
+    "minimum_activation_speed_mps": 0.05,
+    "reference_trigger_s": 4.4,
+    "expectation": "All actors must activate and clear after ego motion; then finish the original parking mission"
+  }
+}

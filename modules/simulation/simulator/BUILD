@@ -96,6 +96,7 @@ apollo_cc_library(
         "//modules/map:apollo_map",
         "//modules/simulation/logsim:apollo_simulation_logsim",
         "//modules/simulation/worldsim:worldsim_core",
+        "//modules/simulation/ml_planning/proto:ml_planning_config_proto",
         "//modules/simulation/logsim/proto:simulation_task_proto",
         "//modules/simulation/simulator/proto:module_trigger_proto",
         "//modules/simulation/simulator/proto:scenario_proto",

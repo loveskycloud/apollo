@@ -1,0 +1,80 @@
+{
+  "id": "meeting_offset_fast",
+  "name": "Quality regression · meeting_offset_fast",
+  "duration": 120,
+  "mapId": "1haolou_202608241047qh",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 10001.631126230091,
+      "y": 9000005.198574401,
+      "z": 0
+    },
+    "heading": 3.1065732939952384,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "route",
+    "routes": [
+      {
+        "id": "route",
+        "waypoints": [
+          {
+            "position": {
+              "x": 9976.646454106765,
+              "y": 9000006.073879428,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ],
+    "vehicleProfile": "ranger_mini_v3"
+  },
+  "agents": [
+    {
+      "id": "actor-0",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 9985.325014393471,
+        "y": 9000005.309555313,
+        "z": 0
+      },
+      "heading": 6.248165949446535,
+      "speed": 0.5175,
+      "size": {
+        "x": 0.8,
+        "y": 0.35,
+        "z": 0.7
+      },
+      "activeRouteId": "actor-route",
+      "routes": [
+        {
+          "id": "actor-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "position": {
+                "x": 9985.325014393471,
+                "y": 9000005.309555313,
+                "z": 0
+              },
+              "speed": 0.5175
+            },
+            {
+              "position": {
+                "x": 10002.81428487984,
+                "y": 9000004.696841795,
+                "z": 0
+              },
+              "speed": 0.5175
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": []
+}

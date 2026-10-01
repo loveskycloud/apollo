@@ -71,6 +71,12 @@ message EgoConfig {
   optional string vehicle_profile = 6;
   optional string active_route_id = 7;
   repeated Route routes = 8;
+  // Standard PlanningCommand.parking_command target (HDMap ParkingSpace ID).
+  // Empty means ordinary lane-follow. Heading comes from the map space.
+  optional string parking_space_id = 9;
+  // "in" (default), "out", "in_out". Exit pose is an explicit user goal.
+  optional string parking_operation = 10 [default = "in"];
+  optional Waypoint parking_exit = 11;
 }
 
 enum TriggerType {

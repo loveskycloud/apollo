@@ -29,7 +29,7 @@ class QualityTest(unittest.TestCase):
         self.assertEqual(self.metrics([-.01,.01]*20)["status"], "PASS")
 
     def test_imminent_oncoming_actor_is_not_clear_road_but_far_actor_is(self):
-        self.assertEqual(self.metrics([.3]*20,1,oncoming_ttc=6)["status"],"PASS")
+        self.assertEqual(self.metrics([.3]*20,1,oncoming_ttc=6)["status"],"NOT_EVALUATED")
         self.assertEqual(self.metrics([.3]*20,1,oncoming_ttc=20)["status"],"FAIL")
 
     def test_oncoming_anticipation_does_not_excuse_weaving(self):

@@ -1,0 +1,41 @@
+{
+  "id": "perpendicular_w60_aisle240_rear__in__base",
+  "name": "perpendicular_w60_aisle240_rear__in__base",
+  "mapId": "ranger_parking_lab_v1",
+  "duration": 120,
+  "description": "Parking lab: perpendicular, width=0.6m, aisle=2.4m, rear entry. Full-body containment required.",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 1013,
+      "y": 2043.8,
+      "z": 0
+    },
+    "heading": 0,
+    "vehicleProfile": "ranger_mini_v3",
+    "parkingSpaceId": "perpendicular_w60_aisle240_rear",
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "approach",
+    "routes": [
+      {
+        "id": "approach",
+        "waypoints": [
+          {
+            "position": {
+              "x": 1015,
+              "y": 2043.8,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ],
+    "parkingOperation": "in"
+  },
+  "agents": [],
+  "triggers": []
+}

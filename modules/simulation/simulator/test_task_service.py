@@ -9,6 +9,20 @@ from bag_diff import compare, algorithm_payload
 
 
 class QueueTests(unittest.TestCase):
+    def test_parking_scorecard_keeps_failed_suite_member_without_analysis(self):
+        with tempfile.TemporaryDirectory() as path:
+            service=TaskService(path)
+            try:
+                source=SIM_PKG/'scene_editor/examples/parking_missions_v2/parallel_w55_aisle120_rear__out__base.worldsim.scenario.json'
+                service.jobs['failed']={'id':'failed','stage':'failed','suite_id':'parking','config':{'source':str(source)}}
+                service.jobs['unrelated']={'id':'unrelated','stage':'failed','suite_id':'another','config':{'source':str(source)}}
+                result=service.request({'action':'parking_scorecard','suite_id':'parking'})['scorecard']
+                self.assertEqual(result['case_count'],1)
+                self.assertEqual(result['rates']['exit_success'],{'passed':0,'total':1,'rate':0.})
+                self.assertEqual(result['safety']['collision_evaluated_cases'],0)
+                with self.assertRaisesRegex(ValueError,'requires a suite_id'):service.request({'action':'parking_scorecard'})
+            finally:service.close()
+
     def test_final_native_progress_is_published_to_live_job_events(self):
         with tempfile.TemporaryDirectory() as path:
             service = TaskService(path)

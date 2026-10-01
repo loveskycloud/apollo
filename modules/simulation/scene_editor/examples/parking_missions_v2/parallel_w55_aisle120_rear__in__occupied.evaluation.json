@@ -1,0 +1,89 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "a4cc6cd1ec56e04f3e96c940359040cb1ad4bf98fb77098f91cfbf895338c00d",
+  "expectation": "parking_hold",
+  "reason": "Occupied target: hold safely at start; do not count as parking success",
+  "parking": {
+    "space_id": "parallel_w55_aisle120_rear",
+    "style": "parallel",
+    "width_m": 0.55,
+    "length_m": 1.4,
+    "aisle_width_m": 1.2,
+    "entry": "rear",
+    "goal": [
+      1015.26,
+      2000.275,
+      3.141592653589793
+    ],
+    "area": [
+      [
+        1019.0,
+        2000.0
+      ],
+      [
+        1019.0,
+        1998.8
+      ],
+      [
+        1011.0,
+        1998.8
+      ],
+      [
+        1011.0,
+        2000.0
+      ],
+      [
+        1014.3,
+        2000.0
+      ],
+      [
+        1014.3,
+        2000.5500000000002
+      ],
+      [
+        1015.7,
+        2000.5500000000002
+      ],
+      [
+        1015.7,
+        2000.0
+      ]
+    ],
+    "slot": [
+      [
+        1014.3,
+        2000.0
+      ],
+      [
+        1015.7,
+        2000.0
+      ],
+      [
+        1015.7,
+        2000.5500000000002
+      ],
+      [
+        1014.3,
+        2000.5500000000002
+      ]
+    ],
+    "operation": "in",
+    "variant": "occupied",
+    "park_goal": [
+      1015.26,
+      2000.275,
+      3.141592653589793
+    ],
+    "hold_goal": [
+      1013,
+      1999.4,
+      0
+    ],
+    "witness_length_m": null
+  },
+  "validity": {
+    "status": "VALID",
+    "reason": "Occupied goal requires safe rejection"
+  }
+}

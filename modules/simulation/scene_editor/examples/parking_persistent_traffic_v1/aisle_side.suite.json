@@ -1,0 +1,20 @@
+{
+  "kind": "worldsim-suite",
+  "version": 1,
+  "name": "泊车旁车停留不清场 V1 · aisle_side",
+  "mapId": "ranger_parking_lab_v1",
+  "scenarios": [
+    "diagonal45_w90_aisle240_front__in__trigger_persistent_aisle_side.worldsim.scenario.json",
+    "diagonal45_w90_aisle240_front__out__trigger_persistent_aisle_side.worldsim.scenario.json",
+    "diagonal45_w90_aisle240_rear__in__trigger_persistent_aisle_side.worldsim.scenario.json",
+    "diagonal45_w90_aisle240_rear__out__trigger_persistent_aisle_side.worldsim.scenario.json",
+    "parallel_w90_aisle240_front__in__trigger_persistent_aisle_side.worldsim.scenario.json",
+    "parallel_w90_aisle240_front__out__trigger_persistent_aisle_side.worldsim.scenario.json",
+    "parallel_w90_aisle240_rear__in__trigger_persistent_aisle_side.worldsim.scenario.json",
+    "parallel_w90_aisle240_rear__out__trigger_persistent_aisle_side.worldsim.scenario.json",
+    "perpendicular_w90_aisle240_front__in__trigger_persistent_aisle_side.worldsim.scenario.json",
+    "perpendicular_w90_aisle240_front__out__trigger_persistent_aisle_side.worldsim.scenario.json",
+    "perpendicular_w90_aisle240_rear__in__trigger_persistent_aisle_side.worldsim.scenario.json",
+    "perpendicular_w90_aisle240_rear__out__trigger_persistent_aisle_side.worldsim.scenario.json"
+  ]
+}

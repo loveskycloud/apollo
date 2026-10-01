@@ -1,0 +1,111 @@
+{
+  "id": "parallel_w90_aisle240_front__out__trigger_relevance_vehicle_passing",
+  "name": "parallel_w90_aisle240_front__out__trigger_relevance_vehicle_passing",
+  "mapId": "ranger_parking_lab_v1",
+  "duration": 120,
+  "description": "持续轻微移动的围观行人/无关行驶车辆不应阻断泊车；混合真实横穿时仍须安全让行。",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 1059.74,
+      "y": 2015.45,
+      "z": 0
+    },
+    "heading": 0.0,
+    "vehicleProfile": "ranger_mini_v3",
+    "parkingSpaceId": "parallel_w90_aisle240_front",
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "approach",
+    "routes": [
+      {
+        "id": "approach",
+        "waypoints": [
+          {
+            "position": {
+              "x": 1062.0,
+              "y": 2013.8,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ],
+    "parkingOperation": "out",
+    "parkingExit": {
+      "position": {
+        "x": 1062.0,
+        "y": 2013.8,
+        "z": 0
+      },
+      "heading": 0
+    }
+  },
+  "agents": [
+    {
+      "id": "unrelated_vehicle",
+      "name": "unrelated_vehicle",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 1056.4,
+        "y": 2012.8999999999999,
+        "z": 0
+      },
+      "heading": 0.0,
+      "speed": 0.12,
+      "size": {
+        "x": 0.72,
+        "y": 0.5,
+        "z": 0.66
+      },
+      "enabled": false,
+      "activeRouteId": "unrelated_vehicle-route",
+      "routes": [
+        {
+          "id": "unrelated_vehicle-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "position": {
+                "x": 1056.4,
+                "y": 2012.8999999999999,
+                "z": 0
+              },
+              "speed": 0.12
+            },
+            {
+              "position": {
+                "x": 1063.6,
+                "y": 2012.8999999999999,
+                "z": 0
+              },
+              "speed": 0.12
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "activate-unrelated-motion",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "targetAgentId": "ego",
+      "center": {
+        "x": 1059.9620111497902,
+        "y": 2015.3320606071131,
+        "z": 0
+      },
+      "radius": 0.06,
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "unrelated_vehicle"
+        }
+      ]
+    }
+  ]
+}

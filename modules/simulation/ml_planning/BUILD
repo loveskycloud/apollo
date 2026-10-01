@@ -6,7 +6,7 @@ package(default_visibility = ["//visibility:public"])
 
 apollo_cc_library(
     name = "planner",
-    hdrs = ["planner.h", "reference_line.h", "model_config.h"],
+    hdrs = ["planner.h", "reference_line.h", "model_config.h", "parking_planner.h", "parking_motion.h"],
 )
 
 apollo_component(

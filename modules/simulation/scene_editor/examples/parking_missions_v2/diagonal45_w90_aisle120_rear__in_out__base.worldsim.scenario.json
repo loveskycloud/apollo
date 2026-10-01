@@ -1,0 +1,49 @@
+{
+  "id": "diagonal45_w90_aisle120_rear__in_out__base",
+  "name": "diagonal45_w90_aisle120_rear__in_out__base",
+  "mapId": "ranger_parking_lab_v1",
+  "duration": 120,
+  "description": "Parking lab: diagonal45, width=0.9m, aisle=1.2m, rear entry. Full-body containment required.",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 1043,
+      "y": 2074.4,
+      "z": 0
+    },
+    "heading": 0,
+    "vehicleProfile": "ranger_mini_v3",
+    "parkingSpaceId": "diagonal45_w90_aisle120_rear",
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "approach",
+    "routes": [
+      {
+        "id": "approach",
+        "waypoints": [
+          {
+            "position": {
+              "x": 1045,
+              "y": 2074.4,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ],
+    "parkingOperation": "in_out",
+    "parkingExit": {
+      "position": {
+        "x": 1047.0,
+        "y": 2074.4,
+        "z": 0
+      },
+      "heading": 0
+    }
+  },
+  "agents": [],
+  "triggers": []
+}

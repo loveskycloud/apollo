@@ -1,0 +1,82 @@
+{
+  "id": "perpendicular_w90_aisle120_rear__in__moving_aisle",
+  "name": "perpendicular_w90_aisle120_rear__in__moving_aisle",
+  "mapId": "ranger_parking_lab_v1",
+  "duration": 120,
+  "description": "Parking lab: perpendicular, width=0.9m, aisle=1.2m, rear entry. Full-body containment required.",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 1043,
+      "y": 2044.4,
+      "z": 0
+    },
+    "heading": 0,
+    "vehicleProfile": "ranger_mini_v3",
+    "parkingSpaceId": "perpendicular_w90_aisle120_rear",
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "approach",
+    "routes": [
+      {
+        "id": "approach",
+        "waypoints": [
+          {
+            "position": {
+              "x": 1045,
+              "y": 2044.4,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ],
+    "parkingOperation": "in"
+  },
+  "agents": [
+    {
+      "id": "aisle_car",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 1048.0,
+        "y": 2044.8500000000001,
+        "z": 0
+      },
+      "heading": 3.141592653589793,
+      "speed": 0.5,
+      "size": {
+        "x": 0.5,
+        "y": 0.2,
+        "z": 0.6
+      },
+      "activeRouteId": "leave",
+      "routes": [
+        {
+          "id": "leave",
+          "waypoints": [
+            {
+              "position": {
+                "x": 1048.0,
+                "y": 2044.8500000000001,
+                "z": 0
+              },
+              "speed": 0.5
+            },
+            {
+              "position": {
+                "x": 1040.5,
+                "y": 2044.8500000000001,
+                "z": 0
+              },
+              "speed": 0.5
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": []
+}

@@ -55,7 +55,7 @@ from hd_map import MapMesh, resolve_map, load_map, build_map_meshes
 from google.protobuf.message_factory import GetMessageClass
 from mcap_topic_debug import pool_from_file_descriptor_set
 
-CONVERTER_VERSION = "semantic-mcap-v16"
+CONVERTER_VERSION = "semantic-mcap-v17"
 
 
 def message_time_ns(message):

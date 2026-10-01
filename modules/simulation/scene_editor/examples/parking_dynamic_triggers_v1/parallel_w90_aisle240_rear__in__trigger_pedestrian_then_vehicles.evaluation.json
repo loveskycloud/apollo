@@ -1,0 +1,97 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "bd1b2a5af92f0d1265210cecbcdf2cb5ac46cffc5ad49123608315deb676c2b4",
+  "expectation": "park",
+  "reason": "Motion-triggered clearing hazards: yield safely and complete the original parking mission",
+  "parking": {
+    "space_id": "parallel_w90_aisle240_rear",
+    "style": "parallel",
+    "width_m": 0.9,
+    "length_m": 1.4,
+    "aisle_width_m": 2.4,
+    "entry": "rear",
+    "goal": [
+      1075.26,
+      2015.45,
+      3.141592653589793
+    ],
+    "area": [
+      [
+        1079.0,
+        2015.0
+      ],
+      [
+        1079.0,
+        2012.6
+      ],
+      [
+        1071.0,
+        2012.6
+      ],
+      [
+        1071.0,
+        2015.0
+      ],
+      [
+        1074.3,
+        2015.0
+      ],
+      [
+        1074.3,
+        2015.9
+      ],
+      [
+        1075.7,
+        2015.9
+      ],
+      [
+        1075.7,
+        2015.0
+      ]
+    ],
+    "slot": [
+      [
+        1074.3,
+        2015.0
+      ],
+      [
+        1075.7,
+        2015.0
+      ],
+      [
+        1075.7,
+        2015.9
+      ],
+      [
+        1074.3,
+        2015.9
+      ]
+    ],
+    "operation": "in",
+    "variant": "trigger_pedestrian_then_vehicles",
+    "park_goal": [
+      1075.26,
+      2015.45,
+      3.141592653589793
+    ],
+    "witness_length_m": 3.707354569508672
+  },
+  "validity": {
+    "status": "VALID",
+    "reason": "Successful baseline; actor sweeps within driveable area; trigger pose has 0.18 m stopping buffer clear of each sequential actor sweep; sweeps intersect future ego path. This geometry audit does not certify dynamic control."
+  },
+  "parking_dynamic": {
+    "version": 1,
+    "pattern": "pedestrian_then_vehicles",
+    "actor_ids": [
+      "pedestrian",
+      "vehicle_left",
+      "vehicle_right"
+    ],
+    "minimum_activation_displacement_m": 0.15,
+    "minimum_activation_speed_mps": 0.05,
+    "reference_trigger_s": 2.0,
+    "expectation": "All actors must activate and clear after ego motion; then finish the original parking mission"
+  }
+}
