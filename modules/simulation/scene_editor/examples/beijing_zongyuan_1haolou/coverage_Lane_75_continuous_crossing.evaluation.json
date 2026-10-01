@@ -1,0 +1,14 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "25c8d4f718ae9a8bf1ea67d00dabbf3be708896d81e09c4b077d790482d27f6b",
+  "expectation": "yield_then_proceed",
+  "reason": "动态障碍会离开道路，预期合理让行后到达终点。",
+  "audit": {
+    "anchor": "Lane_75",
+    "passages": [],
+    "static_obstacle_clearance_m": 0.12,
+    "road_margin_m": 0.02,
+    "vehicle_width_m": 0.5
+  }
+}

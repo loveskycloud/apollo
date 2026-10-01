@@ -1,0 +1,14 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "6e5268f8d55f60e5e0ef99fdccb5b4c4f2a74806a6dcd23cc0a3b293878472af",
+  "expectation": "reach_goal",
+  "reason": "道路可通行，预期无碰撞到达终点。",
+  "audit": {
+    "anchor": "Lane_10",
+    "passages": [],
+    "static_obstacle_clearance_m": 0.12,
+    "road_margin_m": 0.02,
+    "vehicle_width_m": 0.5
+  }
+}

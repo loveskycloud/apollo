@@ -1,0 +1,7 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "be55bcb20188c4f91bba548326296f4b2d117dd779b91e3414b776b987ecaef0",
+  "expectation": "yield_then_proceed",
+  "reason": "动态障碍会离开道路，预期合理让行后到达终点。"
+}

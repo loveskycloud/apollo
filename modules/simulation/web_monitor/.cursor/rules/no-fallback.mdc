@@ -1,0 +1,32 @@
+---
+description: No silent fallbacks — expose failures immediately
+alwaysApply: true
+---
+
+# No Fallback / Fail Loud
+
+Product and agent policy for `web_monitor`:
+
+1. **Do not hide failures** with soft-skip, silent `raw` downgrade, empty UI, or “best effort” paths that look successful.
+2. **Surface the real error** in logs, convert status, HTTP response, or Topic View — so the next fix is obvious.
+3. **Prefer a correct primary path** (e.g. Cyber `ProtoDesc` → FDS, Dreamview-style on-demand decode). If it cannot run, **fail that operation** with a clear message; do not substitute a degraded path unless the user explicitly opts in (named flag).
+4. **Performance limits are not silent fallbacks**: if a render/decode exceeds a budget, show an explicit error (`too large / too deep`) — never truncate without saying so.
+5. **Do not add** `unwrap_or(default_that_hides_bug)`, `continue` on schema errors, or “schemas-only so Topic View looks populated” without payloads — those mask root causes.
+
+## Examples
+
+```text
+BAD:  incomplete protobuf FDS → store as raw → Topic View empty / “looks fine”
+GOOD: incomplete FDS → convert/open returns error naming topic + type
+
+BAD:  SelectionPanel freezes → catch and show nothing
+GOOD: disable heavy path; on-demand DebugString or explicit “render budget exceeded”
+```
+
+## Proto
+
+Follow Cyber / Dreamview Plus intent:
+
+- Records already carry recursive `ProtoDesc` (file + dependencies) via `GetProtoDesc`.
+- Dreamview Plus loads `.proto` by `GetProtoPath` and decodes on demand (cached roots).
+- web_monitor should **use `ProtoDesc` → `FileDescriptorSet`** (or equivalent on-demand decode), not invent silent alternatives.

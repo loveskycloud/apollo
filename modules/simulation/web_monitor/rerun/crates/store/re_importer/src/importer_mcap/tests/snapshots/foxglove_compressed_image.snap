@@ -1,0 +1,26 @@
+---
+source: crates/store/re_importer/src/importer_mcap/tests/util.rs
+expression: snapshot
+input_file: crates/store/re_importer/src/importer_mcap/tests/assets/foxglove_compressed_image.mcap
+---
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ METADATA:                                                                                                                                                                                                               │
+│ * entity_path: /camera/compressed_image                                                                                                                                                                                 │
+│ * id: [**REDACTED**]                                                                                                                                                                                                    │
+│ * version: [**REDACTED**]                                                                                                                                                                                               │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ ┌─────────────────────────────────────┬───────────────────────────────┬───────────────────────────────┬────────────────────────────────────┬─────────────────────────────────────┬────────────────────────────────────┐ │
+│ │ RowId                               ┆ message_time                  ┆ publish_time                  ┆ CoordinateFrame:frame              ┆ EncodedImage:blob                   ┆ EncodedImage:media_type            │ │
+│ │ ---                                 ┆ ---                           ┆ ---                           ┆ ---                                ┆ ---                                 ┆ ---                                │ │
+│ │ type: non-null FixedSizeBinary(16)  ┆ type: Timestamp(ns)           ┆ type: Timestamp(ns)           ┆ type: List(Utf8)                   ┆ type: List(List(non-null UInt8))    ┆ type: List(Utf8)                   │ │
+│ │ ARROW:extension:metadata:           ┆ index_name: message_time      ┆ index_name: publish_time      ┆ archetype: CoordinateFrame         ┆ archetype: EncodedImage             ┆ archetype: EncodedImage            │ │
+│ │ {"namespace":"row"}                 ┆ is_sorted: true               ┆ is_sorted: true               ┆ component: CoordinateFrame:frame   ┆ component: EncodedImage:blob        ┆ component: EncodedImage:media_type │ │
+│ │ ARROW:extension:name: TUID          ┆ kind: index                   ┆ kind: index                   ┆ component_type: TransformFrameId   ┆ component_type: Blob                ┆ component_type: MediaType          │ │
+│ │ is_sorted: true                     ┆                               ┆                               ┆ kind: data                         ┆ kind: data                          ┆ kind: data                         │ │
+│ │ kind: control                       ┆                               ┆                               ┆                                    ┆                                     ┆                                    │ │
+│ ╞═════════════════════════════════════╪═══════════════════════════════╪═══════════════════════════════╪════════════════════════════════════╪═════════════════════════════════════╪════════════════════════════════════╡ │
+│ │ row_[**REDACTED**]                  ┆ 2026-04-02T13:27:59.717618944 ┆ 2026-04-02T13:27:59.717618944 ┆ [camera_optical_frame_image_plane] ┆ [[255, 216, 255, 224, 0, 16, 74,    ┆ [image/jpeg]                       │ │
+│ │                                     ┆                               ┆                               ┆                                    ┆ 70, 73, 70, 0, 1, 1, 0, 0, 1, 0, 1, ┆                                    │ │
+│ │                                     ┆                               ┆                               ┆                                    ┆ 0, 0, 255, 219, 0, 67, 0, 8, 6…     ┆                                    │ │
+│ └─────────────────────────────────────┴───────────────────────────────┴───────────────────────────────┴────────────────────────────────────┴─────────────────────────────────────┴────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

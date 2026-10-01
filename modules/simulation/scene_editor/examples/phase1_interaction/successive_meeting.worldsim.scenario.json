@@ -1,0 +1,120 @@
+{
+  "id": "phase1-successive_meeting",
+  "name": "Phase 1 successive_meeting",
+  "duration": 90,
+  "mapId": "1haolou_202608241047qh",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 10001.631126230091,
+      "y": 9000005.198574401,
+      "z": 0
+    },
+    "heading": 3.1065732939952384,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "route",
+    "routes": [
+      {
+        "id": "route",
+        "waypoints": [
+          {
+            "position": {
+              "x": 9976.646454106765,
+              "y": 9000006.073879428,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "agents": [
+    {
+      "id": "actor-0",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 9987.62640520411,
+        "y": 9000005.3089782,
+        "z": 0
+      },
+      "heading": 6.248165947585031,
+      "speed": 0.4,
+      "size": {
+        "x": 0.8,
+        "y": 0.35,
+        "z": 0.7
+      },
+      "activeRouteId": "actor-route",
+      "routes": [
+        {
+          "id": "actor-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "position": {
+                "x": 9987.62640520411,
+                "y": 9000005.3089782,
+                "z": 0
+              },
+              "speed": 0.4
+            },
+            {
+              "position": {
+                "x": 10003.116901921343,
+                "y": 9000004.766289085,
+                "z": 0
+              },
+              "speed": 0.4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actor-1",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 9980.630697009563,
+        "y": 9000005.554063607,
+        "z": 0
+      },
+      "heading": 6.248165947585095,
+      "speed": 0.4,
+      "size": {
+        "x": 0.8,
+        "y": 0.35,
+        "z": 0.7
+      },
+      "activeRouteId": "actor-route",
+      "routes": [
+        {
+          "id": "actor-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "position": {
+                "x": 9980.630697009563,
+                "y": 9000005.554063607,
+                "z": 0
+              },
+              "speed": 0.4
+            },
+            {
+              "position": {
+                "x": 10003.116901921343,
+                "y": 9000004.766289085,
+                "z": 0
+              },
+              "speed": 0.4
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": []
+}

@@ -1,0 +1,95 @@
+{
+  "id": "phase1-meeting_nudge_left",
+  "name": "Phase 1 meeting_nudge_left",
+  "duration": 90,
+  "mapId": "1haolou_202608241047qh",
+  "ego": {
+    "id": "ego",
+    "position": {
+      "x": 10001.631126230091,
+      "y": 9000005.198574401,
+      "z": 0
+    },
+    "heading": 3.1065732939952384,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.66
+    },
+    "activeRouteId": "route",
+    "routes": [
+      {
+        "id": "route",
+        "waypoints": [
+          {
+            "position": {
+              "x": 9976.646454106765,
+              "y": 9000006.073879428,
+              "z": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "agents": [
+    {
+      "id": "actor-0",
+      "type": "AGENT_TYPE_STATIC",
+      "position": {
+        "x": 9991.626053476597,
+        "y": 9000005.22889261,
+        "z": 0
+      },
+      "heading": 3.106573295856742,
+      "speed": 0,
+      "size": {
+        "x": 0.5,
+        "y": 0.22,
+        "z": 0.7
+      }
+    },
+    {
+      "id": "actor-1",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 9983.628157420379,
+        "y": 9000005.429039268,
+        "z": 0
+      },
+      "heading": 6.248165947585095,
+      "speed": 0.45,
+      "size": {
+        "x": 0.8,
+        "y": 0.35,
+        "z": 0.7
+      },
+      "activeRouteId": "actor-route",
+      "routes": [
+        {
+          "id": "actor-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "position": {
+                "x": 9983.628157420379,
+                "y": 9000005.429039268,
+                "z": 0
+              },
+              "speed": 0.45
+            },
+            {
+              "position": {
+                "x": 10003.116201677334,
+                "y": 9000004.746301347,
+                "z": 0
+              },
+              "speed": 0.45
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": []
+}

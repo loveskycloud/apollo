@@ -1,0 +1,133 @@
+{
+  "algorithm": "PPO",
+  "environment": "vectorized Frenet surrogate (not WorldSim)",
+  "seed": 20261001,
+  "envs": 64,
+  "requested_steps": 1000000,
+  "actual_steps": 1007616,
+  "observation_dim": 48,
+  "stage": "interaction",
+  "init_weights": "models/v4/unified.weights",
+  "init_weights_sha256": "ed91f812703ed6b761d2c868b1fcdf5e7b10762cca3edf56ffc782a327fa5f31",
+  "resume": null,
+  "resume_sha256": null,
+  "sources": {
+    "env.py": "fdfd5b2235ff5930ea4916331d8be48a30c4045b76dcff6c6f39d3b711c808d4",
+    "train.py": "24087f686370e2d12df7679abcb333b38f925abf3f50c9bc087fadaac0fb624e",
+    "interaction_observation.py": "8cd3ca75e20275d5ddb820c849c9a88f6f7adc154201f0fe59355ea1c97ad476"
+  },
+  "history": [
+    {
+      "steps": 8192,
+      "return": -844.0575048307531,
+      "success_rate": 0.0,
+      "collision_rate": 1.0,
+      "offroad_rate": 0.0,
+      "elapsed_s": 0.26
+    },
+    {
+      "steps": 90112,
+      "return": -177.05802487413072,
+      "success_rate": 0.76,
+      "collision_rate": 0.21,
+      "offroad_rate": 0.02,
+      "elapsed_s": 2.61
+    },
+    {
+      "steps": 172032,
+      "return": -168.643292799147,
+      "success_rate": 0.73,
+      "collision_rate": 0.19,
+      "offroad_rate": 0.06,
+      "elapsed_s": 4.94
+    },
+    {
+      "steps": 253952,
+      "return": -112.12870192086133,
+      "success_rate": 0.85,
+      "collision_rate": 0.14,
+      "offroad_rate": 0.0,
+      "elapsed_s": 7.28
+    },
+    {
+      "steps": 335872,
+      "return": -50.517328864398515,
+      "success_rate": 0.91,
+      "collision_rate": 0.07,
+      "offroad_rate": 0.0,
+      "elapsed_s": 9.74
+    },
+    {
+      "steps": 417792,
+      "return": -151.59341304856832,
+      "success_rate": 0.81,
+      "collision_rate": 0.15,
+      "offroad_rate": 0.03,
+      "elapsed_s": 12.08
+    },
+    {
+      "steps": 499712,
+      "return": -121.5272915212884,
+      "success_rate": 0.82,
+      "collision_rate": 0.15,
+      "offroad_rate": 0.03,
+      "elapsed_s": 14.42
+    },
+    {
+      "steps": 581632,
+      "return": -90.19506420232955,
+      "success_rate": 0.86,
+      "collision_rate": 0.11,
+      "offroad_rate": 0.01,
+      "elapsed_s": 16.76
+    },
+    {
+      "steps": 663552,
+      "return": -129.56794849288252,
+      "success_rate": 0.83,
+      "collision_rate": 0.15,
+      "offroad_rate": 0.02,
+      "elapsed_s": 19.1
+    },
+    {
+      "steps": 745472,
+      "return": -78.38041957306743,
+      "success_rate": 0.86,
+      "collision_rate": 0.11,
+      "offroad_rate": 0.03,
+      "elapsed_s": 22.05
+    },
+    {
+      "steps": 827392,
+      "return": -92.40464271155638,
+      "success_rate": 0.87,
+      "collision_rate": 0.12,
+      "offroad_rate": 0.0,
+      "elapsed_s": 24.53
+    },
+    {
+      "steps": 909312,
+      "return": -103.34588439274273,
+      "success_rate": 0.84,
+      "collision_rate": 0.15,
+      "offroad_rate": 0.01,
+      "elapsed_s": 26.93
+    },
+    {
+      "steps": 991232,
+      "return": -84.49686394726854,
+      "success_rate": 0.88,
+      "collision_rate": 0.09,
+      "offroad_rate": 0.02,
+      "elapsed_s": 29.34
+    },
+    {
+      "steps": 1007616,
+      "return": -127.49353562341294,
+      "success_rate": 0.85,
+      "collision_rate": 0.14,
+      "offroad_rate": 0.0,
+      "elapsed_s": 29.82
+    }
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "id": "beijing-diagonal_02",
+  "name": "diagonal · 2",
+  "description": "Family 7/12; variant 2/10; location-triggered deterministic held-out WorldSim regression.",
+  "duration": 90,
+  "mapId": "beijing_zongyuan_1haolou",
+  "simConfig": {
+    "planning": true,
+    "control": false,
+    "prediction": true,
+    "routing": true
+  },
+  "agents": [
+    {
+      "id": "walker",
+      "name": "walker",
+      "type": "AGENT_TYPE_PEDESTRIAN",
+      "position": {
+        "x": 9989.844411170343,
+        "y": 9000007.212488,
+        "z": 0
+      },
+      "heading": -2.249316795923443,
+      "speed": 0.375,
+      "size": {
+        "x": 0.4,
+        "y": 0.4,
+        "z": 1.7
+      },
+      "color": "#F5B654",
+      "enabled": false,
+      "activeRouteId": "walker-route",
+      "routes": [
+        {
+          "id": "walker-route",
+          "name": "walker-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "id": "walker-route-0",
+              "position": {
+                "x": 9989.844411170343,
+                "y": 9000007.212488,
+                "z": 0
+              },
+              "speed": 0.375
+            },
+            {
+              "id": "walker-route-1",
+              "position": {
+                "x": 9986.5492912252,
+                "y": 9000003.125351517,
+                "z": 0
+              },
+              "speed": 0.375
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "walker-position",
+      "name": "walker-position",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "walker"
+        }
+      ],
+      "center": {
+        "x": 9993.286245740903,
+        "y": 9000005.49092628,
+        "z": 0
+      },
+      "size": {
+        "x": 1.5,
+        "y": 3,
+        "z": 3
+      },
+      "heading": 3.106573292133608,
+      "targetAgentId": "ego"
+    }
+  ],
+  "ego": {
+    "id": "ego",
+    "name": "ego",
+    "position": {
+      "x": 10000.881586066409,
+      "y": 9000005.224833554,
+      "z": 0
+    },
+    "heading": 3.106573295364492,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.8
+    },
+    "activeRouteId": "ego-route",
+    "routes": [
+      {
+        "id": "ego-route",
+        "name": "ego-route",
+        "pathType": "polyline",
+        "waypoints": [
+          {
+            "id": "ego-route-0",
+            "position": {
+              "x": 10000.881586066409,
+              "y": 9000005.224833554,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 3.106573292133799
+          },
+          {
+            "id": "ego-route-1",
+            "position": {
+              "x": 9970.650132797107,
+              "y": 9000006.283952633,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 3.106573292133799
+          }
+        ]
+      }
+    ],
+    "vehicleProfile": ""
+  }
+}

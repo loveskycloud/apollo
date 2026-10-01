@@ -1,0 +1,71 @@
+{
+  "id": "coverage_Lane_33_reverse_clear",
+  "name": "Lane_33_reverse · clear",
+  "description": "Map coverage: Lane_10_reverse -> Lane_33_reverse -> Lane_9_reverse; family clear; anchor Lane_33_reverse. Expected: reach_goal. 道路可通行，预期无碰撞到达终点。",
+  "duration": 180,
+  "mapId": "beijing_zongyuan_1haolou",
+  "simConfig": {
+    "planning": true,
+    "control": false,
+    "prediction": true,
+    "routing": true
+  },
+  "agents": [],
+  "triggers": [],
+  "ego": {
+    "id": "ego",
+    "name": "ego",
+    "position": {
+      "x": 9952.632986124263,
+      "y": 9000007.917743994,
+      "z": 0
+    },
+    "heading": -0.02874919412854679,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.8
+    },
+    "activeRouteId": "ego-route",
+    "routes": [
+      {
+        "id": "ego-route",
+        "name": "ego",
+        "pathType": "polyline",
+        "waypoints": [
+          {
+            "id": "ego-0",
+            "position": {
+              "x": 9952.632986124263,
+              "y": 9000007.917743994,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -0.02874919412854679
+          },
+          {
+            "id": "ego-1",
+            "position": {
+              "x": 9959.523566239457,
+              "y": 9000007.185584672,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -0.4928486229049325
+          },
+          {
+            "id": "ego-2",
+            "position": {
+              "x": 9970.4146079527,
+              "y": 9000006.29220231,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -0.03501936145599408
+          }
+        ]
+      }
+    ],
+    "vehicleProfile": ""
+  }
+}

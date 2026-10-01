@@ -1,0 +1,3 @@
+# Training only; runtime inference uses the C++ component, without libtorch.
+numpy>=1.24,<3
+torch>=2.2

@@ -1,0 +1,1302 @@
+{
+  "lanes": 14,
+  "scenes": [
+    {
+      "id": "roadside_000_Lane_9",
+      "lane": "Lane_9",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.08,
+          "remaining_width_m": 1.5896251610341006,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_001_Lane_10",
+      "lane": "Lane_10",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.08,
+          "remaining_width_m": 1.7266837646014523,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_002_Lane_42",
+      "lane": "Lane_42",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.08,
+          "remaining_width_m": 1.5274158304880454,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_003_Lane_47",
+      "lane": "Lane_47",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.08,
+          "remaining_width_m": 1.5565465853669398,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_004_Lane_62",
+      "lane": "Lane_62",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.08,
+          "remaining_width_m": 0.9369448398900105,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_005_Lane_66",
+      "lane": "Lane_66",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.08,
+          "remaining_width_m": 0.9480216469155699,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_006_Lane_72",
+      "lane": "Lane_72",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.08,
+          "remaining_width_m": 1.5655536720378378,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_007_Lane_9_reverse",
+      "lane": "Lane_9_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.08,
+          "remaining_width_m": 1.5958736142912104,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_008_Lane_10_reverse",
+      "lane": "Lane_10_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.08,
+          "remaining_width_m": 1.7402998746833933,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_009_Lane_42_reverse",
+      "lane": "Lane_42_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.08,
+          "remaining_width_m": 1.526374907704942,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_010_Lane_47_reverse",
+      "lane": "Lane_47_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.08,
+          "remaining_width_m": 1.5585619993540223,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_011_Lane_62_reverse",
+      "lane": "Lane_62_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.08,
+          "remaining_width_m": 0.9377928378458281,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_012_Lane_66_reverse",
+      "lane": "Lane_66_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.08,
+          "remaining_width_m": 0.953082208872781,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_013_Lane_72_reverse",
+      "lane": "Lane_72_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.08,
+          "remaining_width_m": 1.5655430354768813,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_014_Lane_9",
+      "lane": "Lane_9",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.098,
+          "remaining_width_m": 1.5736437114855037,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_015_Lane_10",
+      "lane": "Lane_10",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.098,
+          "remaining_width_m": 1.710017855750775,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_016_Lane_42",
+      "lane": "Lane_42",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.098,
+          "remaining_width_m": 1.509285579630771,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_017_Lane_47",
+      "lane": "Lane_47",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.098,
+          "remaining_width_m": 1.538798217543931,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_018_Lane_62",
+      "lane": "Lane_62",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.098,
+          "remaining_width_m": 0.9190507939180613,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_019_Lane_66",
+      "lane": "Lane_66",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.098,
+          "remaining_width_m": 0.9306526637422033,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_020_Lane_72",
+      "lane": "Lane_72",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.098,
+          "remaining_width_m": 1.5475523424587188,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_021_Lane_9_reverse",
+      "lane": "Lane_9_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.098,
+          "remaining_width_m": 1.5758547031527559,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_022_Lane_10_reverse",
+      "lane": "Lane_10_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.098,
+          "remaining_width_m": 1.7209528020401228,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_023_Lane_42_reverse",
+      "lane": "Lane_42_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.098,
+          "remaining_width_m": 1.508504898580891,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_024_Lane_47_reverse",
+      "lane": "Lane_47_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.098,
+          "remaining_width_m": 1.540309733056269,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_025_Lane_62_reverse",
+      "lane": "Lane_62_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.098,
+          "remaining_width_m": 0.9196867881179557,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_026_Lane_66_reverse",
+      "lane": "Lane_66_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.098,
+          "remaining_width_m": 0.9344468940595695,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_027_Lane_72_reverse",
+      "lane": "Lane_72_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.098,
+          "remaining_width_m": 1.547544365038008,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_028_Lane_9",
+      "lane": "Lane_9",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.5569659078091749,
+          "minimum_required_m": 0.57
+        },
+        {
+          "actor_id": "static-1",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.558461146234797,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_029_Lane_10",
+      "lane": "Lane_10",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.6587087473040945,
+          "minimum_required_m": 0.57
+        },
+        {
+          "actor_id": "static-1",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.7330920652108537,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_030_Lane_42",
+      "lane": "Lane_42",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.4911553287734964,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_031_Lane_47",
+      "lane": "Lane_47",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.516646579461093,
+          "minimum_required_m": 0.57
+        },
+        {
+          "actor_id": "static-1",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.526459628877328,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_032_Lane_62",
+      "lane": "Lane_62",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 0.9011567479461126,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_033_Lane_66",
+      "lane": "Lane_66",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 0.9132836805688368,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_034_Lane_72",
+      "lane": "Lane_72",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.5295737138810876,
+          "minimum_required_m": 0.57
+        },
+        {
+          "actor_id": "static-1",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.529522993561638,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_035_Lane_9_reverse",
+      "lane": "Lane_9_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.556532270570937,
+          "minimum_required_m": 0.57
+        },
+        {
+          "actor_id": "static-1",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.5550367649669767,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_036_Lane_10_reverse",
+      "lane": "Lane_10_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.7365860064993264,
+          "minimum_required_m": 0.57
+        },
+        {
+          "actor_id": "static-1",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.6614790274954943,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_037_Lane_42_reverse",
+      "lane": "Lane_42_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.4906348894568406,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_038_Lane_47_reverse",
+      "lane": "Lane_47_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.5264718333507243,
+          "minimum_required_m": 0.57
+        },
+        {
+          "actor_id": "static-1",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.5166340549965835,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_039_Lane_62_reverse",
+      "lane": "Lane_62_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 0.9015807383900835,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_040_Lane_66_reverse",
+      "lane": "Lane_66_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 0.915811579246358,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_041_Lane_72_reverse",
+      "lane": "Lane_72_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.529522993904846,
+          "minimum_required_m": 0.57
+        },
+        {
+          "actor_id": "static-1",
+          "intrusion_m": 0.11599999999999999,
+          "remaining_width_m": 1.529573713537928,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_042_Lane_9",
+      "lane": "Lane_9",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.134,
+          "remaining_width_m": 1.5357020590269497,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_043_Lane_10",
+      "lane": "Lane_10",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.134,
+          "remaining_width_m": 1.6765092284554268,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_044_Lane_42",
+      "lane": "Lane_42",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.134,
+          "remaining_width_m": 1.4730250779162222,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_045_Lane_47",
+      "lane": "Lane_47",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.134,
+          "remaining_width_m": 1.5033014818979131,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_046_Lane_62",
+      "lane": "Lane_62",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.134,
+          "remaining_width_m": 0.8832627019741638,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_047_Lane_66",
+      "lane": "Lane_66",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.134,
+          "remaining_width_m": 0.8959146973954702,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_048_Lane_72",
+      "lane": "Lane_72",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.134,
+          "remaining_width_m": 1.5115496833004807,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_049_Lane_9_reverse",
+      "lane": "Lane_9_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.134,
+          "remaining_width_m": 1.5417967025577517,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_050_Lane_10_reverse",
+      "lane": "Lane_10_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.134,
+          "remaining_width_m": 1.6824371868403984,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_051_Lane_42_reverse",
+      "lane": "Lane_42_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.134,
+          "remaining_width_m": 1.47276488033279,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_052_Lane_47_reverse",
+      "lane": "Lane_47_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.134,
+          "remaining_width_m": 1.5038052004607625,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_053_Lane_62_reverse",
+      "lane": "Lane_62_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.134,
+          "remaining_width_m": 0.8834746886622112,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_054_Lane_66_reverse",
+      "lane": "Lane_66_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.134,
+          "remaining_width_m": 0.8971762644331466,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_055_Lane_72_reverse",
+      "lane": "Lane_72_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.134,
+          "remaining_width_m": 1.5115470241602615,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_056_Lane_9",
+      "lane": "Lane_9",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.152,
+          "remaining_width_m": 1.5197206094700226,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_057_Lane_10",
+      "lane": "Lane_10",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.152,
+          "remaining_width_m": 1.6598433196047497,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_058_Lane_42",
+      "lane": "Lane_42",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.152,
+          "remaining_width_m": 1.4548948270589477,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_059_Lane_47",
+      "lane": "Lane_47",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.152,
+          "remaining_width_m": 1.4855531140749043,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_060_Lane_62",
+      "lane": "Lane_62",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.152,
+          "remaining_width_m": 0.8653686560022148,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_061_Lane_66",
+      "lane": "Lane_66",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.152,
+          "remaining_width_m": 0.8785457142221037,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_062_Lane_72",
+      "lane": "Lane_72",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.152,
+          "remaining_width_m": 1.4935483537213614,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_063_Lane_9_reverse",
+      "lane": "Lane_9_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.152,
+          "remaining_width_m": 1.5217777914276367,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_064_Lane_10_reverse",
+      "lane": "Lane_10_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.152,
+          "remaining_width_m": 1.6630901141971282,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_065_Lane_42_reverse",
+      "lane": "Lane_42_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.152,
+          "remaining_width_m": 1.4548948712087395,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_066_Lane_47_reverse",
+      "lane": "Lane_47_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.152,
+          "remaining_width_m": 1.485552934163009,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_067_Lane_62_reverse",
+      "lane": "Lane_62_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.152,
+          "remaining_width_m": 0.865368638934339,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_068_Lane_66_reverse",
+      "lane": "Lane_66_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.152,
+          "remaining_width_m": 0.8785409496199349,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_069_Lane_72_reverse",
+      "lane": "Lane_72_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.152,
+          "remaining_width_m": 1.4935483537213885,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_070_Lane_9",
+      "lane": "Lane_9",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.5029659078091748,
+          "minimum_required_m": 0.57
+        },
+        {
+          "actor_id": "static-1",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.504461146234797,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_071_Lane_10",
+      "lane": "Lane_10",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.6047087473040946,
+          "minimum_required_m": 0.57
+        },
+        {
+          "actor_id": "static-1",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.6790920652108539,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_072_Lane_42",
+      "lane": "Lane_42",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.4367645762016732,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_073_Lane_47",
+      "lane": "Lane_47",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.4626465794610932,
+          "minimum_required_m": 0.57
+        },
+        {
+          "actor_id": "static-1",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.4724596288773282,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_074_Lane_62",
+      "lane": "Lane_62",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 0.8474746100302659,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_075_Lane_66",
+      "lane": "Lane_66",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 0.8611767310487373,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_076_Lane_72",
+      "lane": "Lane_72",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.4755737138810878,
+          "minimum_required_m": 0.57
+        },
+        {
+          "actor_id": "static-1",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.475522993561638,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_077_Lane_9_reverse",
+      "lane": "Lane_9_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.5025322705709372,
+          "minimum_required_m": 0.57
+        },
+        {
+          "actor_id": "static-1",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.501036764966977,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_078_Lane_10_reverse",
+      "lane": "Lane_10_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.6825860064993265,
+          "minimum_required_m": 0.57
+        },
+        {
+          "actor_id": "static-1",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.6074790274954942,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_079_Lane_42_reverse",
+      "lane": "Lane_42_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.4370248620846888,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_080_Lane_47_reverse",
+      "lane": "Lane_47_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.4724718333507243,
+          "minimum_required_m": 0.57
+        },
+        {
+          "actor_id": "static-1",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.4626340549965837,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_081_Lane_62_reverse",
+      "lane": "Lane_62_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 0.8472625892064669,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_082_Lane_66_reverse",
+      "lane": "Lane_66_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 0.8599056348067238,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_083_Lane_72_reverse",
+      "lane": "Lane_72_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.4755229939048462,
+          "minimum_required_m": 0.57
+        },
+        {
+          "actor_id": "static-1",
+          "intrusion_m": 0.16999999999999998,
+          "remaining_width_m": 1.4755737135379279,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_084_Lane_9",
+      "lane": "Lane_9",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.188,
+          "remaining_width_m": 1.4817789570195807,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_085_Lane_10",
+      "lane": "Lane_10",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.188,
+          "remaining_width_m": 1.6263346737575055,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_086_Lane_42",
+      "lane": "Lane_42",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.188,
+          "remaining_width_m": 1.4186343253443987,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_087_Lane_47",
+      "lane": "Lane_47",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.188,
+          "remaining_width_m": 1.4500563776530317,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_088_Lane_62",
+      "lane": "Lane_62",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.188,
+          "remaining_width_m": 0.8295805640583171,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_089_Lane_66",
+      "lane": "Lane_66",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.188,
+          "remaining_width_m": 0.8438077478753707,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_090_Lane_72",
+      "lane": "Lane_72",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.188,
+          "remaining_width_m": 1.4575456945631233,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_091_Lane_9_reverse",
+      "lane": "Lane_9_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.188,
+          "remaining_width_m": 1.487719790824513,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_092_Lane_10_reverse",
+      "lane": "Lane_10_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.188,
+          "remaining_width_m": 1.6245745357662063,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_093_Lane_42_reverse",
+      "lane": "Lane_42_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.188,
+          "remaining_width_m": 1.4191548529606381,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_094_Lane_47_reverse",
+      "lane": "Lane_47_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.188,
+          "remaining_width_m": 1.449048402420557,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_095_Lane_62_reverse",
+      "lane": "Lane_62_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.188,
+          "remaining_width_m": 0.8291565394785947,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_096_Lane_66_reverse",
+      "lane": "Lane_66_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.188,
+          "remaining_width_m": 0.8412703199935123,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_097_Lane_72_reverse",
+      "lane": "Lane_72_reverse",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.188,
+          "remaining_width_m": 1.4575510128436417,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_098_Lane_9",
+      "lane": "Lane_9",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.20600000000000002,
+          "remaining_width_m": 1.4657975074540994,
+          "minimum_required_m": 0.57
+        }
+      ]
+    },
+    {
+      "id": "roadside_099_Lane_10",
+      "lane": "Lane_10",
+      "passages": [
+        {
+          "actor_id": "static-0",
+          "intrusion_m": 0.20600000000000002,
+          "remaining_width_m": 1.6096687270659173,
+          "minimum_required_m": 0.57
+        }
+      ]
+    }
+  ],
+  "map_sha256": "f1a40484a04c8ba042ca88575ff996c95ddbf1135d82460cf3197549ce81e905"
+}

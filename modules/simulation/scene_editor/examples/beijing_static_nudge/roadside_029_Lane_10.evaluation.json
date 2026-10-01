@@ -1,0 +1,26 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "94c114e2db7f354229ae650bc3e2ba0cdbaff7877ff488851703c59b661cdf1f",
+  "expectation": "reach_goal",
+  "reason": "静态路边障碍保留可通行宽度，必须无碰撞通过，停车不计成功。",
+  "audit": {
+    "passages": [
+      {
+        "actor_id": "static-0",
+        "intrusion_m": 0.11599999999999999,
+        "remaining_width_m": 1.6587087473040945,
+        "minimum_required_m": 0.57
+      },
+      {
+        "actor_id": "static-1",
+        "intrusion_m": 0.11599999999999999,
+        "remaining_width_m": 1.7330920652108537,
+        "minimum_required_m": 0.57
+      }
+    ],
+    "vehicle_width_m": 0.5,
+    "static_obstacle_clearance_m": 0.05,
+    "scope": "Necessary passage width check; native swept-path validation required."
+  }
+}

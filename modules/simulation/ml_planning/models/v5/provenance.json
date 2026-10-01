@@ -1,0 +1,40 @@
+{
+  "version": "v5",
+  "status": "deployed_phase1_26_scene_acceptance",
+  "format": "MLP_V3",
+  "observation_dim": 48,
+  "weights_sha256": "3fc32f3eaf825a0554e097b1432f341faf40454560f3ae404bacb2bb0c9ae1ab",
+  "parent_weights": "models/v4/unified.weights",
+  "parent_sha256": "ed91f812703ed6b761d2c868b1fcdf5e7b10762cca3edf56ffc782a327fa5f31",
+  "selected_lineage": [
+    "train-round1",
+    "train-round2"
+  ],
+  "selected_additional_steps": 5013504,
+  "all_experiments_steps": 15024128,
+  "training": "PPO / perception-only Frenet surrogate; not native WorldSim",
+  "selected_runtime_nudge_training": false,
+  "notes": "Selected round2 actor; rounds3/4 retained but rejected. Perception-only Ranger <=1 m/s; perfect_planning validation, not vehicle Control validation.",
+  "evidence": "data/simulation/phase1-20261001",
+  "validation_status": "26/26 native scenarios PASS including Web Monitor driving quality; V4 comparison 24/26; independent 256-episode surrogate comparison retained",
+  "native_acceptance": {
+    "final-candidate": {
+      "path": "data/simulation/phase1-20261001/final-candidate/summary.json",
+      "sha256": "18266fd688cffa19f32c900ef56c3cf41c4256141aa61321bc520f65cdba90ba"
+    },
+    "final-v4": {
+      "path": "data/simulation/phase1-20261001/final-v4/summary.json",
+      "sha256": "30906ae8526a0a2d1d8dcb6e9e0e26abfa0ac7ce3641e23a3b5bc40c2f975dcb"
+    }
+  },
+  "heldout_report": "data/simulation/phase1-20261001/heldout-final.json",
+  "web_monitor_jobs": [
+    "fe9d219159cc4195",
+    "e0b3730029f24385"
+  ],
+  "runtime_provenance": "data/simulation/phase1-20261001/final-candidate/provenance.json",
+  "inference_parity": {
+    "observations": 19226,
+    "max_abs_error": 1.021405182655144e-14
+  }
+}

@@ -1,0 +1,12 @@
+<package format="2">
+  <name>web-monitor</name>
+  <version>local</version>
+  <description>Apollo simulation web monitor based on Rerun 0.37.1 viewer (AD UI fork)</description>
+  <maintainer email="apollo-support@baidu.com">Apollo</maintainer>
+  <license>Apache License 2.0</license>
+  <type>module</type>
+  <src_path url="https://github.com/ApolloAuto/apollo">//modules/simulation/web_monitor</src_path>
+  <depend type="binary" repo_name="cyber">cyber</depend>
+  <depend>common</depend>
+  <builder>bazel</builder>
+</package>

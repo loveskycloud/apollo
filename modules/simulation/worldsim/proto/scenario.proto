@@ -1,0 +1,145 @@
+syntax = "proto2";
+
+package apollo.simulation.worldsim;
+
+// Scenario IR shared by scene_editor export and WorldSim loader.
+// JSON export uses protobuf JSON mapping (proto3 JSON names / camelCase via tooling).
+
+message Vec3 {
+  optional double x = 1 [default = 0];
+  optional double y = 2 [default = 0];
+  optional double z = 3 [default = 0];
+}
+
+message Waypoint {
+  optional string id = 1;
+  optional Vec3 position = 2;
+  optional double heading = 3;
+  optional double speed = 4;
+  // Cubic Bezier control points (absolute ENU). Used when Route.path_type = "bezier".
+  optional Vec3 handle_in = 5;
+  optional Vec3 handle_out = 6;
+}
+
+message Route {
+  optional string id = 1;
+  optional string name = 2;
+  repeated Waypoint waypoints = 3;
+  // "polyline" (default / vehicles) | "bezier" (pedestrian free-space spline)
+  optional string path_type = 4;
+}
+
+enum AgentType {
+  AGENT_TYPE_UNKNOWN = 0;
+  AGENT_TYPE_EGO = 1;
+  AGENT_TYPE_VEHICLE = 2;
+  AGENT_TYPE_PEDESTRIAN = 3;
+  AGENT_TYPE_BICYCLE = 4;
+  AGENT_TYPE_TRUCK = 5;
+  AGENT_TYPE_LOADER = 6;
+  AGENT_TYPE_STATIC = 7;
+  AGENT_TYPE_IDM = 8;
+}
+
+message AgentConfig {
+  optional string id = 1;
+  optional string name = 2;
+  optional AgentType type = 3;
+  optional Vec3 position = 4;
+  optional double heading = 5 [default = 0];
+  optional double speed = 6 [default = 0];
+  optional Vec3 size = 7;
+  optional string color = 8;
+  optional string active_route_id = 9;
+  repeated Route routes = 10;
+  // IDM / smart-agent parameters (optional).
+  optional double desired_speed = 11;
+  optional double min_gap = 12;
+  optional double time_headway = 13;
+  optional double max_accel = 14;
+  optional double comfortable_decel = 15;
+  // Default true. When false, agent holds until Trigger enable / set_speed.
+  optional bool enabled = 16 [default = true];
+}
+
+message EgoConfig {
+  optional string id = 1 [default = "ego"];
+  optional string name = 2 [default = "Ego"];
+  optional Vec3 position = 3;
+  optional double heading = 4 [default = 0];
+  optional Vec3 size = 5;
+  optional string vehicle_profile = 6;
+  optional string active_route_id = 7;
+  repeated Route routes = 8;
+}
+
+enum TriggerType {
+  TRIGGER_TYPE_UNKNOWN = 0;
+  TRIGGER_TYPE_TIME = 1;
+  TRIGGER_TYPE_LOCATION = 2;
+  TRIGGER_TYPE_AGENT_DISTANCE = 3;
+  TRIGGER_TYPE_SPEED = 4;
+  TRIGGER_TYPE_BEHAVIOR = 5;
+}
+
+enum BehaviorActionKind {
+  ACTION_UNKNOWN = 0;
+  ACTION_SET_SPEED = 1;
+  ACTION_START_ROUTE = 2;
+  ACTION_STOP = 3;
+  ACTION_SWITCH_ROUTE = 4;
+  ACTION_ENABLE = 5;
+  ACTION_DISABLE = 6;
+}
+
+message BehaviorAction {
+  optional BehaviorActionKind kind = 1;
+  optional string target_agent_id = 2;
+  optional double speed = 3;
+  optional string route_id = 4;
+}
+
+message TriggerConfig {
+  optional string id = 1;
+  optional string name = 2;
+  optional TriggerType type = 3;
+  repeated BehaviorAction actions = 4;
+
+  // time
+  optional double time = 10;
+  // location
+  optional Vec3 center = 11;
+  optional Vec3 size = 12;
+  optional double heading = 13;
+  optional double radius = 14;
+  optional string target_agent_id = 15;
+  // agent_distance
+  optional string agent_a_id = 16;
+  optional string agent_b_id = 17;
+  optional double distance = 18;
+  optional string compare = 19;  // "less" | "greater"
+  // speed
+  optional double speed = 20;
+  // behavior
+  optional string source_agent_id = 21;
+  optional string event = 22;  // arrived | stopped | started
+}
+
+message SimModulesConfig {
+  optional bool planning = 1 [default = true];
+  optional bool control = 2 [default = false];
+  optional bool prediction = 3 [default = true];
+  optional bool routing = 4 [default = true];
+}
+
+message Scenario {
+  optional string id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  optional double duration = 4 [default = 60];
+  optional string map_id = 5;
+  optional SimModulesConfig sim_config = 6;
+  optional EgoConfig ego = 7;
+  repeated AgentConfig agents = 8;
+  repeated TriggerConfig triggers = 9;
+}

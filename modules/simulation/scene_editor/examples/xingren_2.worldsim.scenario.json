@@ -1,0 +1,143 @@
+{
+  "id": "244c851a-bff8-472c-a73b-375e77c88200",
+  "name": "空白场景",
+  "description": "",
+  "duration": 60,
+  "mapId": "1haolou_20260902_v1",
+  "simConfig": {
+    "planning": true,
+    "control": true,
+    "prediction": true,
+    "routing": true
+  },
+  "agents": [
+    {
+      "id": "031f4a47-2f9c-4bb6-9a16-de77660fd769",
+      "name": "Worker 031f",
+      "type": "AGENT_TYPE_PEDESTRIAN",
+      "position": {
+        "x": 9956.503440063945,
+        "y": 9000009.246018823,
+        "z": 1
+      },
+      "heading": -1.595619376359364,
+      "speed": 0.6,
+      "size": {
+        "x": 0.6,
+        "y": 0.6,
+        "z": 1.7
+      },
+      "color": "#2ecc71",
+      "enabled": true,
+      "activeRouteId": "4eb18c9e-3455-4f16-945e-9c29ef9657cc",
+      "routes": [
+        {
+          "id": "4eb18c9e-3455-4f16-945e-9c29ef9657cc",
+          "name": "route 1",
+          "pathType": "bezier",
+          "waypoints": [
+            {
+              "id": "6cdfb0d1-c9fa-4c87-bf1d-fd5daeba8e96",
+              "position": {
+                "x": 9956.503440063945,
+                "y": 9000009.246018823,
+                "z": 0
+              },
+              "speed": 0.6,
+              "handleOut": {
+                "x": 9956.67043593909,
+                "y": 9000003.473816063,
+                "z": 0
+              }
+            },
+            {
+              "id": "5cdce0a8-b966-486d-8159-af6c947710c9",
+              "position": {
+                "x": 9957.00442768938,
+                "y": 8999996.190125383,
+                "z": 0
+              },
+              "speed": 0.6,
+              "heading": -1.595619376359364,
+              "handleIn": {
+                "x": 9956.837431814236,
+                "y": 8999999.121851582,
+                "z": 0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "199ca0e8-7102-4b3f-af2d-8e534ad1605d",
+      "name": "Location Trigger",
+      "type": "TRIGGER_TYPE_LOCATION",
+      "actions": [
+        {
+          "kind": "ACTION_ENABLE",
+          "targetAgentId": "031f4a47-2f9c-4bb6-9a16-de77660fd769"
+        }
+      ],
+      "center": {
+        "x": 9957.79311700047,
+        "y": 9000006.866884112,
+        "z": 0
+      },
+      "size": {
+        "x": 5.095435710369389,
+        "y": 4.132958545414831,
+        "z": 0.5
+      },
+      "heading": 0,
+      "targetAgentId": "9978aa52-4f1d-43c8-92d0-0664743aba6d"
+    }
+  ],
+  "ego": {
+    "id": "9978aa52-4f1d-43c8-92d0-0664743aba6d",
+    "name": "Ego Mine Truck",
+    "position": {
+      "x": 9984.721187074314,
+      "y": 9000005.803495783,
+      "z": 0.4
+    },
+    "heading": 3.1414182382302416,
+    "size": {
+      "x": 1,
+      "y": 0.5,
+      "z": 0.8
+    },
+    "activeRouteId": "ego_route_fd35",
+    "routes": [
+      {
+        "id": "ego_route_fd35",
+        "name": "route 1",
+        "pathType": "polyline",
+        "waypoints": [
+          {
+            "id": "84f9b1b5-a61c-41d4-93a2-28d727474d3a",
+            "position": {
+              "x": 9984.721187074314,
+              "y": 9000005.803495783,
+              "z": 0
+            },
+            "speed": 0
+          },
+          {
+            "id": "2f1cfa6b-3cf8-4208-9e2f-147d93494ef5",
+            "position": {
+              "x": 9930.12147003161,
+              "y": 9000007.485575275,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 3.1242150343142647
+          }
+        ]
+      }
+    ],
+    "vehicleProfile": ""
+  }
+}

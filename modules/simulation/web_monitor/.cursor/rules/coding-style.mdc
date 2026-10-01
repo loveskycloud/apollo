@@ -1,0 +1,13 @@
+---
+description: General engineering style
+alwaysApply: true
+---
+
+# Coding Style
+
+- Prefer existing project conventions.
+- Keep changes small.
+- Avoid unnecessary abstractions.
+- Add comments for non-obvious decisions, not obvious code.
+- Do not silently change APIs.
+- Do not remove error handling without proving it is unnecessary.

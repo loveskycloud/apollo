@@ -1,0 +1,20 @@
+<package format="2">
+  <name>simulation</name>
+  <version>local</version>
+  <description>Apollo Emulator-LogSim runtime</description>
+  <maintainer email="apollo-support@baidu.com">Apollo</maintainer>
+  <license>Apache License 2.0</license>
+  <type>module</type>
+  <src_path url="https://github.com/ApolloAuto/apollo">//modules/simulation</src_path>
+  <depend repo_name="cyber" lib_names="cyber">cyber</depend>
+  <depend>common</depend>
+  <depend>common-msgs</depend>
+  <depend>map</depend>
+  <!-- Restore together with ML Planning custom command support.
+  <depend>external-command-proto</depend>
+  -->
+  <depend repo_name="com_github_gflags_gflags" lib_names="gflags">3rd-gflags</depend>
+  <depend repo_name="com_google_protobuf" lib_names="protobuf">3rd-protobuf</depend>
+  <depend expose="False">3rd-rules-proto</depend>
+  <depend repo_name="com_google_googletest" lib_names="gtest,gtest_main">3rd-gtest</depend>
+</package>

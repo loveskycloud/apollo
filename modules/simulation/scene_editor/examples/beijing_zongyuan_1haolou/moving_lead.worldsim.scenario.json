@@ -1,0 +1,109 @@
+{
+  "id": "beijing-moving-lead",
+  "name": "动态车辆 · 慢速前车",
+  "description": "Lane_9 / ENU；位置触发，固定路径可重复回放。",
+  "duration": 70,
+  "mapId": "beijing_zongyuan_1haolou",
+  "simConfig": {
+    "planning": true,
+    "control": false,
+    "prediction": true,
+    "routing": true
+  },
+  "agents": [
+    {
+      "id": "lead",
+      "name": "lead",
+      "type": "AGENT_TYPE_VEHICLE",
+      "position": {
+        "x": 9991.63725738075,
+        "y": 9000005.548696412,
+        "z": 0
+      },
+      "heading": 3.106573295313827,
+      "speed": 0.55,
+      "size": {
+        "x": 0.72,
+        "y": 0.5,
+        "z": 0.8
+      },
+      "color": "#F5B654",
+      "enabled": true,
+      "activeRouteId": "lead-route",
+      "routes": [
+        {
+          "id": "lead-route",
+          "name": "lead-route",
+          "pathType": "polyline",
+          "waypoints": [
+            {
+              "id": "lead-route-0",
+              "position": {
+                "x": 9991.63725738075,
+                "y": 9000005.548696412,
+                "z": 0
+              },
+              "speed": 0.55
+            },
+            {
+              "id": "lead-route-1",
+              "position": {
+                "x": 9967.651972142312,
+                "y": 9000006.388989236,
+                "z": 0
+              },
+              "speed": 0.55
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [],
+  "ego": {
+    "id": "ego",
+    "name": "ego",
+    "position": {
+      "x": 10000.631739345203,
+      "y": 9000005.233586604,
+      "z": 0
+    },
+    "heading": 3.1065732953604215,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.8
+    },
+    "activeRouteId": "ego-route",
+    "routes": [
+      {
+        "id": "ego-route",
+        "name": "ego-route",
+        "pathType": "polyline",
+        "waypoints": [
+          {
+            "id": "ego-route-0",
+            "position": {
+              "x": 10000.631739345203,
+              "y": 9000005.233586604,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 3.106573292133799
+          },
+          {
+            "id": "ego-route-1",
+            "position": {
+              "x": 9970.650132797107,
+              "y": 9000006.283952633,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 3.106573292133799
+          }
+        ]
+      }
+    ],
+    "vehicleProfile": ""
+  }
+}

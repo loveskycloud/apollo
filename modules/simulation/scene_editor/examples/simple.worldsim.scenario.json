@@ -1,0 +1,135 @@
+{
+  "id": "71731258-0c2a-445c-9395-19285d82c4c7",
+  "name": "空白场景",
+  "description": "",
+  "duration": 60,
+  "mapId": "6",
+  "simConfig": {
+    "planning": true,
+    "control": true,
+    "prediction": true,
+    "routing": true
+  },
+  "agents": [
+    {
+      "id": "610baa46-2f64-4f96-a9d3-02d0927b61a3",
+      "name": "Worker 610b",
+      "type": "AGENT_TYPE_PEDESTRIAN",
+      "position": {
+        "x": 9982.831127808095,
+        "y": 9000009.64186566,
+        "z": 1
+      },
+      "heading": 3.141592653589793,
+      "speed": 1.2,
+      "size": {
+        "x": 0.6,
+        "y": 0.6,
+        "z": 1.7
+      },
+      "color": "#2ecc71",
+      "enabled": true,
+      "activeRouteId": "a17529d7-ab24-4512-b606-45ac625f947c",
+      "routes": [
+        {
+          "id": "a17529d7-ab24-4512-b606-45ac625f947c",
+          "name": "route 1",
+          "pathType": "bezier",
+          "waypoints": [
+            {
+              "id": "7a5bbdfc-400c-42f0-8c1a-87eeafa1133d",
+              "position": {
+                "x": 9982.831127808095,
+                "y": 9000009.64186566,
+                "z": 0
+              },
+              "speed": 1.2,
+              "handleOut": {
+                "x": 9982.624712526056,
+                "y": 9000006.677914461,
+                "z": 0
+              }
+            },
+            {
+              "id": "002ecfe0-1d12-47aa-bfb1-57609082019c",
+              "position": {
+                "x": 9982.211881961977,
+                "y": 9000000.750012062,
+                "z": 0
+              },
+              "speed": 1.2,
+              "heading": 3.141592653589793,
+              "handleIn": {
+                "x": 9982.418297244016,
+                "y": 9000003.71396326,
+                "z": 0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [],
+  "ego": {
+    "id": "7b118e24-fbc7-46b9-a071-e74d6eb85e3e",
+    "name": "Ego Mine Truck",
+    "position": {
+      "x": 9995.459318184958,
+      "y": 9000005.555781377,
+      "z": 0.4
+    },
+    "heading": 3.1037732290319,
+    "size": {
+      "x": 1,
+      "y": 0.5,
+      "z": 0.8
+    },
+    "activeRouteId": "ego_route_63ff",
+    "routes": [
+      {
+        "id": "ego_route_63ff",
+        "name": "route 1",
+        "pathType": "polyline",
+        "waypoints": [
+          {
+            "id": "93e87b34-aef3-4992-9bfa-c3e50d423706",
+            "position": {
+              "x": 9995.459318184958,
+              "y": 9000005.555781377,
+              "z": 0
+            },
+            "speed": 0
+          },
+          {
+            "id": "7d84b8f8-ad6c-4c88-aa87-6e029f07cbd5",
+            "position": {
+              "x": 9985.462859149065,
+              "y": 9000005.929026887,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 3.1065732958567414
+          }
+        ]
+      },
+      {
+        "id": "50c1a08f-bc07-4cbe-b10e-38f2271a076c",
+        "name": "route 2",
+        "pathType": "polyline",
+        "waypoints": [
+          {
+            "id": "80cc727e-d66d-4d48-9e27-8e30845d1238",
+            "position": {
+              "x": 9985.462859149065,
+              "y": 9000005.929026887,
+              "z": 0
+            },
+            "speed": 0
+          }
+        ]
+      }
+    ],
+    "vehicleProfile": ""
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "37d6413afd454d508ca5cf00f801a09e7137d0b2fbb69a710f416e6009bcf5bf",
+  "expectation": "reach_goal",
+  "reason": "道路可通行，预期无碰撞到达终点。",
+  "audit": {
+    "anchor": "Lane_75",
+    "passages": [
+      {
+        "actor_id": "static-0",
+        "s": 17.010265647862933,
+        "lane_width_m": 1.1180296309003697,
+        "available_passage_m": 1.0790301287771729,
+        "curvature_per_m": 0.46808099241253065,
+        "swept_vehicle_width_m": 0.5792252242960343,
+        "required_passage_m": 0.7192252242960343,
+        "blocked": false
+      }
+    ],
+    "static_obstacle_clearance_m": 0.12,
+    "road_margin_m": 0.02,
+    "vehicle_width_m": 0.5
+  }
+}

@@ -1,0 +1,101 @@
+{
+  "id": "coverage_Lane_50_clear",
+  "name": "Lane_50 · clear",
+  "description": "Map coverage: Lane_47 -> Lane_75 -> Lane_42 -> Lane_50 -> Lane_18 -> Lane_60 -> Lane_19 -> Lane_61; family clear; anchor Lane_50. Expected: reach_goal. 道路可通行，预期无碰撞到达终点。",
+  "duration": 180,
+  "mapId": "beijing_zongyuan_1haolou",
+  "simConfig": {
+    "planning": true,
+    "control": false,
+    "prediction": true,
+    "routing": true
+  },
+  "agents": [],
+  "triggers": [],
+  "ego": {
+    "id": "ego",
+    "name": "ego",
+    "position": {
+      "x": 9911.402901154399,
+      "y": 9000005.699204987,
+      "z": 0
+    },
+    "heading": 3.129414609563937,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.8
+    },
+    "activeRouteId": "ego-route",
+    "routes": [
+      {
+        "id": "ego-route",
+        "name": "ego",
+        "pathType": "polyline",
+        "waypoints": [
+          {
+            "id": "ego-0",
+            "position": {
+              "x": 9911.402901154399,
+              "y": 9000005.699204987,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 3.129414609563937
+          },
+          {
+            "id": "ego-1",
+            "position": {
+              "x": 9910.261050136183,
+              "y": 9000005.713111188,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 3.129414609563937
+          },
+          {
+            "id": "ego-2",
+            "position": {
+              "x": 9904.736716196114,
+              "y": 9000004.680075048,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -2.1813242853027286
+          },
+          {
+            "id": "ego-3",
+            "position": {
+              "x": 9904.07240332018,
+              "y": 9000000.778426366,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -1.6000875847927871
+          },
+          {
+            "id": "ego-4",
+            "position": {
+              "x": 9902.737224657181,
+              "y": 8999998.203286598,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -3.0985045311017525
+          },
+          {
+            "id": "ego-5",
+            "position": {
+              "x": 9901.569745781722,
+              "y": 9000000.99434056,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 1.5433549757292653
+          }
+        ]
+      }
+    ],
+    "vehicleProfile": ""
+  }
+}

@@ -1,0 +1,695 @@
+{
+  "algorithm": "PPO with body-clearance and pass-completion rewards; online geometric pass hold",
+  "parent_sha256": "def23984d280b07da4d57ee51e0b453ea918ff180a09ed0fbed002ef92d9f6fb",
+  "deployed_sha256": "66969b6ccc0fe6c4fbedc2d24ac18d585f22aa1add8f18876b393666fa9977bd",
+  "additional_ppo_surrogate_steps": 16023552,
+  "total_ppo_surrogate_steps": 44064768,
+  "new_native_training_episodes": 0,
+  "prior_native_training_episodes": 144,
+  "ppo_phases": [
+    {
+      "algorithm": "PPO",
+      "environment": "vectorized Frenet surrogate (not WorldSim)",
+      "seed": 7,
+      "envs": 128,
+      "history": [
+        {
+          "steps": 16384,
+          "return": -173.9744469583092,
+          "success_rate": 0.0,
+          "elapsed_s": 0.26
+        },
+        {
+          "steps": 180224,
+          "return": 134.52299263540974,
+          "success_rate": 0.91,
+          "elapsed_s": 2.84
+        },
+        {
+          "steps": 344064,
+          "return": 153.29425513685248,
+          "success_rate": 0.97,
+          "elapsed_s": 5.4
+        },
+        {
+          "steps": 507904,
+          "return": 153.6367564369342,
+          "success_rate": 0.97,
+          "elapsed_s": 7.97
+        },
+        {
+          "steps": 671744,
+          "return": 150.74902195386548,
+          "success_rate": 0.95,
+          "elapsed_s": 10.54
+        },
+        {
+          "steps": 835584,
+          "return": 155.66666911206278,
+          "success_rate": 0.98,
+          "elapsed_s": 13.1
+        },
+        {
+          "steps": 999424,
+          "return": 153.63247547593772,
+          "success_rate": 0.97,
+          "elapsed_s": 15.67
+        },
+        {
+          "steps": 1163264,
+          "return": 146.04287411584275,
+          "success_rate": 0.94,
+          "elapsed_s": 18.26
+        },
+        {
+          "steps": 1327104,
+          "return": 144.75077564686802,
+          "success_rate": 0.94,
+          "elapsed_s": 20.87
+        },
+        {
+          "steps": 1490944,
+          "return": 137.58772093723604,
+          "success_rate": 0.91,
+          "elapsed_s": 23.44
+        },
+        {
+          "steps": 1654784,
+          "return": 150.87806593184655,
+          "success_rate": 0.96,
+          "elapsed_s": 26.01
+        },
+        {
+          "steps": 1818624,
+          "return": 143.82053221101472,
+          "success_rate": 0.95,
+          "elapsed_s": 28.58
+        },
+        {
+          "steps": 1982464,
+          "return": 161.13140292142825,
+          "success_rate": 0.99,
+          "elapsed_s": 31.15
+        },
+        {
+          "steps": 2146304,
+          "return": 161.59271570310943,
+          "success_rate": 0.99,
+          "elapsed_s": 33.72
+        },
+        {
+          "steps": 2310144,
+          "return": 144.5555830700845,
+          "success_rate": 0.94,
+          "elapsed_s": 36.29
+        },
+        {
+          "steps": 2473984,
+          "return": 153.774974700765,
+          "success_rate": 0.96,
+          "elapsed_s": 38.86
+        },
+        {
+          "steps": 2637824,
+          "return": 138.2033525183594,
+          "success_rate": 0.9,
+          "elapsed_s": 41.42
+        },
+        {
+          "steps": 2801664,
+          "return": 162.37981051847157,
+          "success_rate": 0.98,
+          "elapsed_s": 43.99
+        },
+        {
+          "steps": 2965504,
+          "return": 137.01941017015739,
+          "success_rate": 0.92,
+          "elapsed_s": 46.55
+        },
+        {
+          "steps": 3129344,
+          "return": 150.3393037614336,
+          "success_rate": 0.95,
+          "elapsed_s": 49.13
+        },
+        {
+          "steps": 3293184,
+          "return": 152.56121436184307,
+          "success_rate": 0.97,
+          "elapsed_s": 51.69
+        },
+        {
+          "steps": 3457024,
+          "return": 149.12043027396015,
+          "success_rate": 0.95,
+          "elapsed_s": 54.27
+        },
+        {
+          "steps": 3620864,
+          "return": 152.80698507669769,
+          "success_rate": 0.97,
+          "elapsed_s": 56.89
+        },
+        {
+          "steps": 3784704,
+          "return": 158.4148208552159,
+          "success_rate": 0.99,
+          "elapsed_s": 59.46
+        },
+        {
+          "steps": 3948544,
+          "return": 158.5133119377152,
+          "success_rate": 0.98,
+          "elapsed_s": 62.03
+        },
+        {
+          "steps": 4112384,
+          "return": 157.74978121180666,
+          "success_rate": 0.97,
+          "elapsed_s": 64.6
+        },
+        {
+          "steps": 4276224,
+          "return": 149.71554220619092,
+          "success_rate": 0.93,
+          "elapsed_s": 67.17
+        },
+        {
+          "steps": 4440064,
+          "return": 163.7522743291559,
+          "success_rate": 0.98,
+          "elapsed_s": 69.74
+        },
+        {
+          "steps": 4603904,
+          "return": 156.16342495052794,
+          "success_rate": 0.98,
+          "elapsed_s": 72.41
+        },
+        {
+          "steps": 4767744,
+          "return": 157.85874988163974,
+          "success_rate": 0.99,
+          "elapsed_s": 75.05
+        },
+        {
+          "steps": 4931584,
+          "return": 158.2679154645912,
+          "success_rate": 0.98,
+          "elapsed_s": 77.66
+        },
+        {
+          "steps": 5095424,
+          "return": 150.07084525096977,
+          "success_rate": 0.94,
+          "elapsed_s": 80.23
+        },
+        {
+          "steps": 5259264,
+          "return": 152.2887695376414,
+          "success_rate": 0.96,
+          "elapsed_s": 82.92
+        },
+        {
+          "steps": 5423104,
+          "return": 150.24115781524733,
+          "success_rate": 0.97,
+          "elapsed_s": 85.58
+        },
+        {
+          "steps": 5586944,
+          "return": 158.1308457340283,
+          "success_rate": 0.97,
+          "elapsed_s": 88.16
+        },
+        {
+          "steps": 5750784,
+          "return": 158.75860861608385,
+          "success_rate": 0.97,
+          "elapsed_s": 90.74
+        },
+        {
+          "steps": 5914624,
+          "return": 163.79955141186284,
+          "success_rate": 0.99,
+          "elapsed_s": 93.32
+        },
+        {
+          "steps": 6078464,
+          "return": 149.71333296690815,
+          "success_rate": 0.95,
+          "elapsed_s": 95.9
+        },
+        {
+          "steps": 6242304,
+          "return": 151.38870971514476,
+          "success_rate": 0.95,
+          "elapsed_s": 98.6
+        },
+        {
+          "steps": 6406144,
+          "return": 152.29531122931692,
+          "success_rate": 0.96,
+          "elapsed_s": 101.18
+        },
+        {
+          "steps": 6569984,
+          "return": 145.80573894901758,
+          "success_rate": 0.95,
+          "elapsed_s": 103.8
+        },
+        {
+          "steps": 6733824,
+          "return": 147.04414772595499,
+          "success_rate": 0.96,
+          "elapsed_s": 106.4
+        },
+        {
+          "steps": 6897664,
+          "return": 152.8003901768335,
+          "success_rate": 0.95,
+          "elapsed_s": 108.96
+        },
+        {
+          "steps": 7061504,
+          "return": 143.23702378493869,
+          "success_rate": 0.94,
+          "elapsed_s": 111.53
+        },
+        {
+          "steps": 7225344,
+          "return": 158.36060827774799,
+          "success_rate": 0.96,
+          "elapsed_s": 114.14
+        },
+        {
+          "steps": 7389184,
+          "return": 149.8697060569621,
+          "success_rate": 0.95,
+          "elapsed_s": 116.76
+        },
+        {
+          "steps": 7553024,
+          "return": 167.0384690005971,
+          "success_rate": 0.99,
+          "elapsed_s": 119.36
+        },
+        {
+          "steps": 7716864,
+          "return": 153.41293516643591,
+          "success_rate": 0.96,
+          "elapsed_s": 121.92
+        },
+        {
+          "steps": 7880704,
+          "return": 162.28100272756342,
+          "success_rate": 0.98,
+          "elapsed_s": 124.49
+        },
+        {
+          "steps": 8044544,
+          "return": 154.5850791918583,
+          "success_rate": 0.96,
+          "elapsed_s": 127.05
+        },
+        {
+          "steps": 8208384,
+          "return": 152.33825156819918,
+          "success_rate": 0.96,
+          "elapsed_s": 129.62
+        },
+        {
+          "steps": 8372224,
+          "return": 158.790526078536,
+          "success_rate": 0.98,
+          "elapsed_s": 132.23
+        },
+        {
+          "steps": 8536064,
+          "return": 143.5098323171727,
+          "success_rate": 0.93,
+          "elapsed_s": 134.81
+        },
+        {
+          "steps": 8699904,
+          "return": 156.22790348104127,
+          "success_rate": 0.97,
+          "elapsed_s": 137.38
+        },
+        {
+          "steps": 8863744,
+          "return": 157.32420995802119,
+          "success_rate": 0.96,
+          "elapsed_s": 139.95
+        },
+        {
+          "steps": 9027584,
+          "return": 155.38446517394806,
+          "success_rate": 0.96,
+          "elapsed_s": 142.51
+        },
+        {
+          "steps": 9191424,
+          "return": 150.39771350212342,
+          "success_rate": 0.97,
+          "elapsed_s": 145.08
+        },
+        {
+          "steps": 9355264,
+          "return": 158.9947676351411,
+          "success_rate": 0.98,
+          "elapsed_s": 147.65
+        },
+        {
+          "steps": 9519104,
+          "return": 162.8542307217285,
+          "success_rate": 0.99,
+          "elapsed_s": 150.22
+        },
+        {
+          "steps": 9682944,
+          "return": 155.52380993690923,
+          "success_rate": 0.97,
+          "elapsed_s": 152.78
+        },
+        {
+          "steps": 9846784,
+          "return": 163.64077749394,
+          "success_rate": 0.98,
+          "elapsed_s": 155.35
+        },
+        {
+          "steps": 10010624,
+          "return": 148.71711770501992,
+          "success_rate": 0.95,
+          "elapsed_s": 157.95
+        },
+        {
+          "steps": 10174464,
+          "return": 154.4648957390444,
+          "success_rate": 0.96,
+          "elapsed_s": 160.53
+        },
+        {
+          "steps": 10338304,
+          "return": 141.82481256979193,
+          "success_rate": 0.94,
+          "elapsed_s": 163.09
+        },
+        {
+          "steps": 10502144,
+          "return": 156.0681620627452,
+          "success_rate": 0.97,
+          "elapsed_s": 165.65
+        },
+        {
+          "steps": 10665984,
+          "return": 155.42907757314993,
+          "success_rate": 0.97,
+          "elapsed_s": 168.22
+        },
+        {
+          "steps": 10829824,
+          "return": 154.31443010077444,
+          "success_rate": 0.97,
+          "elapsed_s": 170.78
+        },
+        {
+          "steps": 10993664,
+          "return": 154.45978435480424,
+          "success_rate": 0.96,
+          "elapsed_s": 173.35
+        },
+        {
+          "steps": 11157504,
+          "return": 163.57830868763813,
+          "success_rate": 1.0,
+          "elapsed_s": 175.92
+        },
+        {
+          "steps": 11321344,
+          "return": 144.9404341890959,
+          "success_rate": 0.94,
+          "elapsed_s": 178.49
+        },
+        {
+          "steps": 11485184,
+          "return": 156.56099257834543,
+          "success_rate": 0.96,
+          "elapsed_s": 181.05
+        },
+        {
+          "steps": 11649024,
+          "return": 149.70144423683857,
+          "success_rate": 0.95,
+          "elapsed_s": 183.62
+        },
+        {
+          "steps": 11812864,
+          "return": 150.34352774318094,
+          "success_rate": 0.95,
+          "elapsed_s": 186.19
+        },
+        {
+          "steps": 11976704,
+          "return": 161.7367202390293,
+          "success_rate": 0.99,
+          "elapsed_s": 188.76
+        },
+        {
+          "steps": 12009472,
+          "return": 157.846027436064,
+          "success_rate": 0.96,
+          "elapsed_s": 189.27
+        }
+      ]
+    },
+    {
+      "algorithm": "PPO",
+      "environment": "vectorized Frenet surrogate (not WorldSim)",
+      "seed": 7,
+      "envs": 128,
+      "history": [
+        {
+          "steps": 16384,
+          "return": -193.96586357366624,
+          "success_rate": 0.0,
+          "elapsed_s": 0.27
+        },
+        {
+          "steps": 180224,
+          "return": 152.11033509944252,
+          "success_rate": 0.97,
+          "elapsed_s": 2.84
+        },
+        {
+          "steps": 344064,
+          "return": 141.7519278597422,
+          "success_rate": 0.92,
+          "elapsed_s": 5.41
+        },
+        {
+          "steps": 507904,
+          "return": 160.34795625371186,
+          "success_rate": 0.99,
+          "elapsed_s": 8.39
+        },
+        {
+          "steps": 671744,
+          "return": 146.03845148025232,
+          "success_rate": 0.95,
+          "elapsed_s": 10.97
+        },
+        {
+          "steps": 835584,
+          "return": 158.1133720543912,
+          "success_rate": 0.97,
+          "elapsed_s": 13.54
+        },
+        {
+          "steps": 999424,
+          "return": 165.2596640077661,
+          "success_rate": 1.0,
+          "elapsed_s": 16.1
+        },
+        {
+          "steps": 1163264,
+          "return": 148.49446836404883,
+          "success_rate": 0.95,
+          "elapsed_s": 19.05
+        },
+        {
+          "steps": 1327104,
+          "return": 161.9159067161548,
+          "success_rate": 1.0,
+          "elapsed_s": 21.9
+        },
+        {
+          "steps": 1490944,
+          "return": 137.12723802782128,
+          "success_rate": 0.9,
+          "elapsed_s": 24.6
+        },
+        {
+          "steps": 1654784,
+          "return": 155.02347415664272,
+          "success_rate": 0.96,
+          "elapsed_s": 27.26
+        },
+        {
+          "steps": 1818624,
+          "return": 161.7046911517789,
+          "success_rate": 0.99,
+          "elapsed_s": 29.95
+        },
+        {
+          "steps": 1982464,
+          "return": 161.88834525970142,
+          "success_rate": 0.98,
+          "elapsed_s": 32.58
+        },
+        {
+          "steps": 2146304,
+          "return": 160.40900032903934,
+          "success_rate": 0.98,
+          "elapsed_s": 35.24
+        },
+        {
+          "steps": 2310144,
+          "return": 161.97150626488832,
+          "success_rate": 0.99,
+          "elapsed_s": 37.88
+        },
+        {
+          "steps": 2473984,
+          "return": 148.66346232302038,
+          "success_rate": 0.95,
+          "elapsed_s": 40.46
+        },
+        {
+          "steps": 2637824,
+          "return": 162.1292680145294,
+          "success_rate": 0.99,
+          "elapsed_s": 43.03
+        },
+        {
+          "steps": 2801664,
+          "return": 156.49575636730094,
+          "success_rate": 0.98,
+          "elapsed_s": 45.6
+        },
+        {
+          "steps": 2965504,
+          "return": 158.80540665808033,
+          "success_rate": 0.98,
+          "elapsed_s": 48.16
+        },
+        {
+          "steps": 3129344,
+          "return": 157.96914158494036,
+          "success_rate": 0.97,
+          "elapsed_s": 50.74
+        },
+        {
+          "steps": 3293184,
+          "return": 157.61483117554172,
+          "success_rate": 0.97,
+          "elapsed_s": 53.31
+        },
+        {
+          "steps": 3457024,
+          "return": 153.526561427362,
+          "success_rate": 0.97,
+          "elapsed_s": 55.86
+        },
+        {
+          "steps": 3620864,
+          "return": 160.83270129443966,
+          "success_rate": 0.99,
+          "elapsed_s": 58.42
+        },
+        {
+          "steps": 3784704,
+          "return": 165.2496414519789,
+          "success_rate": 0.98,
+          "elapsed_s": 60.99
+        },
+        {
+          "steps": 3948544,
+          "return": 164.99329966902883,
+          "success_rate": 0.99,
+          "elapsed_s": 63.55
+        },
+        {
+          "steps": 4014080,
+          "return": 162.02527088732143,
+          "success_rate": 0.98,
+          "elapsed_s": 64.57
+        }
+      ]
+    }
+  ],
+  "reward": {
+    "collision": -200,
+    "offroad": -100,
+    "near_miss_margin_m": 0.25,
+    "current_near_miss_squared_weight": 4,
+    "one_second_predicted_near_miss_squared_weight": 2,
+    "early_return_lateral_distance_weight": 200,
+    "training_pass_rear_margin_m": 0.5
+  },
+  "online_constraint": {
+    "hold_current_passing_offset_until_rear_clearance_m": 0.5,
+    "source": "planner.h HoldUntilPassed",
+    "trace": "pass_hold indicates constrained original actor rollout"
+  },
+  "validation": {
+    "fixed_scenarios": 14,
+    "random_variants": 36,
+    "all_arrived_collision_free_no_early_return": true,
+    "near_miss_is_soft_cost_not_global_zero_guarantee": true,
+    "user_overtake": {
+      "passed": true,
+      "record": "/apollo_workspace/simulation/ml_planning/runs/nearmiss-retrain/pass-regression/user_overtake/simulation.record.00000.20260929072851",
+      "goal_error_m": 0.21828378152309322,
+      "distance_m": 30.7050989498476,
+      "heading_change_rad": 7.3298510166732,
+      "collisions": 0,
+      "offroad_corners": 0,
+      "max_boundary_excess_m": -0.03991910186382869,
+      "estop_frames": 0,
+      "planning_frames": 601,
+      "max_curvature": 1.8352736363075954,
+      "max_acceleration": 0.6000000000000002,
+      "shield_frames": 17,
+      "min_clearance_m": 0.378056989694556,
+      "near_miss_threshold_m": 0.25,
+      "near_miss_samples": 0,
+      "min_clearance_time_s": 24.29,
+      "early_return_samples": 0,
+      "return_min_rear_gap_m": 0.7187288193662846,
+      "route_lanes": [
+        "Lane_74",
+        "Lane_72",
+        "Lane_73",
+        "Lane_45",
+        "Lane_48",
+        "Lane_47"
+      ],
+      "clear_straight_samples": 19,
+      "clear_straight_max_abs_l_m": 0.00128346886940265,
+      "clear_straight_rms_l_m": 0.0008775336236890656,
+      "centering_passed": true
+    },
+    "overtake_variants_near_miss_samples": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "source_user_job": "44b30d1af4264c47",
+  "artifacts": "simulation/ml_planning/runs/nearmiss-retrain"
+}

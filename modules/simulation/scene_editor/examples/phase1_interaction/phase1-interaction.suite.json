@@ -1,0 +1,20 @@
+{
+  "kind": "worldsim-suite",
+  "version": 1,
+  "name": "第一期 · 感知结果 · 会车与 nudge · 12 场景",
+  "mapId": "1haolou_202608241047qh",
+  "scenarios": [
+    "clear.worldsim.scenario.json",
+    "nudge_left.worldsim.scenario.json",
+    "nudge_right.worldsim.scenario.json",
+    "nudge_alternating.worldsim.scenario.json",
+    "meeting_slow.worldsim.scenario.json",
+    "meeting_fast.worldsim.scenario.json",
+    "meeting_offset.worldsim.scenario.json",
+    "meeting_nudge_right.worldsim.scenario.json",
+    "meeting_nudge_left.worldsim.scenario.json",
+    "successive_meeting.worldsim.scenario.json",
+    "lead.worldsim.scenario.json",
+    "meeting_nudge_late.worldsim.scenario.json"
+  ]
+}

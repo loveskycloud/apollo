@@ -1,0 +1,14 @@
+---
+description: Architecture-aware development
+alwaysApply: false
+---
+
+# Architecture Rule
+
+For architecture-impacting changes:
+
+1. Read `Architecture.md`.
+2. Identify affected modules.
+3. Check dependencies and interfaces.
+4. Check relevant ADRs from the Obsidian knowledge base if available.
+5. Explain architectural impact before making broad changes.

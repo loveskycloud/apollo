@@ -1,0 +1,81 @@
+{
+  "id": "coverage_Lane_47_clear",
+  "name": "Lane_47 · clear",
+  "description": "Map coverage: Lane_60 -> Lane_19 -> Lane_61 -> Lane_45 -> Lane_48 -> Lane_47 -> Lane_75 -> Lane_42 -> Lane_50; family clear; anchor Lane_47. Expected: reach_goal. 道路可通行，预期无碰撞到达终点。",
+  "duration": 180,
+  "mapId": "beijing_zongyuan_1haolou",
+  "simConfig": {
+    "planning": true,
+    "control": false,
+    "prediction": true,
+    "routing": true
+  },
+  "agents": [],
+  "triggers": [],
+  "ego": {
+    "id": "ego",
+    "name": "ego",
+    "position": {
+      "x": 9902.092092266064,
+      "y": 9000007.803324075,
+      "z": 0
+    },
+    "heading": 0.8508907892515168,
+    "size": {
+      "x": 0.72,
+      "y": 0.5,
+      "z": 0.8
+    },
+    "activeRouteId": "ego-route",
+    "routes": [
+      {
+        "id": "ego-route",
+        "name": "ego",
+        "pathType": "polyline",
+        "waypoints": [
+          {
+            "id": "ego-0",
+            "position": {
+              "x": 9902.092092266064,
+              "y": 9000007.803324075,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 0.8508907892515168
+          },
+          {
+            "id": "ego-1",
+            "position": {
+              "x": 9908.902126260358,
+              "y": 9000008.45603226,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -0.01527699274344336
+          },
+          {
+            "id": "ego-2",
+            "position": {
+              "x": 9914.825207522552,
+              "y": 9000006.893957615,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": -1.6153582805542113
+          },
+          {
+            "id": "ego-3",
+            "position": {
+              "x": 9911.513647630383,
+              "y": 9000005.697856244,
+              "z": 0
+            },
+            "speed": 0,
+            "heading": 3.129414609563937
+          }
+        ]
+      }
+    ],
+    "vehicleProfile": ""
+  }
+}

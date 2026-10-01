@@ -1,0 +1,20 @@
+---
+description: Project identity, architecture boundaries and mandatory constraints
+alwaysApply: true
+---
+
+# Project Rule
+
+Before making non-trivial changes:
+
+1. Read `Project.md`.
+2. Read `Current-Status.md`.
+3. Read `Architecture.md`.
+4. Read `TODO.md` when the task involves planning.
+
+Rules:
+
+- Do not invent architecture.
+- Do not modify unrelated modules.
+- Prefer minimal, reviewable changes.
+- Preserve existing interfaces unless the task explicitly requires breaking changes.

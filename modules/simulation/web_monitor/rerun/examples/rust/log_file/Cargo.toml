@@ -1,0 +1,13 @@
+[package]
+name = "log_file"
+version = "0.37.1"
+edition = "2024"
+rust-version = "1.96"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[dependencies]
+rerun = { path = "../../../crates/top/rerun", features = ["web_viewer", "clap"] }
+
+anyhow.workspace = true
+clap = { workspace = true, features = ["derive"] }

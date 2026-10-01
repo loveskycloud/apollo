@@ -1,0 +1,11 @@
+cyber_recorder_bvar_dump_interval : 10
+cyber_recorder_cpu_usage_count : 1
+cyber_recorder_gcc_version : "7.5.0"
+cyber_recorder_mem_resident_usage_count : 0
+cyber_recorder_pgrp : 233310
+cyber_recorder_pid : 233325
+cyber_recorder_ppid : 233310
+cyber_recorder_system_core_count : 32
+cyber_recorder_system_loadavg_15m : 1.3
+cyber_recorder_system_loadavg_1m : 1.56
+cyber_recorder_system_loadavg_5m : 1.33

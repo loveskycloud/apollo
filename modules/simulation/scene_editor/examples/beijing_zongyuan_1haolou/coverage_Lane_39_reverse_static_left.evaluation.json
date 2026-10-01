@@ -1,0 +1,25 @@
+{
+  "kind": "worldsim-evaluation",
+  "version": 1,
+  "scenario_sha256": "27869cf4f893223d33f843a1d8249821be46d7eebe8e48601be9b0b1f9357820",
+  "expectation": "reach_goal",
+  "reason": "道路可通行，预期无碰撞到达终点。",
+  "audit": {
+    "anchor": "Lane_39_reverse",
+    "passages": [
+      {
+        "actor_id": "static-0",
+        "s": 19.460907980101787,
+        "lane_width_m": 1.1561806689509149,
+        "available_passage_m": 0.982630175149618,
+        "curvature_per_m": 0.49562909584253284,
+        "swept_vehicle_width_m": 0.5832303782487132,
+        "required_passage_m": 0.7232303782487132,
+        "blocked": false
+      }
+    ],
+    "static_obstacle_clearance_m": 0.12,
+    "road_margin_m": 0.02,
+    "vehicle_width_m": 0.5
+  }
+}

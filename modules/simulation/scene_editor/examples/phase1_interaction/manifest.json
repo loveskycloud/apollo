@@ -1,0 +1,19 @@
+{
+  "map": "/apollo_workspace/data/map_data/1haolou_202608241047qh",
+  "map_sha256": "c908b98c0e08e17a940eb27409729760b6adc37c14091c82d35889a28f2116de",
+  "scope": "Lane_9 / 12 fixed cases / perfect_planning / nonreactive actors",
+  "files": {
+    "clear.worldsim.scenario.json": "b301629088a16ce93226f0a9793dc06a1f1907bf825c1c290281c034ea154cb1",
+    "nudge_left.worldsim.scenario.json": "4052c19fe5b1cee17d0a4007a3fcd60bc02b3fd79e29f6fe3505675108642624",
+    "nudge_right.worldsim.scenario.json": "6e911dc7b1246c5cd7ef44f7fd39f53ce0a296b8b00bdadab4ed4909f4e91237",
+    "nudge_alternating.worldsim.scenario.json": "f8ae9f809563d7450acdfa0ac3371e6ef68ab60565cd07ba288a01d7c2f4cdf6",
+    "meeting_slow.worldsim.scenario.json": "47b66b81b0f66e1ad0f388b45dcf8831bca8d6b86755df1f9bc5f5e04127fe74",
+    "meeting_fast.worldsim.scenario.json": "52f71334d24cff5f4dc70796cfcf222849f10f30c2e86fecfa5c6bfd745a0d55",
+    "meeting_offset.worldsim.scenario.json": "12c8f1b111566eda6d812d73f34ce95e80176406185c6fee459030bd2ee19c3e",
+    "meeting_nudge_right.worldsim.scenario.json": "12c60e4b6266bfda5e1b4925b0a37d2c597c6d4048e5b0e3d8f7332c0061c5b6",
+    "meeting_nudge_left.worldsim.scenario.json": "d94eee5c4a1ca42ec2fbded724818a63cdc10211f5216be8a7419231c1a1746a",
+    "successive_meeting.worldsim.scenario.json": "26bafbdc31183a7de17720ce14cc19736f3a1e048a41a8b13de13a641aaf4d64",
+    "lead.worldsim.scenario.json": "2c9a1d88a0b0392d7e0003f04b936f4dabe8e19e9c49c8a2e4b0ae7c8bedb972",
+    "meeting_nudge_late.worldsim.scenario.json": "0e5f736cd1835f74e7815a061f69a0e3d0784f0c4eb832f697c4aeca695178fa"
+  }
+}

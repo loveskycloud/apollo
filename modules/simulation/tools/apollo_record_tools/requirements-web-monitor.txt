@@ -1,0 +1,14 @@
+# Validated with Apollo 10 / Python 3.10. Install only in this directory's .venv.
+# protobuf 4 supplies GetMessageClass; Apollo's generated schemas use pure Python.
+foxglove-schemas-protobuf==0.3.0
+lz4==4.4.5
+mcap==1.4.0
+mcap-protobuf-support==0.5.4
+mapbox-earcut==1.0.3
+# CuPy 14 needs numpy>=2; keep <2.6 for cupy-cuda13x pin.
+numpy==2.2.6
+protobuf==4.25.9
+zstandard==0.25.0
+# Point-cloud packing acceleration for apollo_record_to_semantic_mcap --gpu auto/on.
+# [ctk] pulls CUDA 13 runtime/headers used by CuPy JIT (needed when system toolkit is older).
+cupy-cuda13x[ctk]==14.2.0
