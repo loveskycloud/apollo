@@ -38,29 +38,49 @@ is explicitly `not_tested`, never a determinism PASS.
   Updates preserve the draft, selected detail, filter and command errors.
   Only enqueue requests show **Starting…**. Disconnections are displayed explicitly;
   the browser reconnects automatically and closing the panel releases the stream.
-- **仿真任务** opens a wider docked workspace with live totals, status shortcuts,
+- **仿真配置** and **仿真任务** share one resizable sidebar and its persisted width.
+  The two centered tabs each use half the available width, with identical height,
+  padding and corners; selection only changes background, text and underline.
+  Tasks have live totals, status shortcuts,
   source/status dropdowns and search by task ID, scene, suite or status.
+  Filters stay above the scrolling list and pagination stays at the bottom.
   Counts reflect the complete task collection; pagination reflects the intersection
   of the selected filters. Cancelled and interrupted tasks have their own statuses.
 - Tasks are ordered by submission time, newest first, independently of ID and status.
   New submissions store `created_at`; historical tasks use their queued event time.
   Suites remain grouped by submission ID and can be collapsed; members submitted at
   the same instant retain manifest order. Standalone tasks appear directly between suites.
-  Each page renders at most ten cards and incoming events preserve the current page.
-- Cards show real source type, run count, progress, FIFO queue position and completed
-  wall-clock duration. Failed cards expose a short reason and quick actions;
-  the overflow menu provides detail, config reuse, cancellation, deletion and per-run replay.
+  Each page renders at most ten compact rows and incoming events preserve the current page.
+  Suite name, scenario count and source appear once in the group header.
+- The suite header's overflow menu offers **全部取消**, **全部重试** and **全部删除**.
+  These commands use the submission's `suite_id`, covering every remaining member
+  regardless of filters or pagination; identically named submissions stay independent.
+  Cancellation stops running processes and removes queued members from scheduling,
+  while preserving finished results. Retry is enabled after the entire group stops:
+  every stored member configuration is revalidated before a new group is enqueued,
+  with the original concurrency, fresh IDs/timestamps and empty results.
+  Original records remain available; `retry_of_suite_id` records the origin.
+  Deletion preflights all members and replay conversions before removing anything.
+  Running members must stop first. Filesystem failures surface explicitly, and any
+  members already deleted are persisted and broadcast in a full SSE snapshot.
+  The API commands are `cancel_suite`, `retry_suite`, `delete_suite`, each with `suite_id`.
+  No simulation pause/resume operation is provided.
+- Rows align status, run count, elapsed time and always-visible detail/config/replay actions.
+  Progress and FIFO position remain visible, with failure evidence in the status tooltip
+  and full task details. The overflow menu contains cancellation and deletion.
+  **回放** opens a direct choice of recorded run; both menus open toward the sidebar
+  and do not cover the debugging panels. Starting replay keeps the task sidebar open.
   Missing replay outputs disable replay. No status is inferred to be a determinism PASS.
 - **删除任务** removes queued or finished tasks, their private output directory and
   recording conversion caches, while preserving original scene/map/vehicle inputs.
   Running tasks must be cancelled and fully stopped first.
   Filesystem errors are reported without dropping the task; successful deletion persists
   the queue and publishes a full SSE snapshot so every open task list removes the card.
-- **新建任务** opens a clean configuration draft without changing existing tasks.
+- Start new tasks from **仿真配置**; there is no separate **新建任务** button.
 - Click a task's title to open **Simulation detail** inside the same Tasks panel.
   Status, progress, run count, stage history, errors, analysis and outputs update
   from the live service; **Back to tasks** or the Tasks tab restores the list.
-- **View config**, available on both a task card and its detail page, copies that
+- **View config**, available on both a task row and its detail page, copies that
   task's submitted configuration into the normal **editable** Simulation Config
   form. All selections are restored, including modules/model/step/seed/runs; the
   additional configuration section preserves and edits timeout and bag range.

@@ -148,6 +148,11 @@ pub const LEFT_PANEL_TOGGLE: Icon = icon_from_path!("../data/icons/left_panel_to
 
 pub const MINIMIZE: Icon = icon_from_path!("../data/icons/minimize.svg");
 pub const MAXIMIZE: Icon = icon_from_path!("../data/icons/maximize.svg");
+pub const AD_PANEL_MAXIMIZE: Icon = icon_from_path!("../data/icons/ad_panel_maximize.svg");
+pub const AD_PANEL_RESTORE: Icon = icon_from_path!("../data/icons/ad_panel_restore.svg");
+pub const AD_PANEL_COPY: Icon = icon_from_path!("../data/icons/ad_panel_copy.svg");
+pub const AD_PANEL_PLOT: Icon = icon_from_path!("../data/icons/ad_panel_plot.svg");
+pub const AD_PANEL_TOPIC: Icon = icon_from_path!("../data/icons/ad_panel_topic.svg");
 pub const EXPAND: Icon = icon_from_path!("../data/icons/expand.svg");
 
 pub const VISIBLE: Icon = icon_from_path!("../data/icons/visible.svg");

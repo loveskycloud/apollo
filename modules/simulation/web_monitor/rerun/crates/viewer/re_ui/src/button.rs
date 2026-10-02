@@ -6,6 +6,41 @@ use egui::{
     AtomLayoutResponse, Button, CornerRadius, IntoAtoms, NumExt as _, Rect, Response, Sense, Style,
 };
 
+/// Borderless actions shared by the AD panel headers and panel management rows.
+pub fn ad_panel_icon_button(ui: &mut egui::Ui, icon: &crate::Icon, label: &str) -> Response {
+    ad_panel_action(ui, Some(icon), label)
+}
+
+/// Three centered dots, independent of the text font's ellipsis metrics.
+pub fn ad_panel_more_button(ui: &mut egui::Ui) -> Response {
+    ad_panel_action(ui, None, "更多操作")
+}
+
+fn ad_panel_action(ui: &mut egui::Ui, icon: Option<&crate::Icon>, label: &str) -> Response {
+    let (rect, response) = ui.allocate_exact_size(egui::vec2(28.0, 24.0), Sense::click());
+    let color = egui::Color32::from_rgb(219, 210, 244);
+    if response.hovered() || response.has_focus() || response.is_pointer_button_down_on() {
+        ui.painter()
+            .rect_filled(rect.shrink(1.0), 4.0, egui::Color32::from_rgb(62, 53, 85));
+    }
+    if let Some(icon) = icon {
+        icon.as_image()
+            .tint(color)
+            .paint_at(ui, Rect::from_center_size(rect.center(), Vec2::splat(18.0)));
+    } else {
+        for x in [-4.5, 0.0, 4.5] {
+            ui.painter()
+                .circle_filled(rect.center() + egui::vec2(x, 0.0), 1.35, color);
+        }
+    }
+    response.widget_info(|| {
+        egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), label)
+    });
+    response
+        .on_hover_cursor(egui::CursorIcon::PointingHand)
+        .on_hover_text(label)
+}
+
 #[derive(Default, Clone, Copy)]
 pub enum Variant {
     Primary,

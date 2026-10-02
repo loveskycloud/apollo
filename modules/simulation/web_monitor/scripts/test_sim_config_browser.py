@@ -64,7 +64,7 @@ async def main():
             s=await capture('editable-'+task_id)
             assert s['draft_config']==expected, (s['draft_config'],expected)
             assert s['config_from']==task_id and s['inspected_task'] is None
-            for key in ['Scenario','Map','Vehicle','seed','runs']:
+            for key in ['Scenario','Map','Vehicle','determinism']:
                 assert key in s
 
         async def drag_edit(key, value):
@@ -94,27 +94,30 @@ async def main():
             await open_sim_tasks(page,args.job)
             await page.wait_for_function('id=>window._handle.get_simulation_state().jobs.some(j=>j.id===id)',arg=args.job)
             original=next(j for j in await jobs() if j['id']==args.job)
+            editable={**original['config'], 'step_ms':10}
             if args.exercise:
                 assert all(j['stage'] in TERMINAL for j in await jobs()), 'Existing simulation active; do not add test jobs'
             await detail(args.job)
             await sim_click(page,'back_to_tasks')
             assert (await sim_state(page))['page']=='tasks'
             # Explicit config button also works directly from the list.
-            await load_config(args.job,original['config'])
+            await load_config(args.job,editable)
             if args.exercise:
-                first=await enqueue(original['config'])
+                first=await enqueue(editable)
                 await detail(first)
                 await page.wait_for_timeout(2000)
                 s=await capture('live-detail-refresh')
                 latest=next(j for j in s['jobs'] if j['id']==first)
                 assert s['inspected_task']==latest
-                await load_config(first,original['config'])
+                await load_config(first,editable)
             else:
                 await detail(args.job)
-                await load_config(args.job,original['config'])
+                await load_config(args.job,editable)
+            if (await sim_state(page))['draft_config']['repeat'] == 1:
+                await sim_click(page, 'determinism')
             await drag_edit('seed',original['config']['seed']+7)
-            await drag_edit('runs',1)
-            expected={**original['config'],'seed':original['config']['seed']+7,'repeat':1}
+            await sim_click(page, 'determinism')
+            expected={**editable,'seed':original['config']['seed']+7,'repeat':1}
             assert (await sim_state(page))['draft_config']==expected
             await capture('edited-copy')
             await detail(args.job)

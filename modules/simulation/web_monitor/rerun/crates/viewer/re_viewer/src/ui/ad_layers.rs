@@ -1,6 +1,56 @@
 //! Display layers separate transport topics from render entities.
 use std::collections::BTreeMap;
 
+pub(super) fn label(path: &str) -> &str {
+    match path {
+        "map" => "地图",
+        "map/lane_boundaries" => "车道边界",
+        "map/lane_centerlines" => "车道中心线",
+        "map/parking_spaces" => "停车位",
+        "map/road_surface" => "路面",
+        "planning" => "规划",
+        "planning/trajectory" => "规划轨迹",
+        "localization" => "定位",
+        "localization/pose" => "车辆位姿",
+        "perception" => "感知",
+        "perception/obstacles" => "障碍物",
+        "prediction" => "预测",
+        "prediction/trajectories" => "预测轨迹",
+        "sensing" => "传感器",
+        "sensing/lidar" => "激光雷达",
+        "sensing/lidar/main" => "主雷达",
+        "sensing/lidar/side_left" => "左侧雷达",
+        "sensing/lidar/side_right" => "右侧雷达",
+        "sensing/camera" => "相机",
+        "sensing/camera/camera_front" => "前视相机",
+        "sensing/camera/camera_left" => "左视相机",
+        "sensing/camera/camera_right" => "右视相机",
+        "sensing/camera/camera_back" => "后视相机",
+        "sensing/camera/camera_back_left" => "左后相机",
+        "sensing/camera/camera_back_right" => "右后相机",
+        _ => path.rsplit('/').next().unwrap_or(path),
+    }
+}
+
+pub(super) fn matches(layer: &Layer, query: &str) -> bool {
+    let query = query.trim().to_lowercase();
+    let mut names = layer.path.clone();
+    let mut prefix = String::new();
+    for part in layer.path.split('/') {
+        if !prefix.is_empty() {
+            prefix.push('/');
+        }
+        prefix.push_str(part);
+        names.push(' ');
+        names.push_str(label(&prefix));
+    }
+    names.to_lowercase().contains(&query)
+        || layer
+            .topics
+            .iter()
+            .any(|topic| topic.to_lowercase().contains(&query))
+}
+
 #[derive(Clone, Debug)]
 pub(super) struct Layer {
     pub path: String,
@@ -73,6 +123,31 @@ pub(super) fn catalog(topics: &[String]) -> Vec<Layer> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn search_matches_translated_ancestors_leaf_names_and_source_topics() {
+        let layers = catalog(
+            &[
+                "/hdmap/lane_boundaries",
+                "/hdmap/parking_spaces",
+                "/vehicle",
+            ]
+            .map(str::to_owned),
+        );
+        let paths = |query| {
+            layers
+                .iter()
+                .filter(|layer| matches(layer, query))
+                .map(|layer| layer.path.as_str())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(paths("地图"), ["map/lane_boundaries", "map/parking_spaces"]);
+        assert_eq!(paths("车道"), ["map/lane_boundaries"]);
+        assert_eq!(paths("  /HDMAP/PARKING  "), ["map/parking_spaces"]);
+        assert_eq!(paths("定位"), ["localization/pose"]);
+        assert_eq!(paths("车辆位姿"), ["localization/pose"]);
+        assert!(paths("不存在").is_empty());
+        assert_eq!(paths("").len(), layers.len());
+    }
     #[test]
     fn semantic_layers_have_one_authority_and_no_invented_sensors() {
         let layers = catalog(

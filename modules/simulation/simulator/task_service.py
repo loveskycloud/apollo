@@ -388,7 +388,7 @@ def validate(request):
     if "ML_PLANNING" in selected and config.get("model", "perfect_planning") != "perfect_planning":
         raise ValueError("ML_PLANNING currently requires perfect_planning")
     config["modules"] = [module for module in MODULES if module in selected]
-    config["repeat"] = int(config.get("repeat", 2))
+    config["repeat"] = int(config.get("repeat", 1))
     if config["repeat"] not in (1, 2, 3):
         raise ValueError("Repeat count must be 1, 2 or 3")
     config["seed"] = int(config.get("seed", 1))
@@ -646,39 +646,78 @@ class TaskService:
                     preflight_world(config["source"])
             else:
                 configs = [validate(config_request)]
+            return self.enqueue_configs(configs, suite["name"] if suite else None,
+                                        concurrency if suite else 1)
+        if action in ("cancel_suite", "retry_suite", "delete_suite"):
             with self.lock:
-                if self.stopping:
-                    raise ValueError("Simulation service is stopping")
-                if sum(j["stage"] not in TERMINAL for j in self.jobs.values()) + len(configs) > 1024:
-                    raise ValueError("Queue limit reached (1024 active / waiting tasks)")
-                suite_id = uuid.uuid4().hex[:16] if suite else None
-                if suite:
-                    self.limits[suite_id] = concurrency
-                ids = []
-                created_at = time.time()
-                for index, config in enumerate(configs):
-                    job_id = uuid.uuid4().hex[:16]
-                    ids.append(job_id)
-                    self.jobs[job_id] = {"id": job_id, "stage": "queued", "config": config,
-                        "created_at": created_at,
-                        "progress": 0, "history": [{"stage": "queued", "wall_time": created_at}],
-                        "outputs": [], "error": None, "analysis": None}
-                    if suite:
-                        self.jobs[job_id].update(suite_id=suite_id, suite_name=suite["name"],
-                                                suite_index=index + 1, suite_size=len(configs),
-                                                concurrency=concurrency)
-                self.save()
-                self.notify_jobs(ids)
-                self.pending_ids.extend(ids)
-                self.condition.notify_all()
-            return {"status": "ok", "id": ids[0], "ids": ids, "suite_id": suite_id}
+                suite_id = request.get("suite_id")
+                if not isinstance(suite_id, str) or not suite_id:
+                    raise ValueError("A suite_id is required")
+                members = sorted((job for job in self.jobs.values() if job.get("suite_id") == suite_id),
+                                 key=lambda job: job["suite_index"])
+                if not members:
+                    raise ValueError("Unknown suite_id")
+                ids = [job["id"] for job in members]
+                if action == "cancel_suite":
+                    return self.cancel_tasks(ids)
+                if action == "delete_suite":
+                    return self.delete_tasks(ids)
+                if any(job["stage"] not in TERMINAL or job["id"] in self.active_ids for job in members):
+                    raise ValueError("Wait for the entire suite to stop before retrying")
+                # Retry the stored members, even if the original manifest changed.
+                # Validate every input before publishing any replacement tasks.
+                configs = [validate(job["config"]) for job in members]
+                for config in configs:
+                    if config["kind"] == "world":
+                        preflight_world(config["source"])
+                return self.enqueue_configs(configs, members[0]["suite_name"],
+                                            members[0]["concurrency"], retry_of=suite_id)
         if action == "delete":
             return self.delete_task(request.get("id"))
         if action == "cancel":
+            return self.cancel_tasks([request.get("id")])
+        if action == "list":
             with self.lock:
-                job_id = request["id"]
-                if job_id not in self.jobs:
-                    raise ValueError("Unknown task")
+                return {"status": "ok", "jobs": copy.deepcopy(list(self.jobs.values()))}
+        raise ValueError("Unknown simulation API action")
+
+    def enqueue_configs(self, configs, suite_name=None, concurrency=1, retry_of=None):
+        with self.lock:
+            if self.stopping:
+                raise ValueError("Simulation service is stopping")
+            if type(concurrency) is not int or not 1 <= concurrency <= self.worker_count:
+                raise ValueError(f"Concurrency must be 1..{self.worker_count}")
+            if sum(j["stage"] not in TERMINAL for j in self.jobs.values()) + len(configs) > 1024:
+                raise ValueError("Queue limit reached (1024 active / waiting tasks)")
+            suite_id = uuid.uuid4().hex[:16] if suite_name is not None else None
+            if suite_id:
+                self.limits[suite_id] = concurrency
+            ids = []
+            created_at = time.time()
+            for index, config in enumerate(configs):
+                job_id = uuid.uuid4().hex[:16]
+                ids.append(job_id)
+                self.jobs[job_id] = {"id": job_id, "stage": "queued", "config": config,
+                    "created_at": created_at,
+                    "progress": 0, "history": [{"stage": "queued", "wall_time": created_at}],
+                    "outputs": [], "error": None, "analysis": None}
+                if suite_id:
+                    self.jobs[job_id].update(suite_id=suite_id, suite_name=suite_name,
+                                            suite_index=index + 1, suite_size=len(configs),
+                                            concurrency=concurrency)
+                if retry_of:
+                    self.jobs[job_id]["retry_of_suite_id"] = retry_of
+            self.save()
+            self.notify_jobs(ids)
+            self.pending_ids.extend(ids)
+            self.condition.notify_all()
+        return {"status": "ok", "id": ids[0], "ids": ids, "suite_id": suite_id}
+
+    def cancel_tasks(self, ids):
+        with self.lock:
+            if any(job_id not in self.jobs for job_id in ids):
+                raise ValueError("Unknown task")
+            for job_id in ids:
                 if self.jobs[job_id]["stage"] not in TERMINAL:
                     self.cancelled.add(job_id)
                     stop_process(self.children.get(job_id))
@@ -686,51 +725,66 @@ class TaskService:
                         if job_id in self.pending_ids:
                             self.pending_ids.remove(job_id)
                         self.update(job_id, stage="cancelled")
-            return {"status": "ok"}
-        if action == "list":
-            with self.lock:
-                return {"status": "ok", "jobs": copy.deepcopy(list(self.jobs.values()))}
-        raise ValueError("Unknown simulation API action")
+            self.condition.notify_all()
+        return {"status": "ok"}
 
     def delete_task(self, job_id):
+        reply = self.delete_tasks([job_id])
+        reply["deleted_id"] = reply["deleted_ids"][0]
+        return reply
+
+    def deletion_plan(self, job_id):
         if not isinstance(job_id, str) or not re.fullmatch(r"[0-9a-f]{16}", job_id):
             raise ValueError("Invalid task ID")
+        job = self.jobs.get(job_id)
+        if job is None:
+            raise ValueError("Unknown task")
+        if job_id in self.active_ids or job["stage"] not in TERMINAL | {"queued"}:
+            raise ValueError("Cancel the running task and wait for it to stop before deleting")
+        directory = self.root / job_id
+        if directory.is_symlink():
+            raise ValueError("Task directory must not be a symbolic link")
+        # Only delete owned outputs, never paths supplied by the client/config.
+        cache = Path(os.environ.get("WEB_MONITOR_CONVERT_CACHE", str(ROOT / "data/bag/.wm_mcap_cache")))
+        cache_files = []
+        for descriptor in cache.glob("*.source.json"):
+            key = descriptor.name.removesuffix(".source.json")
+            if not re.fullmatch(r"[0-9a-f]{16}", key):
+                continue
+            source = Path(json.loads(descriptor.read_text())["source"])
+            if source.is_relative_to(directory):
+                progress = cache / (key + ".progress.json")
+                if not progress.is_file() or json.loads(progress.read_text()).get("status") not in ("done", "error"):
+                    raise ValueError("Task replay conversion is in progress; wait before deleting")
+                cache_files.extend(cache / (key + suffix) for suffix in
+                                   (".mcap", ".progress.json", ".source.json"))
+        return job_id, directory, cache_files
+
+    def delete_tasks(self, ids):
         with self.lock:
-            job = self.jobs.get(job_id)
-            if job is None:
-                raise ValueError("Unknown task")
-            if job_id in self.active_ids or job["stage"] not in TERMINAL | {"queued"}:
-                raise ValueError("Cancel the running task and wait for it to stop before deleting")
-            directory = self.root / job_id
-            if directory.is_symlink():
-                raise ValueError("Task directory must not be a symbolic link")
-            # Only delete owned outputs, never paths supplied by the client/config.
-            cache = Path(os.environ.get("WEB_MONITOR_CONVERT_CACHE", str(ROOT / "data/bag/.wm_mcap_cache")))
-            cache_files = []
-            for descriptor in cache.glob("*.source.json"):
-                key = descriptor.name.removesuffix(".source.json")
-                if not re.fullmatch(r"[0-9a-f]{16}", key):
-                    continue
-                source = Path(json.loads(descriptor.read_text())["source"])
-                if source.is_relative_to(directory):
-                    progress = cache / (key + ".progress.json")
-                    if not progress.is_file() or json.loads(progress.read_text()).get("status") not in ("done", "error"):
-                        raise ValueError("Task replay conversion is in progress; wait before deleting")
-                    cache_files.extend(cache / (key + suffix) for suffix in
-                                       (".mcap", ".progress.json", ".source.json"))
-            for path in cache_files:
-                path.unlink(missing_ok=True)
-            if directory.exists():
-                shutil.rmtree(directory)
-            del self.jobs[job_id]
-            if job_id in self.pending_ids:
-                self.pending_ids.remove(job_id)
-            self.cancelled.discard(job_id)
-            self.job_revisions.pop(job_id, None)
-            self.save()
-            self.notify_jobs([])
-            self.snapshot_revision = self.revision
-            return {"status": "ok", "deleted_id": job_id,
+            # Preflight the entire group before deleting any member.
+            plans = [self.deletion_plan(job_id) for job_id in ids]
+            deleted = []
+            try:
+                for job_id, directory, cache_files in plans:
+                    for path in cache_files:
+                        path.unlink(missing_ok=True)
+                    if directory.exists():
+                        shutil.rmtree(directory)
+                    del self.jobs[job_id]
+                    if job_id in self.pending_ids:
+                        self.pending_ids.remove(job_id)
+                    self.cancelled.discard(job_id)
+                    self.job_revisions.pop(job_id, None)
+                    deleted.append(job_id)
+            finally:
+                # A filesystem failure must surface, while successful deletions
+                # remain persisted and visible to every subscribed client.
+                if deleted:
+                    self.save()
+                    self.notify_jobs([])
+                    self.snapshot_revision = self.revision
+            return {"status": "ok", "deleted_ids": deleted,
                     "jobs": copy.deepcopy(list(self.jobs.values()))}
 
     def check_cancel(self, job_id):

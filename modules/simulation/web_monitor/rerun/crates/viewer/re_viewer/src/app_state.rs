@@ -623,7 +623,12 @@ impl AppState {
                 self.ad_shell
                     .show_viewport_layers_picker(&ctx, &viewport_ui.blueprint, ui);
                 ctx.egui_ctx().data_mut(|d| d.insert_temp(egui::Id::new("ad_layout_state"), serde_json::json!({
-                    "views": viewport_ui.blueprint.views.values().map(|v| serde_json::json!({"id":v.id.to_string(), "name":v.display_name, "origin":v.space_origin.to_string()})).collect::<Vec<_>>()
+                    "views": viewport_ui.blueprint.views.values().map(|v| serde_json::json!({"id":v.id.to_string(), "name":v.display_name, "origin":v.space_origin.to_string(), "visible":v.visible})).collect::<Vec<_>>(),
+                    "controls": d.get_temp::<serde_json::Value>(egui::Id::new("ad_layout_controls")),
+                    "active": self.ad_shell.active_layout,
+                    "default": self.ad_shell.default_layout,
+                    "panel_open": self.ad_shell.panel_open,
+                    "layout_open": self.ad_shell.layout_open
                 })));
 
                 // Selection Panel (right)

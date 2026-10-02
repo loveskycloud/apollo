@@ -695,6 +695,21 @@ impl WebHandle {
         js_sys::JSON::parse(&value.to_string())
     }
 
+    /// Read-only layout controls and view visibility for UI acceptance tests.
+    #[wasm_bindgen]
+    pub fn get_layout_state(&self) -> Result<JsValue, JsValue> {
+        let app = self
+            .runner
+            .app_mut::<crate::App>()
+            .ok_or_else(|| JsValue::from_str("Viewer is not running"))?;
+        let value = app
+            .egui_ctx
+            .data(|d| d.get_temp::<serde_json::Value>(egui::Id::new("ad_layout_state")));
+        js_sys::JSON::parse(
+            &serde_json::to_string(&value).map_err(|e| JsValue::from_str(&e.to_string()))?,
+        )
+    }
+
     #[wasm_bindgen]
     pub fn get_simulation_state(&self) -> Result<JsValue, JsValue> {
         let app = self

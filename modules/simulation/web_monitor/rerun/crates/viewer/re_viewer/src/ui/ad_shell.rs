@@ -20,6 +20,11 @@ const CONTROL_RBL: &[u8] = include_bytes!("../../layouts/control.rbl");
 
 /// Stable ApplicationId for AD layouts. Independent of whether a bag is open.
 const AD_APPLICATION_ID: &str = "apollo_ad_viewer";
+// Source and scene-layer surfaces follow the supplied source_and_layger reference.
+const SOURCE_BG: Color32 = Color32::from_rgb(24, 24, 38);
+const SOURCE_INPUT: Color32 = Color32::from_rgb(34, 33, 54);
+const SOURCE_BORDER: Color32 = Color32::from_rgb(73, 65, 99);
+const SOURCE_MUTED: Color32 = Color32::from_rgb(196, 184, 232);
 /// Placeholder recording so blueprint activation has something to attach to (data optional).
 const AD_LAYOUT_WORKSPACE_RECORDING_ID: &str = "ad_layout_workspace";
 /// egui temp id: Cyber header `(begin_ns, end_ns)` for media-bar duration (not EntityDb scan).
@@ -136,6 +141,23 @@ pub enum AdLayoutKind {
 }
 
 impl AdLayoutKind {
+    fn display_label(self) -> &'static str {
+        match self {
+            Self::Perception => "感知布局",
+            Self::Planning => "规划布局",
+            Self::Control => "控制布局",
+            Self::Custom => "自定义布局",
+        }
+    }
+    fn workspace_title(self) -> &'static str {
+        match self {
+            Self::Perception => "感知调试",
+            Self::Planning => "规划调试",
+            Self::Control => "控制调试",
+            Self::Custom => "自定义工作区",
+        }
+    }
+
     pub fn label(self) -> &'static str {
         match self {
             Self::Perception => "Perception layout",
@@ -185,7 +207,7 @@ pub enum SourceOpenMode {
 impl SourceOpenMode {
     fn label(self) -> &'static str {
         match self {
-            Self::Local | Self::LegacyOther => "Local bag",
+            Self::Local | Self::LegacyOther => "本地文件",
         }
     }
 
@@ -205,6 +227,10 @@ pub struct AdShell {
     pub layout_open: bool,
     /// Panel secondary drawer open (edit current layout).
     pub panel_open: bool,
+    #[serde(skip)]
+    panel_search: String,
+    #[serde(skip)]
+    layout_notice: String,
     #[serde(alias = "sim_modal_open")]
     pub sim_open: bool,
     pub active_layout: Option<AdLayoutKind>,
@@ -298,6 +324,10 @@ pub struct AdShell {
     /// Expandable Topics control anchored in the 3D viewport (not the Panel drawer).
     #[serde(skip)]
     topics_picker_expanded: bool,
+    #[serde(skip)]
+    layer_search: String,
+    #[serde(skip)]
+    collapsed_layers: std::collections::BTreeSet<String>,
     /// After a topic-set reset, seek here instead of bag begin (keep playhead).
     #[serde(skip)]
     playback_resume_ns: Option<i64>,
@@ -335,6 +365,8 @@ pub struct AdShell {
         Option<std::sync::Arc<parking_lot::Mutex<Option<Result<serde_json::Value, String>>>>>,
     #[serde(skip)]
     source_catalog_at: Option<web_time::Instant>,
+    #[serde(skip)]
+    source_catalog_error: Option<String>,
 }
 
 impl Default for AdShell {
@@ -344,6 +376,8 @@ impl Default for AdShell {
             source_open: false,
             layout_open: false,
             panel_open: false,
+            panel_search: String::new(),
+            layout_notice: String::new(),
             sim_open: false,
             active_layout: Some(AdLayoutKind::Perception),
             default_layout: Some(AdLayoutKind::Perception),
@@ -387,6 +421,8 @@ impl Default for AdShell {
             playback_window_pending: false,
             playback_window_error: None,
             topics_picker_expanded: false,
+            layer_search: String::new(),
+            collapsed_layers: Default::default(),
             playback_resume_ns: None,
             playback_resume_was_playing: false,
             playback_last_playhead_ns: None,
@@ -401,6 +437,7 @@ impl Default for AdShell {
             source_catalog: serde_json::Value::Null,
             source_catalog_pending: None,
             source_catalog_at: None,
+            source_catalog_error: None,
         }
     }
 }
@@ -468,6 +505,9 @@ impl AdShell {
             self.show_playback_status(ctx);
             self.show_upload_progress_modal(ctx);
         }
+        ctx.egui_ctx.data_mut(|d| {
+            d.insert_temp(egui::Id::new("ad_layout_controls"), serde_json::json!({}))
+        });
         self.show_rail(ui);
         self.show_source_secondary(ctx, ui);
         self.show_layout_secondary(ctx, ui);
@@ -509,7 +549,6 @@ impl AdShell {
                 .data_mut(|d| d.insert_temp(egui::Id::new("ad_sim_replay_layers"), true));
             self.open_map_path_draft.clear(); // Sim replay owns its immutable map snapshot.
             self.try_open_local_path(ctx, &path);
-            self.sim_open = false;
         }
     }
 
@@ -948,76 +987,140 @@ impl AdShell {
         egui::Panel::left("ad_layout_secondary")
             .resizable(true)
             .drag_to_open(false)
-            .default_size(220.0)
-            .min_size(180.0)
-            .frame(egui::Frame {
-                fill: theme::PANEL_BG,
-                inner_margin: egui::Margin::same(12),
-                stroke: Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.2)),
-                ..Default::default()
-            })
+            .default_size(256.0)
+            .min_size(224.0)
+            .frame(layout_drawer_frame())
             .show_collapsible(ui, &mut layout_open_flag, |ui| {
-                ui.label(
-                    RichText::new("Layouts")
-                        .strong()
-                        .size(15.0)
-                        .color(theme::TEXT),
-                );
+                layout_control(ui, "layout_rect", ui.max_rect());
+                drawer_heading(ui, "布局管理", &mut self.layout_open);
+                ui.add_space(16.0);
+                layout_section_label(ui, "布局预设");
                 ui.add_space(8.0);
-
                 for kind in AdLayoutKind::all() {
                     self.layout_row(ctx, ui, kind);
                 }
+                ui.add_space(14.0);
+                ui.separator();
+                ui.add_space(12.0);
+                let edit = layout_action(ui, "管理面板", true);
+                layout_control(ui, "manage_panels", edit.rect);
+                if edit.clicked() {
+                    self.layout_open = false;
+                    self.panel_open = true;
+                    self.active_nav = AdNavId::Panel;
+                }
+                ui.add_space(8.0);
+                ui.label(
+                    RichText::new("固定常用布局，下次打开时自动使用。")
+                        .size(11.0)
+                        .color(theme::TEXT_DIM),
+                );
             });
-        self.layout_open = layout_open_flag;
+        self.layout_open &= layout_open_flag;
     }
+
     fn layout_row(&mut self, ctx: &AppContext<'_>, ui: &mut Ui, kind: AdLayoutKind) {
         let selected = self.active_layout == Some(kind);
         let pinned = self.default_layout == Some(kind);
-        let height = 36.0;
-        let full = ui.available_width();
-        let (rect, response) = ui.allocate_exact_size(Vec2::new(full, height), Sense::click());
-
-        let fill = if selected {
-            theme::ACCENT_STRONG.gamma_multiply(0.45)
-        } else if response.hovered() {
-            theme::CARD_BG_HOVER
-        } else {
-            Color32::TRANSPARENT
+        let available = kind != AdLayoutKind::Custom || !self.custom_layout.is_empty();
+        let (rect, response) =
+            ui.allocate_exact_size(Vec2::new(ui.available_width(), 80.0), Sense::click());
+        layout_control(ui, &format!("layout_{}", kind.label()), rect);
+        ui.painter().rect(
+            rect,
+            7.0,
+            if selected {
+                theme::ACCENT_STRONG.gamma_multiply(0.25)
+            } else if response.hovered() {
+                theme::CARD_BG_HOVER
+            } else {
+                theme::CARD_BG.gamma_multiply(0.35)
+            },
+            Stroke::new(
+                1.0,
+                theme::ACCENT.gamma_multiply(if selected { 0.85 } else { 0.25 }),
+            ),
+            StrokeKind::Inside,
+        );
+        let preview = Rect::from_min_size(
+            rect.left_top() + Vec2::new(10.0, 15.0),
+            Vec2::new(68.0, 50.0),
+        );
+        let tiles = match kind {
+            AdLayoutKind::Perception => vec![
+                (0.0, 0.0, 0.6, 1.0),
+                (0.64, 0.0, 1.0, 0.47),
+                (0.64, 0.53, 1.0, 1.0),
+            ],
+            AdLayoutKind::Planning => vec![
+                (0.0, 0.0, 0.48, 0.57),
+                (0.0, 0.63, 0.48, 1.0),
+                (0.54, 0.0, 1.0, 0.47),
+                (0.54, 0.53, 1.0, 1.0),
+            ],
+            AdLayoutKind::Control => vec![
+                (0.0, 0.0, 0.48, 0.47),
+                (0.54, 0.0, 1.0, 0.47),
+                (0.0, 0.53, 0.48, 1.0),
+                (0.54, 0.53, 1.0, 1.0),
+            ],
+            AdLayoutKind::Custom => vec![
+                (0.0, 0.0, 1.0, 0.3),
+                (0.0, 0.36, 0.48, 1.0),
+                (0.54, 0.36, 1.0, 1.0),
+            ],
         };
-        ui.painter().rect_filled(rect, CornerRadius::same(6), fill);
-        if selected {
-            ui.painter().rect_filled(
-                Rect::from_min_size(rect.left_top(), Vec2::new(3.0, rect.height())),
-                CornerRadius::ZERO,
-                theme::ACCENT,
+        for (x0, y0, x1, y1) in tiles {
+            let tile = Rect::from_min_max(
+                preview.min + Vec2::new(x0 * preview.width(), y0 * preview.height()),
+                preview.min + Vec2::new(x1 * preview.width(), y1 * preview.height()),
+            );
+            ui.painter().rect(
+                tile,
+                2.0,
+                theme::ACCENT.gamma_multiply(0.15),
+                Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.55)),
+                StrokeKind::Inside,
             );
         }
-
-        // Text only — no leading icons.
         ui.painter().text(
-            rect.left_center() + Vec2::new(12.0, 0.0),
+            rect.left_top() + Vec2::new(90.0, 27.0),
             egui::Align2::LEFT_CENTER,
-            kind.label(),
+            kind.display_label(),
             egui::FontId::proportional(13.0),
-            theme::TEXT,
+            if available {
+                theme::TEXT
+            } else {
+                theme::TEXT_DIM.gamma_multiply(0.55)
+            },
         );
-
-        // Pin control on the right.
+        ui.painter().text(
+            rect.left_top() + Vec2::new(90.0, 52.0),
+            egui::Align2::LEFT_CENTER,
+            if selected {
+                "使用中"
+            } else if available {
+                "点击切换"
+            } else {
+                "尚未保存"
+            },
+            egui::FontId::proportional(11.0),
+            theme::TEXT_DIM,
+        );
         let pin_rect = Rect::from_center_size(
-            Pos2::new(rect.right() - 16.0, rect.center().y),
+            Pos2::new(rect.right() - 17.0, rect.top() + 18.0),
             Vec2::splat(22.0),
         );
-        let pin_id = ui.id().with("pin").with(kind.label());
-        let pin_resp = ui.interact(pin_rect, pin_id, Sense::click());
-        let pin_bg = if pinned {
-            theme::ACCENT_STRONG
-        } else if pin_resp.hovered() {
-            theme::CARD_BG
-        } else {
-            Color32::TRANSPARENT
-        };
-        ui.painter().circle_filled(pin_rect.center(), 10.0, pin_bg);
+        let pin = ui.interact(
+            pin_rect,
+            ui.id().with(("pin", kind.label())),
+            Sense::click(),
+        );
+        layout_control(ui, &format!("pin_{}", kind.label()), pin_rect);
+        if pinned {
+            ui.painter()
+                .circle_filled(pin_rect.center(), 10.0, theme::ACCENT_STRONG);
+        }
         paint_nail(
             ui.painter(),
             pin_rect.center(),
@@ -1027,16 +1130,13 @@ impl AdShell {
                 theme::TEXT_DIM
             },
         );
-        if pin_resp.on_hover_text("Pin as default layout").clicked() {
+        if pin.on_hover_text("设为默认布局").clicked() && available {
             self.default_layout = Some(kind);
-            re_log::info!("Pinned default layout: {}", kind.label());
         }
-
-        if response.clicked() {
+        if response.clicked() && available {
             self.apply_layout(ctx, kind);
         }
-
-        ui.add_space(4.0);
+        ui.add_space(10.0);
     }
 
     pub(crate) fn show_panel_secondary(
@@ -1045,350 +1145,304 @@ impl AdShell {
         viewport: &re_viewport_blueprint::ViewportBlueprint,
         ui: &mut Ui,
     ) {
+        use re_viewer_context::{Contents, DragAndDropPayload, VisitorControlFlow};
         let mut panel_open_flag = self.panel_open;
         egui::Panel::left("ad_panel_secondary")
             .resizable(true)
             .drag_to_open(false)
-            .default_size(260.0)
-            .min_size(200.0)
-            .frame(egui::Frame {
-                fill: theme::PANEL_BG,
-                inner_margin: egui::Margin::same(12),
-                stroke: Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.2)),
-                ..Default::default()
-            })
+            .default_size(256.0)
+            .min_size(224.0)
+            .frame(layout_drawer_frame())
             .show_collapsible(ui, &mut panel_open_flag, |ui| {
-                ui.visuals_mut().override_text_color = Some(theme::TEXT);
-                ui.visuals_mut().widgets.inactive.fg_stroke = Stroke::new(1.0, theme::TEXT);
-                ui.visuals_mut().widgets.hovered.fg_stroke = Stroke::new(1.0, theme::TEXT);
-                ui.visuals_mut().widgets.active.fg_stroke = Stroke::new(1.0, Color32::WHITE);
-                ui.visuals_mut().widgets.inactive.bg_fill = theme::CARD_BG;
-                ui.visuals_mut().widgets.inactive.weak_bg_fill = theme::CARD_BG;
-                ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
-                ui.visuals_mut().extreme_bg_color = theme::CARD_BG;
-
-                ui.label(
-                    RichText::new("Edit layout")
-                        .strong()
-                        .size(15.0)
-                        .color(theme::TEXT),
+                layout_control(ui, "panel_rect", ui.max_rect());
+                drawer_heading(ui, "面板管理", &mut self.panel_open);
+                ui.add_space(10.0);
+                let search = ui.add_sized(
+                    [ui.available_width(), 36.0],
+                    egui::TextEdit::singleline(&mut self.panel_search)
+                        .hint_text("搜索添加面板…")
+                        .margin(egui::Margin::symmetric(10, 8)),
                 );
-                ui.label(
-                    RichText::new("Add or modify visualizations in this layout")
-                        .size(11.0)
-                        .color(theme::TEXT_DIM),
-                );
+                layout_control(ui, "panel_search", search.rect);
                 ui.add_space(12.0);
 
+                // Keep the two layout actions reachable while the library/list scrolls.
+                egui::Panel::bottom("ad_panel_save_actions")
+                    .frame(egui::Frame::new().inner_margin(egui::Margin::symmetric(0, 10)))
+                    .show_inside(ui, |ui| {
+                        ui.vertical(|ui| {
+                            let save = layout_action(ui, "保存布局", true);
+                            layout_control(ui, "save_layout", save.rect);
+                            if save.clicked() {
+                                match crate::saving::RrdSnapshot::blueprint(ctx.store_context.blueprint, None)
+                                    .and_then(crate::saving::RrdSnapshot::encode)
+                                {
+                                    Ok(bytes) => {
+                                        self.custom_layout = bytes;
+                                        self.active_layout = Some(AdLayoutKind::Custom);
+                                        self.default_layout = Some(AdLayoutKind::Custom);
+                                        self.layout_notice = "已保存为自定义布局".into();
+                                    }
+                                    Err(err) => {
+                                        self.layout_notice = format!("保存失败：{err}");
+                                        re_log::error!("Failed to save custom layout: {err}");
+                                    }
+                                }
+                            }
+                            ui.add_space(6.0);
+                            let export = layout_action(ui, "导出布局", false);
+                            layout_control(ui, "export_layout", export.rect);
+                            if export.clicked() {
+                                use re_ui::RecordingCommandSender as _;
+                                ctx.command_sender().send_recording_command(re_ui::RecordingCommand {
+                                    recording_id: ctx.store_context.recording.store_id().clone(),
+                                    kind: re_ui::RecordingCommandKind::SaveBlueprint,
+                                });
+                            }
+                            if !self.layout_notice.is_empty() {
+                                ui.add_space(4.0);
+                                ui.label(RichText::new(&self.layout_notice).size(11.0).color(theme::TEXT_DIM));
+                            }
+                        });
+                    });
                 egui::ScrollArea::vertical()
                     .id_salt("ad_panel_edit_scroll")
                     .auto_shrink([false, false])
                     .show(ui, |ui| {
-                        section_label(ui, "Add");
-                        ui.add_space(4.0);
-
-                        let add_trigger = ui.add(
-                            egui::Button::new(
-                                RichText::new("Scene / camera / control…")
-                                    .size(12.0)
-                                    .color(theme::TEXT),
-                            )
-                            .fill(theme::CARD_BG)
-                            .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.35)))
-                            .corner_radius(6.0)
-                            .min_size(egui::vec2(ui.available_width(), 30.0)),
-                        );
-                        egui::Popup::menu(&add_trigger)
-                            .id(egui::Id::new("ad_panel_add_menu"))
-                            .align(egui::RectAlign::BOTTOM_START)
-                            .gap(4.0)
-                            .show(|ui| {
-                                egui::Frame::new()
-                                    .fill(theme::PANEL_BG)
-                                    .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.4)))
-                                    .corner_radius(8.0)
-                                    .inner_margin(egui::Margin::symmetric(8, 8))
-                                    .show(ui, |ui| {
-                                        ui.set_min_width(240.0);
-                                        ui.set_max_height(320.0);
-                                        ui.visuals_mut().override_text_color = Some(theme::TEXT);
-                                        ui.visuals_mut().widgets.hovered.weak_bg_fill =
-                                            theme::CARD_BG_HOVER;
-                                        ui.visuals_mut().selection.bg_fill =
-                                            theme::ACCENT_STRONG.gamma_multiply(0.45);
-                                        egui::ScrollArea::vertical().show(ui, |ui| {
-                                            let mut presets = vec![(
-                                                "3D scene".to_owned(),
-                                                "3D",
-                                                "/lidar/up/points".to_owned(),
-                                                "+ /lidar/**\n+ /vehicle/**\n+ /planning/**\n+ /perception/**\n+ /prediction/**\n+ /hdmap/**"
-                                                    .to_owned(),
-                                            )];
-                                            for topic in self
-                                                .mcap_topic_list
-                                                .iter()
-                                                .filter(|t| t.starts_with("/camera/"))
-                                            {
-                                                presets.push((
-                                                    topic
-                                                        .trim_start_matches("/camera/")
-                                                        .to_owned(),
-                                                    "2D",
-                                                    topic.clone(),
-                                                    format!("+ {topic}/**"),
-                                                ));
-                                            }
-                                            ui.label(
-                                                RichText::new("Spatial")
-                                                    .size(10.0)
-                                                    .strong()
-                                                    .color(theme::ACCENT),
-                                            );
-                                            ui.add_space(4.0);
-                                            for (name, class, origin, filter) in presets {
-                                                if menu_row(ui, &format!("+ {name}")).clicked() {
-                                                    let mut view =
-                                                        re_viewport_blueprint::ViewBlueprint::new(
-                                                            class.into(),
-                                                            re_viewer_context::RecommendedView {
-                                                                origin: origin.into(),
-                                                                query_filter:
-                                                                    re_log_types::EntityPathFilter::parse_forgiving(
-                                                                        &filter,
-                                                                    ),
-                                                            },
-                                                        );
-                                                    view.display_name = Some(name);
-                                                    viewport.add_views(
-                                                        std::iter::once(view),
-                                                        None,
-                                                        None,
-                                                    );
-                                                    viewport.mark_user_interaction(ctx);
-                                                    ui.close();
-                                                }
-                                            }
-                                            if !self
-                                                .mcap_topic_list
-                                                .iter()
-                                                .any(|t| t.starts_with("/camera/"))
-                                            {
-                                                ui.label(
-                                                    RichText::new("No camera channels in this bag")
-                                                        .size(11.0)
-                                                        .color(theme::TEXT_DIM),
-                                                );
-                                            }
-                                            ui.add_space(6.0);
-                                            ui.label(
-                                                RichText::new("Control extras")
-                                                    .size(10.0)
-                                                    .strong()
-                                                    .color(theme::ACCENT),
-                                            );
-                                            ui.add_space(4.0);
-                                            for (name, preset) in [
-                                                ("Acceleration tracking", "acceleration"),
-                                                ("Heading error", "heading"),
-                                                ("Controller runtime", "runtime"),
-                                                ("Full control dashboard", "control"),
-                                            ] {
-                                                if menu_row(ui, &format!("+ {name}")).clicked() {
-                                                    let mut view =
-                                                        re_viewport_blueprint::ViewBlueprint::new_with_root_wildcard(
-                                                            "AdDebug".into(),
-                                                        );
-                                                    view.space_origin =
-                                                        format!("/debug/{preset}").into();
-                                                    view.display_name = Some(name.into());
-                                                    viewport.add_views(
-                                                        std::iter::once(view),
-                                                        None,
-                                                        None,
-                                                    );
-                                                    viewport.mark_user_interaction(ctx);
-                                                    ui.close();
-                                                }
-                                            }
-                                            ui.add_space(6.0);
-                                            ui.separator();
-                                            ui.add_space(4.0);
-                                            if menu_row(ui, "More types / split / tabs…").clicked()
-                                            {
-                                                re_viewport_blueprint::ui::show_add_view_or_container_modal(
-                                                    viewport.root_container,
-                                                );
+                        ui.set_width(ui.available_width());
+                        ui.spacing_mut().item_spacing.y = 4.0;
+                        layout_section_label(ui, "面板库");
+                        ui.add_space(8.0);
+                        let search = self.panel_search.trim().to_lowercase();
+                        let groups: &[(&str, &[(&str, &str, &str)])] = &[
+                            ("场景与轨迹", &[("三维场景", "scene", "3D scene"), ("XY 轨迹", "trajectory", "Trajectory XY")]),
+                            ("规划与控制", &[
+                                ("规划曲线", "profile", "Planning profile"),
+                                ("速度跟踪", "speed", "Speed tracking"),
+                                ("转向反馈", "steering", "Steering feedback"),
+                                ("跟踪误差", "errors", "Tracking errors"),
+                                ("踏板", "pedals", "Pedals"),
+                            ]),
+                            ("数据与诊断", &[
+                                ("规划消息", "planning", "Planning message"),
+                                ("信号曲线", "plot", "Signal plot"),
+                                ("值监视", "watch", "Value watch"),
+                                ("状态变化", "states", "State transitions"),
+                                ("话题健康", "health", "Topic health"),
+                            ]),
+                            ("更多工具", &[
+                                ("消息检查器", "inspector", "Topic inspector"),
+                                ("加速度跟踪", "acceleration", "Acceleration tracking"),
+                                ("航向误差", "heading", "Heading error"),
+                                ("控制器耗时", "runtime", "Controller runtime"),
+                                ("完整控制仪表盘", "control", "Full control dashboard"),
+                            ]),
+                        ];
+                        let mut matches = 0;
+                        for (index, (group, entries)) in groups.iter().enumerate() {
+                            let filtered: Vec<_> = entries.iter().filter(|(name, preset, english)| {
+                                format!("{group} {name} {preset} {english}").to_lowercase().contains(&search)
+                            }).collect();
+                            if filtered.is_empty() { continue; }
+                            matches += filtered.len();
+                            library_group(ui, group, filtered.len(), index < 2, !search.is_empty(), |ui| {
+                                for (name, preset, _) in filtered {
+                                    let response = library_row(ui, name);
+                                    layout_control(ui, &format!("add_{preset}"), response.rect);
+                                    if response.clicked() {
+                                        let mut view = if *preset == "scene" {
+                                            re_viewport_blueprint::ViewBlueprint::new("3D".into(), re_viewer_context::RecommendedView {
+                                                origin: "/lidar/up/points".into(),
+                                                query_filter: re_log_types::EntityPathFilter::parse_forgiving(
+                                                    "+ /lidar/**\n+ /vehicle/**\n+ /planning/**\n+ /perception/**\n+ /prediction/**\n+ /hdmap/**",
+                                                ),
+                                            })
+                                        } else {
+                                            let mut view = re_viewport_blueprint::ViewBlueprint::new_with_root_wildcard("AdDebug".into());
+                                            view.space_origin = format!("/debug/{preset}").into();
+                                            view
+                                        };
+                                        view.display_name = Some((*name).into());
+                                        viewport.add_views(std::iter::once(view), None, None);
+                                        viewport.mark_user_interaction(ctx);
+                                        self.topics_picker_expanded = false;
+                                        self.layout_notice.clear();
+                                    }
+                                }
+                            });
+                            ui.add_space(8.0);
+                        }
+                        let cameras: Vec<_> = self.mcap_topic_list.iter().filter(|topic| {
+                            topic.starts_with("/camera/") && format!("相机 {topic}").to_lowercase().contains(&search)
+                        }).collect();
+                        if !cameras.is_empty() {
+                            matches += cameras.len();
+                            library_group(ui, "相机", cameras.len(), false, !search.is_empty(), |ui| {
+                                for topic in cameras {
+                                    let name = topic.trim_start_matches("/camera/");
+                                    if library_row(ui, name).clicked() {
+                                        let mut view = re_viewport_blueprint::ViewBlueprint::new("2D".into(), re_viewer_context::RecommendedView {
+                                            origin: topic.clone().into(),
+                                            query_filter: re_log_types::EntityPathFilter::parse_forgiving(&format!("+ {topic}/**")),
+                                        });
+                                        view.display_name = Some(name.into());
+                                        viewport.add_views(std::iter::once(view), None, None);
+                                        viewport.mark_user_interaction(ctx);
+                                    }
+                                }
+                            });
+                        }
+                        if matches == 0 {
+                            ui.label(RichText::new("没有匹配的面板").size(12.0).color(theme::TEXT_DIM));
+                        }
+                        ui.add_space(6.0);
+                        let more = ui.add(egui::Button::new(RichText::new("更多类型 / 分屏 / 标签页…").size(11.0).color(theme::TEXT_DIM)).frame(false));
+                        layout_control(ui, "more_types", more.rect);
+                        if more.clicked() {
+                            re_viewport_blueprint::ui::show_add_view_or_container_modal(viewport.root_container);
+                        }
+                        ui.add_space(12.0);
+                        ui.separator();
+                        ui.add_space(12.0);
+                        layout_section_label(ui, &format!("已添加 · {}", viewport.views.len()));
+                        ui.add_space(8.0);
+                        let mut ordered_views = Vec::new();
+                        let _ = viewport.visit_contents(&mut |contents, _| {
+                            if let Contents::View(id) = contents { ordered_views.push(*id); }
+                            VisitorControlFlow::<()>::Continue
+                        });
+                        for id in ordered_views {
+                            let Some(view) = viewport.view(&id) else { continue; };
+                            let row = egui::Frame::new()
+                                .fill(theme::CARD_BG.gamma_multiply(0.4))
+                                .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.3)))
+                                .corner_radius(6.0)
+                                .inner_margin(egui::Margin::symmetric(6, 5))
+                                .show(ui, |ui| {
+                                    ui.set_width(ui.available_width());
+                                    ui.horizontal(|ui| {
+                                        ui.spacing_mut().item_spacing.x = 4.0;
+                                        let (rect, drag) = ui.allocate_exact_size(Vec2::new(16.0, 24.0), Sense::drag());
+                                        paint_grip(ui.painter(), rect.center());
+                                        drag.dnd_set_drag_payload(DragAndDropPayload::Contents { contents: vec![Contents::View(id)] });
+                                        layout_control(ui, &format!("drag_{id}"), rect);
+                                        let title = panel_display_name(view.display_name.as_deref().unwrap_or("未命名面板"));
+                                        let title_width = (ui.available_width() - 64.0).max(24.0);
+                                        let (title_rect, response) = ui.allocate_exact_size(Vec2::new(title_width, 26.0), Sense::click());
+                                        ui.painter().with_clip_rect(title_rect.intersect(ui.clip_rect())).text(title_rect.left_center(), egui::Align2::LEFT_CENTER, title, egui::FontId::proportional(13.0), theme::TEXT);
+                                        if response.clicked() { viewport.focus_tab(id); }
+                                        let mut visible = view.visible;
+                                        let visibility = re_ui::ad_panel_icon_button(ui, if visible { &re_ui::icons::VISIBLE } else { &re_ui::icons::INVISIBLE }, if visible { "隐藏面板" } else { "显示面板" });
+                                        if visibility.clicked() { visible = !visible; }
+                                        layout_control(ui, &format!("visible_{id}"), visibility.rect);
+                                        if visible != view.visible {
+                                            viewport.set_content_visibility(ctx, &Contents::View(id), visible);
+                                            viewport.mark_user_interaction(ctx);
+                                            self.layout_notice.clear();
+                                        }
+                                        let menu = re_ui::ad_panel_more_button(ui);
+                                        layout_control(ui, &format!("menu_{id}"), menu.rect);
+                                        egui::Popup::menu(&menu).id(egui::Id::new(("ad_panel_more", id))).show(|ui| {
+                                            let focus = ui.button("定位面板");
+                                            if focus.clicked() { viewport.focus_tab(id); ui.close(); }
+                                            let remove = ui.button("删除面板");
+                                            layout_control(ui, &format!("remove_{id}"), remove.rect);
+                                            if remove.clicked() {
+                                                viewport.remove_contents(Contents::View(id));
+                                                viewport.mark_user_interaction(ctx);
+                                                self.layout_notice.clear();
                                                 ui.close();
                                             }
                                         });
                                     });
-                            });
-
-                        ui.add_space(8.0);
-                        ui.label(
-                            RichText::new("Debug panels")
-                                .size(10.0)
-                                .strong()
-                                .color(theme::ACCENT),
-                        );
-                        ui.add_space(4.0);
-                        for (name, preset) in [
-                            ("Topic inspector", "inspector"),
-                            ("Signal plot", "plot"),
-                            ("Planning profile", "profile"),
-                            ("Trajectory XY", "trajectory"),
-                            ("Speed tracking", "speed"),
-                            ("Steering feedback", "steering"),
-                            ("Tracking errors", "errors"),
-                            ("Pedals", "pedals"),
-                            ("State transitions", "states"),
-                            ("Value watch", "watch"),
-                            ("Topic health", "health"),
-                        ] {
-                            if panel_list_button(ui, name).clicked() {
-                                let mut view =
-                                    re_viewport_blueprint::ViewBlueprint::new_with_root_wildcard(
-                                        "AdDebug".into(),
-                                    );
-                                view.space_origin = format!("/debug/{preset}").into();
-                                view.display_name = Some(name.into());
-                                viewport.add_views(std::iter::once(view), None, None);
-                                viewport.mark_user_interaction(ctx);
-                                self.topics_picker_expanded = false;
-                            }
-                        }
-
-                        ui.add_space(12.0);
-                        section_label(ui, "Current panels");
-                        ui.label(
-                            RichText::new("Drag their titles in the viewport to dock")
-                                .size(11.0)
-                                .color(theme::TEXT_DIM),
-                        );
-                        ui.add_space(6.0);
-                        if viewport.views.is_empty() {
-                            egui::Frame::new()
-                                .fill(theme::RAIL_BG)
-                                .corner_radius(6.0)
-                                .inner_margin(egui::Margin::symmetric(10, 8))
-                                .show(ui, |ui| {
-                                    ui.set_width(ui.available_width());
-                                    ui.label(
-                                        RichText::new("No panels yet — add one above")
-                                            .size(12.0)
-                                            .color(theme::TEXT_DIM),
-                                    );
-                                });
-                        } else {
-                            egui::Frame::new()
-                                .fill(theme::RAIL_BG)
-                                .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.16)))
-                                .corner_radius(6.0)
-                                .inner_margin(egui::Margin::symmetric(8, 6))
-                                .show(ui, |ui| {
-                                    ui.set_width(ui.available_width());
-                                    for view in viewport.views.values() {
-                                        ui.horizontal(|ui| {
-                                            let remove = ui.add(
-                                                egui::Button::new(
-                                                    RichText::new("×")
-                                                        .size(14.0)
-                                                        .color(theme::TEXT),
-                                                )
-                                                .fill(theme::CARD_BG)
-                                                .corner_radius(4.0)
-                                                .min_size(egui::vec2(24.0, 24.0)),
-                                            );
-                                            if remove
-                                                .on_hover_text("Remove this panel")
-                                                .clicked()
-                                            {
-                                                viewport.remove_contents(
-                                                    re_viewer_context::Contents::View(view.id),
-                                                );
-                                                viewport.mark_user_interaction(ctx);
-                                            }
-                                            ui.label(
-                                                RichText::new(
-                                                    view.display_name
-                                                        .as_deref()
-                                                        .unwrap_or("Unnamed panel"),
-                                                )
-                                                .size(12.0)
-                                                .color(theme::TEXT),
-                                            );
-                                        });
-                                        ui.add_space(2.0);
-                                    }
-                                });
-                        }
-
-                        ui.add_space(12.0);
-                        section_label(ui, "Save");
-                        ui.add_space(4.0);
-                        if ui
-                            .add(
-                                egui::Button::new(
-                                    RichText::new("Save as Custom layout")
-                                        .size(12.0)
-                                        .color(Color32::WHITE),
-                                )
-                                .fill(theme::ACCENT_STRONG)
-                                .corner_radius(6.0)
-                                .min_size(egui::vec2(ui.available_width(), 32.0)),
-                            )
-                            .clicked()
-                        {
-                            match crate::saving::RrdSnapshot::blueprint(
-                                ctx.store_context.blueprint,
-                                None,
-                            )
-                            .and_then(crate::saving::RrdSnapshot::encode)
+                                }).response;
+                            if let Some(payload) = row.dnd_release_payload::<DragAndDropPayload>()
+                                && let DragAndDropPayload::Contents { contents } = payload.as_ref()
+                                && !contents.contains(&Contents::View(id))
+                                && let Some((parent, position)) = viewport.find_parent_and_position_index(&Contents::View(id))
                             {
-                                Ok(bytes) => {
-                                    self.custom_layout = bytes;
-                                    self.active_layout = Some(AdLayoutKind::Custom);
-                                    self.default_layout = Some(AdLayoutKind::Custom);
-                                }
-                                Err(err) => {
-                                    re_log::error!("Failed to save custom layout: {err}")
-                                }
+                                viewport.move_contents(contents.clone(), parent, position);
+                                viewport.mark_user_interaction(ctx);
+                                self.layout_notice.clear();
                             }
+                            ui.add_space(6.0);
                         }
-                        ui.add_space(6.0);
-                        use re_ui::RecordingCommandSender as _;
-                        if ui
-                            .add(
-                                egui::Button::new(
-                                    RichText::new("Export layout (.rbl)")
-                                        .size(12.0)
-                                        .color(theme::TEXT),
-                                )
-                                .fill(theme::CARD_BG)
-                                .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.3)))
-                                .corner_radius(6.0)
-                                .min_size(egui::vec2(ui.available_width(), 30.0)),
-                            )
-                            .clicked()
-                        {
-                            ctx.command_sender().send_recording_command(
-                                re_ui::RecordingCommand {
-                                    recording_id: ctx.store_context.recording.store_id().clone(),
-                                    kind: re_ui::RecordingCommandKind::SaveBlueprint,
-                                },
-                            );
+                        if viewport.views.is_empty() {
+                            ui.label(RichText::new("从面板库添加面板").size(12.0).color(theme::TEXT_DIM));
                         }
-                        ui.add_space(10.0);
-                        ui.label(
-                            RichText::new(
-                                "Drag panel titles to split or tab; drag dividers to resize. Custom stays in this browser. Export .rbl for a portable backup (open via Source).",
-                            )
-                            .size(11.0)
-                            .color(theme::TEXT_DIM),
-                        );
                     });
             });
-        self.panel_open = panel_open_flag;
+        // Both the heading and egui's resize-to-close interaction can close the drawer.
+        self.panel_open &= panel_open_flag;
+        self.show_layout_workspace_header(ctx, ui);
+    }
+
+    fn show_layout_workspace_header(&mut self, ctx: &ViewerContext<'_>, ui: &mut Ui) {
+        if !self.panel_open && !self.layout_open {
+            return;
+        }
+        egui::Panel::top("ad_layout_workspace_header")
+            .frame(
+                egui::Frame::new()
+                    .fill(theme::RAIL_BG)
+                    .inner_margin(egui::Margin::symmetric(12, 8)),
+            )
+            .show_inside(ui, |ui| {
+                ui.horizontal(|ui| {
+                    let kind = self.active_layout.unwrap_or(AdLayoutKind::Perception);
+                    ui.label(
+                        RichText::new(kind.workspace_title())
+                            .size(18.0)
+                            .strong()
+                            .color(theme::TEXT),
+                    );
+                    ui.add_space(8.0);
+                    let selected = ui.add(
+                        egui::Button::new(kind.display_label()).min_size(Vec2::new(125.0, 30.0)),
+                    );
+                    layout_control(ui, "layout_selector", selected.rect);
+                    let c = selected.rect.right_center() - Vec2::new(12.0, 0.0);
+                    ui.painter().add(egui::Shape::convex_polygon(
+                        vec![
+                            c + Vec2::new(-4.0, -2.0),
+                            c + Vec2::new(4.0, -2.0),
+                            c + Vec2::new(0.0, 3.0),
+                        ],
+                        theme::TEXT_DIM,
+                        Stroke::NONE,
+                    ));
+                    egui::Popup::menu(&selected).show(|ui| {
+                        for kind in AdLayoutKind::all() {
+                            let available =
+                                kind != AdLayoutKind::Custom || !self.custom_layout.is_empty();
+                            let response = ui.add_enabled(
+                                available,
+                                egui::Button::new(kind.display_label())
+                                    .min_size(Vec2::new(140.0, 28.0)),
+                            );
+                            layout_control(ui, &format!("select_{}", kind.label()), response.rect);
+                            if response.clicked() {
+                                self.apply_layout(&ctx.app_ctx, kind);
+                                ui.close();
+                            }
+                        }
+                    });
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui
+                            .add_sized([74.0, 30.0], egui::Button::new("全屏"))
+                            .clicked()
+                        {
+                            ctx.command_sender().send_ui(UICommand::ToggleFullscreen);
+                        }
+                        if ui
+                            .add_sized([74.0, 30.0], egui::Button::new("设置"))
+                            .clicked()
+                        {
+                            ctx.command_sender().send_ui(UICommand::Settings);
+                        }
+                    });
+                });
+            });
     }
 
     /// Global display switches, applied to each spatial view without deleting cached data.
@@ -1401,143 +1455,139 @@ impl AdShell {
         let layers = super::ad_layers::catalog(&self.mcap_topic_list);
         let mut hitboxes = std::collections::BTreeMap::<String, [f32; 2]>::new();
         let mut changed = false;
+        let mut controls = std::collections::BTreeMap::<String, [f32; 2]>::new();
+        let mut rows = std::collections::BTreeMap::<String, serde_json::Value>::new();
+        let mut panel_rect = None;
+        let bounds = ui.available_rect_before_wrap();
+        let width = (bounds.width() - 20.0).clamp(240.0, 320.0);
         egui::Area::new(egui::Id::new("ad_viewport_topics_picker"))
-            .fixed_pos(Pos2::new(
-                ui.available_rect_before_wrap().left() + 12.0,
-                32.0,
-            ))
+            .fixed_pos(bounds.min + Vec2::new(10.0, 31.0))
             .order(egui::Order::Foreground)
             .show(ui.ctx(), |ui| {
-                let toggle = ui.add(
-                    egui::Button::new(
-                        RichText::new(if self.topics_picker_expanded {
-                            "Layers"
-                        } else {
-                            "Layers"
-                        })
-                        .size(12.0)
-                        .color(theme::TEXT),
-                    )
-                    .fill(if self.topics_picker_expanded {
-                        theme::ACCENT_STRONG.gamma_multiply(0.85)
-                    } else {
-                        theme::CARD_BG
-                    })
-                    .stroke(Stroke::new(
-                        1.0,
-                        if self.topics_picker_expanded {
-                            theme::ACCENT
-                        } else {
-                            theme::ACCENT.gamma_multiply(0.35)
-                        },
-                    ))
-                    .corner_radius(6.0)
-                    .min_size(egui::vec2(72.0, 28.0)),
+                source_style(ui);
+                ui.spacing_mut().item_spacing.y = 0.0;
+                let (rect, toggle) = ui.allocate_exact_size(Vec2::new(68.0, 28.0), Sense::click());
+                ui.painter().rect(
+                    rect,
+                    5.0,
+                    SOURCE_INPUT,
+                    Stroke::new(1.0, SOURCE_BORDER),
+                    StrokeKind::Inside,
                 );
-                // Drawn chevron — avoid Unicode ▾ which often becomes □ on web.
-                {
-                    let r = toggle.rect;
-                    let c = egui::pos2(r.right() - 12.0, r.center().y + 0.5);
-                    let s = 3.8;
-                    let open = self.topics_picker_expanded;
-                    let pts = if open {
-                        vec![
-                            egui::pos2(c.x - s, c.y + s * 0.35),
-                            egui::pos2(c.x + s, c.y + s * 0.35),
-                            egui::pos2(c.x, c.y - s * 0.55),
-                        ]
-                    } else {
-                        vec![
-                            egui::pos2(c.x - s, c.y - s * 0.35),
-                            egui::pos2(c.x + s, c.y - s * 0.35),
-                            egui::pos2(c.x, c.y + s * 0.55),
-                        ]
-                    };
-                    ui.painter().add(egui::Shape::convex_polygon(
-                        pts,
-                        theme::TEXT_DIM,
-                        Stroke::NONE,
-                    ));
-                }
-                if toggle.on_hover_text("Show or hide scene layers").clicked() {
+                ui.painter().text(
+                    rect.left_center() + Vec2::new(9.0, 0.0),
+                    egui::Align2::LEFT_CENTER,
+                    "图层",
+                    egui::FontId::proportional(14.0),
+                    theme::TEXT,
+                );
+                paint_layer_arrow(ui, rect.right_center() - Vec2::new(14.0, 0.0), true);
+                controls.insert("toggle".into(), [rect.center().x, rect.center().y]);
+                if toggle.clicked() {
                     self.topics_picker_expanded = !self.topics_picker_expanded;
                 }
                 if !self.topics_picker_expanded {
                     return;
                 }
-                ui.add_space(6.0);
-                egui::Frame::new()
-                    .fill(theme::PANEL_BG)
-                    .inner_margin(egui::Margin::symmetric(12, 12))
-                    .corner_radius(8.0)
-                    .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.35)))
-                    .shadow(egui::Shadow {
-                        offset: [0, 8],
-                        blur: 24,
-                        spread: 0,
-                        color: Color32::from_black_alpha(120),
+                ui.add_space(10.0);
+                let frame = egui::Frame::new()
+                    .fill(SOURCE_BG)
+                    .inner_margin(egui::Margin {
+                        left: 16,
+                        right: 16,
+                        top: 14,
+                        bottom: 10,
                     })
+                    .corner_radius(6.0)
+                    .stroke(Stroke::new(1.0, SOURCE_BORDER))
                     .show(ui, |ui| {
-                        ui.set_width(300.0);
-                        // Force readable text inside this floating panel — default
-                        // checkbox / collapsing labels were near-black on PANEL_BG.
-                        ui.visuals_mut().override_text_color = Some(theme::TEXT);
-                        ui.visuals_mut().widgets.noninteractive.fg_stroke =
-                            Stroke::new(1.0, theme::TEXT);
-                        ui.visuals_mut().widgets.inactive.fg_stroke =
-                            Stroke::new(1.0, theme::TEXT);
-                        ui.visuals_mut().widgets.hovered.fg_stroke =
-                            Stroke::new(1.0, theme::TEXT);
-                        ui.visuals_mut().widgets.active.fg_stroke =
-                            Stroke::new(1.0, Color32::WHITE);
-                        ui.visuals_mut().extreme_bg_color = theme::CARD_BG;
-                        ui.visuals_mut().widgets.inactive.bg_fill = theme::CARD_BG;
-                        ui.visuals_mut().widgets.inactive.weak_bg_fill = theme::CARD_BG;
-                        ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
-
-                        ui.label(
-                            RichText::new("Layers")
-                                .size(13.0)
-                                .strong()
-                                .color(theme::TEXT),
+                        ui.set_width(width - 34.0);
+                        // The collapsed Area remembers its 28 px height. Give the
+                        // tree a screen-bounded content area when it opens again.
+                        ui.set_max_height((ui.ctx().content_rect().height() - 120.0).max(150.0));
+                        let (header, _) = ui.allocate_exact_size(
+                            Vec2::new(ui.available_width(), 24.0),
+                            Sense::hover(),
                         );
-                        ui.label(
-                            RichText::new("Checked = visible in all spatial panels")
-                                .size(11.0)
-                                .color(theme::TEXT_DIM),
+                        ui.painter().text(
+                            header.left_center(),
+                            egui::Align2::LEFT_CENTER,
+                            "图层",
+                            egui::FontId::proportional(16.0),
+                            theme::TEXT,
                         );
-                        ui.add_space(8.0);
-                        ui.horizontal(|ui| {
-                            ui.spacing_mut().item_spacing.x = 6.0;
-                            for (label, value) in [("All", true), ("None", false)] {
-                                let r = ui.add(
-                                    egui::Button::new(
-                                        RichText::new(label).size(11.0).color(theme::TEXT),
-                                    )
-                                    .fill(theme::CARD_BG)
-                                    .stroke(Stroke::new(
-                                        1.0,
-                                        theme::ACCENT.gamma_multiply(0.3),
-                                    ))
-                                    .corner_radius(4.0)
-                                    .min_size(egui::vec2(48.0, 24.0)),
-                                );
-                                if r.clicked() {
-                                    for layer in &layers {
-                                        for topic in &layer.topics {
-                                            self.playback_topic_enabled
-                                                .insert(topic.clone(), value);
-                                        }
+                        let close_rect = Rect::from_center_size(
+                            header.right_center() - Vec2::new(8.0, 0.0),
+                            Vec2::splat(24.0),
+                        );
+                        let close =
+                            ui.interact(close_rect, ui.id().with("close_layers"), Sense::click());
+                        let c = close_rect.center();
+                        for sign in [-1.0, 1.0] {
+                            ui.painter().line_segment(
+                                [
+                                    c + Vec2::new(-5.0, -5.0 * sign),
+                                    c + Vec2::new(5.0, 5.0 * sign),
+                                ],
+                                Stroke::new(1.2, SOURCE_MUTED),
+                            );
+                        }
+                        controls.insert("close".into(), [c.x, c.y]);
+                        if close.clicked() {
+                            self.topics_picker_expanded = false;
+                        }
+                        ui.add_space(10.0);
+                        let (toolbar, _) = ui.allocate_exact_size(
+                            Vec2::new(ui.available_width(), 38.0),
+                            Sense::hover(),
+                        );
+                        let search_rect =
+                            Rect::from_min_max(toolbar.min, toolbar.max - Vec2::new(96.0, 0.0));
+                        let search = layer_search_field(ui, search_rect, &mut self.layer_search);
+                        controls.insert(
+                            "search".into(),
+                            [search.rect.center().x, search.rect.center().y],
+                        );
+                        for (index, key, label, value) in
+                            [(0, "all", "全选", true), (1, "none", "清空", false)]
+                        {
+                            let r = Rect::from_min_size(
+                                Pos2::new(
+                                    toolbar.right() - 88.0 + index as f32 * 48.0,
+                                    toolbar.top(),
+                                ),
+                                Vec2::new(40.0, 38.0),
+                            );
+                            let response = ui.interact(r, ui.id().with(key), Sense::click());
+                            ui.painter().text(
+                                r.center(),
+                                egui::Align2::CENTER_CENTER,
+                                label,
+                                egui::FontId::proportional(14.0),
+                                if response.hovered() {
+                                    theme::TEXT
+                                } else {
+                                    SOURCE_MUTED
+                                },
+                            );
+                            controls.insert(key.into(), [r.center().x, r.center().y]);
+                            if response.clicked() {
+                                for layer in &layers {
+                                    for topic in &layer.topics {
+                                        self.playback_topic_enabled.insert(topic.clone(), value);
                                     }
-                                    changed = true;
                                 }
+                                changed = true;
                             }
-                        });
+                        }
                         ui.add_space(8.0);
+                        let max_height = (ui.ctx().content_rect().bottom() - bounds.top() - 180.0)
+                            .clamp(60.0, 520.0);
                         egui::ScrollArea::vertical()
                             .id_salt("ad_layers_scroll")
-                            .max_height(420.0)
+                            .max_height(max_height)
                             .show(ui, |ui| {
+                                let mut first = true;
                                 for prefix in [
                                     "map",
                                     "sensing",
@@ -1546,18 +1596,39 @@ impl AdShell {
                                     "perception",
                                     "prediction",
                                 ] {
-                                    changed |=
-                                        self.draw_layer_branch(ui, prefix, &layers, &mut hitboxes);
+                                    let visible = layers.iter().any(|l| {
+                                        l.path.starts_with(&format!("{prefix}/"))
+                                            && super::ad_layers::matches(l, &self.layer_search)
+                                    });
+                                    if visible {
+                                        if !first {
+                                            ui.add_space(4.0);
+                                        }
+                                        first = false;
+                                        changed |= self.draw_layer_branch(
+                                            ui,
+                                            prefix,
+                                            &layers,
+                                            &mut hitboxes,
+                                            &mut controls,
+                                            &mut rows,
+                                        );
+                                    }
+                                }
+                                if first {
+                                    ui.label(
+                                        RichText::new(if layers.is_empty() {
+                                            "打开录制文件后显示图层"
+                                        } else {
+                                            "没有匹配的图层"
+                                        })
+                                        .size(13.0)
+                                        .color(SOURCE_MUTED),
+                                    );
                                 }
                             });
-                        if layers.is_empty() {
-                            ui.add_space(4.0);
-                            ui.label(
-                                RichText::new("Open a bag with spatial data.")
-                                    .size(12.0)
-                                    .color(theme::TEXT_DIM),
-                            );
-                        }
+                        // Keep genuine empty geometry visible instead of making a
+                        // checked layer with no current data look like a UI failure.
                         for layer in &layers {
                             if (layer.path.starts_with("prediction/")
                                 || layer.path.starts_with("perception/")
@@ -1567,75 +1638,42 @@ impl AdShell {
                                 })
                             {
                                 let component = if layer.path == "planning/trajectory" {
-                                    re_sdk_types::archetypes::Mesh3D::descriptor_vertex_positions().component
+                                    re_sdk_types::archetypes::Mesh3D::descriptor_vertex_positions()
+                                        .component
                                 } else {
-                                    re_sdk_types::archetypes::LineStrips3D::descriptor_strips().component
+                                    re_sdk_types::archetypes::LineStrips3D::descriptor_strips()
+                                        .component
                                 };
-                                for entity in &layer.entities {
-                                    let result = ctx.store_context.recording.latest_at(
-                                        &ctx.current_query(),
-                                        &entity.as_str().into(),
-                                        [component],
-                                    );
-                                    if result
+                                let empty = layer.entities.iter().any(|entity| {
+                                    ctx.store_context
+                                        .recording
+                                        .latest_at(
+                                            &ctx.current_query(),
+                                            &entity.as_str().into(),
+                                            [component],
+                                        )
                                         .component_batch_raw(component)
                                         .is_some_and(|batch| batch.is_empty())
-                                    {
-                                        ui.label(
-                                            RichText::new(format!(
-                                                "{}: no geometry at current time",
-                                                layer.path
-                                            ))
-                                            .size(11.0)
-                                            .color(theme::TEXT_DIM),
-                                        );
-                                    }
+                                });
+                                if empty {
+                                    ui.label(
+                                        RichText::new(format!(
+                                            "{}：当前无几何数据",
+                                            super::ad_layers::label(&layer.path)
+                                        ))
+                                        .size(12.0)
+                                        .color(SOURCE_MUTED),
+                                    );
                                 }
                             }
                         }
-                        ui.add_space(6.0);
-                        ui.separator();
-                        ui.add_space(6.0);
-                        ui.label(
-                            RichText::new("Lidar height (sensor Z, meters)")
-                                .size(11.0)
-                                .strong()
-                                .color(theme::TEXT),
-                        );
-                        ui.add_space(4.0);
-                        ui.horizontal(|ui| {
-                            ui.spacing_mut().item_spacing.x = 10.0;
-                            for (color, label) in [
-                                (Color32::from_rgb(255, 216, 64), "≤0"),
-                                (Color32::from_rgb(255, 145, 48), "2"),
-                                (Color32::from_rgb(240, 84, 114), "5"),
-                                (Color32::from_rgb(175, 130, 255), "≥10"),
-                            ] {
-                                ui.horizontal(|ui| {
-                                    let (rect, _) = ui.allocate_exact_size(
-                                        egui::vec2(10.0, 10.0),
-                                        egui::Sense::hover(),
-                                    );
-                                    ui.painter().rect_filled(rect, 2.0, color);
-                                    ui.label(
-                                        RichText::new(label).size(11.0).color(theme::TEXT),
-                                    );
-                                });
-                            }
-                        });
-                        ui.add_space(6.0);
-                        ui.label(
-                            RichText::new(
-                                "Hover a layer for its source topic. Raw messages: Panel → Inspector.",
-                            )
-                            .size(11.0)
-                            .color(theme::TEXT_DIM),
-                        );
                         if let Some(error) = &self.playback_window_error {
-                            ui.add_space(4.0);
+                            ui.add_space(6.0);
                             ui.colored_label(Color32::LIGHT_RED, error);
                         }
                     });
+                let r = frame.response.rect;
+                panel_rect = Some([r.left(), r.top(), r.right(), r.bottom()]);
             });
         #[cfg(target_arch = "wasm32")]
         if changed {
@@ -1703,7 +1741,7 @@ impl AdShell {
         ctx.egui_ctx().data_mut(|d| {
             d.insert_temp(
                 egui::Id::new("ad_layer_state"),
-                serde_json::json!({"layers":state,"views":rendered,"nodes":hitboxes}),
+                serde_json::json!({"layers":state,"views":rendered,"nodes":hitboxes,"controls":controls,"rows":rows,"expanded":self.topics_picker_expanded,"filter":self.layer_search,"panel_rect":panel_rect}),
             )
         });
     }
@@ -1714,12 +1752,17 @@ impl AdShell {
         prefix: &str,
         layers: &[super::ad_layers::Layer],
         hitboxes: &mut std::collections::BTreeMap<String, [f32; 2]>,
+        controls: &mut std::collections::BTreeMap<String, [f32; 2]>,
+        rows: &mut std::collections::BTreeMap<String, serde_json::Value>,
     ) -> bool {
         let members = layers
             .iter()
             .filter(|l| l.path == prefix || l.path.starts_with(&format!("{prefix}/")))
             .collect::<Vec<_>>();
-        if members.is_empty() {
+        if !members
+            .iter()
+            .any(|l| super::ad_layers::matches(l, &self.layer_search))
+        {
             return false;
         }
         let enabled = members
@@ -1730,62 +1773,124 @@ impl AdShell {
                     .any(|t| self.playback_topic_enabled.get(t).copied().unwrap_or(false))
             })
             .count();
-        let mut on = enabled == members.len();
+        let on = enabled == members.len();
+        let partial = enabled > 0 && !on;
+        let branch = members.len() != 1 || members[0].path != prefix;
+        let expanded =
+            !self.collapsed_layers.contains(prefix) || !self.layer_search.trim().is_empty();
+        let depth = prefix.matches('/').count() as f32;
+        let (row, _) =
+            ui.allocate_exact_size(Vec2::new(ui.available_width(), 28.0), Sense::hover());
+        let check = Rect::from_center_size(
+            row.left_center() + Vec2::new(28.0 + 20.0 * depth, 0.0),
+            Vec2::splat(16.0),
+        );
+        let click_rect = Rect::from_min_max(Pos2::new(check.left() - 3.0, row.top()), row.max);
+        let response = ui.interact(
+            click_rect,
+            ui.id().with(("layer_checkbox", prefix)),
+            Sense::click(),
+        );
+        if response.hovered() {
+            ui.painter()
+                .rect_filled(click_rect, 4.0, Color32::from_rgb(37, 33, 52));
+        }
+        ui.painter().rect(
+            check,
+            4.0,
+            if on || partial {
+                Color32::from_rgb(163, 116, 246)
+            } else {
+                SOURCE_INPUT
+            },
+            Stroke::new(
+                1.0,
+                if on || partial {
+                    theme::ACCENT
+                } else {
+                    SOURCE_BORDER
+                },
+            ),
+            StrokeKind::Inside,
+        );
+        if on {
+            ui.painter().add(egui::Shape::line(
+                vec![
+                    check.min + Vec2::new(3.5, 8.0),
+                    check.min + Vec2::new(6.5, 11.0),
+                    check.min + Vec2::new(12.5, 4.5),
+                ],
+                Stroke::new(1.8, Color32::WHITE),
+            ));
+        } else if partial {
+            ui.painter().hline(
+                (check.left() + 4.0)..=(check.right() - 4.0),
+                check.center().y,
+                Stroke::new(1.8, Color32::WHITE),
+            );
+        }
+        let label = super::ad_layers::label(prefix);
+        ui.painter().text(
+            Pos2::new(check.right() + 11.0, row.center().y),
+            egui::Align2::LEFT_CENTER,
+            label,
+            egui::FontId::proportional(14.0),
+            theme::TEXT,
+        );
+        if ui.clip_rect().contains_rect(check) {
+            hitboxes.insert(prefix.into(), [check.center().x, check.center().y]);
+        }
+        rows.insert(prefix.into(),serde_json::json!({"label":label,"rect":[row.left(),row.top(),row.right(),row.bottom()],"checked":on,"partial":partial,"expanded":expanded}));
         let mut changed = false;
-        let name = prefix.rsplit('/').next().unwrap_or(prefix);
-        let depth = prefix.matches('/').count();
-        let label = if depth == 0 {
-            RichText::new(name).size(12.5).strong().color(theme::TEXT)
-        } else {
-            RichText::new(name).size(12.0).color(theme::TEXT)
-        };
-        let mut checkbox = |ui: &mut Ui| {
-            let response = ui.add(
-                egui::Checkbox::new(&mut on, label.clone())
-                    .indeterminate(enabled > 0 && enabled < members.len()),
-            );
-            hitboxes.insert(
-                prefix.to_owned(),
-                [response.rect.center().x, response.rect.center().y],
-            );
-            if response.changed() {
-                for layer in &members {
-                    for topic in &layer.topics {
-                        self.playback_topic_enabled.insert(topic.clone(), on);
-                    }
+        if response.clicked() {
+            for layer in &members {
+                for topic in &layer.topics {
+                    self.playback_topic_enabled.insert(topic.clone(), !on);
                 }
-                changed = true;
             }
-            response.on_hover_text(
-                members
-                    .iter()
-                    .flat_map(|l| l.topics.iter())
-                    .cloned()
-                    .collect::<Vec<_>>()
-                    .join("\n"),
-            );
-        };
-        if members.len() == 1 && members[0].path == prefix {
-            checkbox(ui);
-        } else {
-            let id = ui.make_persistent_id(("display-layer", prefix));
-            let children = members
+            changed = true;
+        }
+        response.on_hover_text(
+            members
                 .iter()
-                .filter_map(|l| l.path.strip_prefix(&format!("{prefix}/")))
-                .map(|s| s.split('/').next().expect("child"))
-                .collect::<std::collections::BTreeSet<_>>();
-            egui::collapsing_header::CollapsingState::load_with_default_open(ui.ctx(), id, true)
-                .show_header(ui, checkbox)
-                .body(|ui| {
-                    for child in children {
-                        changed |= self.draw_layer_branch(
-                            ui,
-                            &format!("{prefix}/{child}"),
-                            layers,
-                            hitboxes,
-                        );
-                    }
-                });
+                .flat_map(|l| l.topics.iter())
+                .cloned()
+                .collect::<Vec<_>>()
+                .join("\n"),
+        );
+        if branch {
+            let center = row.left_center() + Vec2::new(8.0 + 20.0 * depth, 0.0);
+            paint_layer_arrow(ui, center, expanded);
+            let response = ui.interact(
+                Rect::from_center_size(center, Vec2::new(18.0, 28.0)),
+                ui.id().with(("layer_collapse", prefix)),
+                Sense::click(),
+            );
+            controls.insert(format!("collapse_{prefix}"), [center.x, center.y]);
+            if response.clicked() && self.layer_search.trim().is_empty() {
+                if expanded {
+                    self.collapsed_layers.insert(prefix.into());
+                } else {
+                    self.collapsed_layers.remove(prefix);
+                }
+            }
+            if expanded {
+                let children = members
+                    .iter()
+                    .filter_map(|l| l.path.strip_prefix(&format!("{prefix}/")))
+                    .map(|p| p.split('/').next().expect("layer child"))
+                    .collect::<std::collections::BTreeSet<_>>();
+                for child in children {
+                    changed |= self.draw_layer_branch(
+                        ui,
+                        &format!("{prefix}/{child}"),
+                        layers,
+                        hitboxes,
+                        controls,
+                        rows,
+                    );
+                }
+            }
         }
         changed
     }
@@ -1796,51 +1901,103 @@ impl AdShell {
             self.ensure_source_catalog(ctx);
         }
         let mut source_open_flag = self.source_open;
-        egui::Panel::left("ad_source_secondary")
+        let mut close = false;
+        egui::Panel::left("ad_source_secondary_v2")
             .resizable(true)
             .drag_to_open(false)
-            .default_size(300.0)
-            .min_size(240.0)
-            .frame(egui::Frame {
-                fill: theme::PANEL_BG,
-                inner_margin: egui::Margin::same(12),
-                stroke: Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.2)),
-                ..Default::default()
-            })
+            .default_size(432.0)
+            .min_size(320.0)
+            .max_size((ui.available_width() - 380.0).max(320.0))
+            .frame(
+                egui::Frame::new()
+                    .fill(SOURCE_BG)
+                    .inner_margin(egui::Margin {
+                        left: 18,
+                        right: 18,
+                        top: 16,
+                        bottom: 16,
+                    })
+                    .corner_radius(4.0)
+                    .stroke(Stroke::new(1.0, SOURCE_BORDER)),
+            )
             .show_collapsible(ui, &mut source_open_flag, |ui| {
-                ui.visuals_mut().override_text_color = Some(theme::TEXT);
-                ui.visuals_mut().widgets.inactive.fg_stroke = Stroke::new(1.0, theme::TEXT);
-                ui.visuals_mut().widgets.hovered.fg_stroke = Stroke::new(1.0, theme::TEXT);
-                ui.visuals_mut().extreme_bg_color = theme::CARD_BG;
-                ui.visuals_mut().widgets.inactive.bg_fill = theme::CARD_BG;
-                ui.visuals_mut().widgets.inactive.weak_bg_fill = theme::CARD_BG;
-                ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
-
-                ui.label(
-                    RichText::new("Source")
-                        .strong()
-                        .size(15.0)
-                        .color(theme::TEXT),
+                source_style(ui);
+                ui.spacing_mut().item_spacing.y = 0.0;
+                ui.ctx().data_mut(|d| {
+                    d.insert_temp(
+                        egui::Id::new("ad_source_ui"),
+                        serde_json::json!({"controls":{},"properties":[],"open":true}),
+                    )
+                });
+                source_control_rect(ui, "panel", ui.max_rect());
+                ui.horizontal(|ui| {
+                    source_label(
+                        ui,
+                        "数据源",
+                        18.0,
+                        true,
+                        Vec2::new(ui.available_width() - 36.0, 24.0),
+                    );
+                    let more = re_ui::ad_panel_more_button(ui);
+                    source_control_rect(ui, "more", more.rect);
+                    egui::Popup::menu(&more)
+                        .align(egui::RectAlign::BOTTOM_END)
+                        .show(|ui| {
+                            source_style(ui);
+                            let path = if self.local_bag.is_empty() {
+                                &self.open_local_path_draft
+                            } else {
+                                &self.local_bag
+                            };
+                            if ui
+                                .add_enabled(
+                                    !path.is_empty(),
+                                    egui::Button::new("复制录制文件路径"),
+                                )
+                                .clicked()
+                            {
+                                ui.ctx().copy_text(path.clone());
+                                ui.close();
+                            }
+                            if ui.button("刷新地图列表").clicked() {
+                                self.source_catalog_at = None;
+                                ui.close();
+                            }
+                            if ui.button("收起侧栏").clicked() {
+                                close = true;
+                                ui.close();
+                            }
+                        });
+                });
+                ui.add_space(16.0);
+                let (line, _) =
+                    ui.allocate_exact_size(Vec2::new(ui.available_width(), 1.0), Sense::hover());
+                ui.painter().hline(
+                    line.x_range(),
+                    line.center().y,
+                    Stroke::new(1.0, SOURCE_BORDER),
                 );
-                ui.label(
-                    RichText::new("Load a recording into the viewer")
-                        .size(11.0)
-                        .color(theme::TEXT_DIM),
-                );
-                ui.add_space(10.0);
-
+                ui.add_space(16.0);
                 egui::ScrollArea::vertical()
                     .id_salt("ad_source_scroll")
                     .auto_shrink([false, false])
                     .show(ui, |ui| {
                         self.source_open_section(ctx, ui);
-                        ui.add_space(14.0);
-                        ui.separator();
-                        ui.add_space(10.0);
+                        ui.add_space(24.0);
                         self.source_props_section(ctx, ui);
                     });
             });
-        self.source_open = source_open_flag;
+        self.source_open = source_open_flag && !close;
+        ui.ctx().data_mut(|d| {
+            let key = egui::Id::new("ad_source_ui");
+            if let Some(mut state) = d.get_temp::<serde_json::Value>(key) {
+                state["open"] = serde_json::json!(self.source_open);
+                if !self.source_open {
+                    state["controls"] = serde_json::json!({});
+                }
+                d.insert_temp(key, state);
+            }
+        });
     }
 
     fn poll_source_catalog(&mut self) {
@@ -1851,8 +2008,18 @@ impl AdShell {
             return;
         };
         self.source_catalog_pending = None;
+        self.source_catalog_at = Some(web_time::Instant::now());
         match result {
+            Ok(value) if value["status"] == "error" => {
+                self.source_catalog_error = Some(
+                    value["message"]
+                        .as_str()
+                        .unwrap_or("Invalid catalog response")
+                        .into(),
+                );
+            }
             Ok(value) => {
+                self.source_catalog_error = None;
                 if let Some(catalog) = value.get("catalog") {
                     self.source_catalog = catalog.clone();
                 } else {
@@ -1862,6 +2029,7 @@ impl AdShell {
             }
             Err(err) => {
                 re_log::warn!("Source catalog failed: {err}");
+                self.source_catalog_error = Some(err);
             }
         }
     }
@@ -1873,7 +2041,7 @@ impl AdShell {
         let stale = self
             .source_catalog_at
             .is_none_or(|t| t.elapsed().as_secs() >= 30);
-        if !self.source_catalog.is_null() && !stale {
+        if !stale {
             return;
         }
         #[cfg(target_arch = "wasm32")]
@@ -1913,170 +2081,132 @@ impl AdShell {
     fn source_props_section(&mut self, ctx: &AppContext<'_>, ui: &mut Ui) {
         let tz = ctx.app_options.timestamp_format;
         let db = ctx.active_recording();
-
-        ui.label(
-            RichText::new("Properties")
-                .strong()
-                .size(13.0)
-                .color(theme::TEXT),
-        );
-        ui.add_space(6.0);
-
-        let has_data = db.map(|d| d.store_info().is_some()).unwrap_or(false);
-        if !has_data
-            && self.local_bag.is_empty()
-            && self.scenario_id.is_empty()
-            && self.trip_id.is_empty()
-        {
-            ui.label(
-                RichText::new("No recording loaded yet.")
-                    .size(12.0)
-                    .color(theme::TEXT_DIM),
-            );
-            ui.add_space(4.0);
-        }
-
-        // Prefer path from the live channel when a local file is loaded.
-        if let Some(db) = db {
-            if let Some(LogSource::File { path }) = db.data_source.as_ref() {
-                let p = path.display().to_string();
-                if path.extension().and_then(|ext| ext.to_str()) != Some("rbl")
-                    && self.local_bag != p
-                {
-                    self.local_bag = p;
-                }
+        if let Some(LogSource::File { path }) = db.and_then(|d| d.data_source.as_ref()) {
+            if path.extension().and_then(|e| e.to_str()) != Some("rbl") {
+                self.local_bag = path.display().to_string();
             }
         }
-
+        source_label(
+            ui,
+            "数据概览",
+            14.0,
+            true,
+            Vec2::new(ui.available_width(), 22.0),
+        );
+        ui.add_space(4.0);
         let app_id = db
             .map(|d| d.application_id().as_str().to_owned())
-            .unwrap_or_else(|| "—".into());
+            .unwrap_or_default();
         let store_id = db
             .and_then(|d| d.store_info().map(|i| i.store_id.to_string()))
-            .unwrap_or_else(|| "—".into());
-
-        let (start_s, end_s) =
-            if let (Some(b), Some(e)) = (self.header_begin_ns, self.header_end_ns) {
-                // Prefer Cyber/MCAP header times — do not wait for / recompute from EntityDb timelines.
-                (format_header_time_ns(b, tz), format_header_time_ns(e, tz))
-            } else {
-                recording_time_bounds(ctx)
-            };
-        let source_s = db
-            .and_then(|d| d.data_source.as_ref().map(describe_channel_source))
-            .unwrap_or_else(|| {
-                if !self.local_bag.is_empty() {
-                    self.local_bag.clone()
-                } else {
-                    "—".into()
-                }
-            });
-
-        // Prefer explicit Source-panel fields; fall back to parsing app/store id.
+            .unwrap_or_default();
+        let (start, end) = if let (Some(b), Some(e)) = (self.header_begin_ns, self.header_end_ns) {
+            (format_source_time(b, tz), format_source_time(e, tz))
+        } else {
+            recording_time_bounds(ctx)
+        };
+        let duration = match (self.header_begin_ns, self.header_end_ns) {
+            (Some(b), Some(e)) if e >= b => format!("{:.2} s", (e - b) as f64 / 1e9),
+            _ => "—".into(),
+        };
+        // Apollo recordings contain original /apollo messages plus derived render
+        // channels. Count original topics, not the generated map/vehicle geometry.
+        let apollo = self
+            .mcap_topic_list
+            .iter()
+            .filter(|t| t.starts_with("/apollo/"))
+            .count();
+        let topics = if self.mcap_topic_list_path.is_empty() {
+            "—".into()
+        } else if apollo > 0 {
+            apollo.to_string()
+        } else {
+            self.mcap_topic_list.len().to_string()
+        };
         let car = first_nonempty(&[
-            self.car_id.as_str(),
+            &self.car_id,
             &extract_tagged(&app_id, "car"),
             &extract_tagged(&store_id, "car"),
         ]);
         let scenario = first_nonempty(&[
-            self.scenario_id.as_str(),
+            &self.scenario_id,
             &extract_tagged(&app_id, "scenario"),
             &extract_tagged(&store_id, "scenario"),
         ]);
         let trip = first_nonempty(&[
-            self.trip_id.as_str(),
+            &self.trip_id,
             &extract_tagged(&app_id, "trip"),
             &extract_tagged(&store_id, "trip"),
         ]);
-        let bag = if !self.local_bag.is_empty() && self.local_bag != "(choose a local .rrd / bag…)"
-        {
-            self.local_bag.clone()
-        } else if db.is_some_and(|d| matches!(d.data_source.as_ref(), Some(LogSource::File { .. })))
-        {
-            source_s.clone()
-        } else {
-            "—".into()
-        };
-
-        prop_row(ui, "Start time", &start_s);
-        prop_row(ui, "End time", &end_s);
-        prop_row(ui, "Car ID", &car);
-        prop_row(ui, "Scenario ID", &scenario);
-        prop_row(ui, "Trip ID", &trip);
-        prop_row(ui, "Local bag", &bag);
-        prop_row(ui, "Connection", &source_s);
+        for (label, value) in [
+            ("时长", duration),
+            ("Topic 数量", topics),
+            ("起始时间", start),
+            ("结束时间", end),
+            ("车辆 ID", car),
+            ("场景 ID", scenario),
+            ("行程 ID", trip),
+        ] {
+            prop_row(ui, label, &value);
+        }
     }
 
     fn source_open_section(&mut self, ctx: &AppContext<'_>, ui: &mut Ui) {
-        ui.ctx().data_mut(|d| {
-            d.insert_temp(
-                egui::Id::new("ad_source_ui"),
-                serde_json::json!({"controls":{},"properties":[]}),
-            )
-        });
-
-        // Scenario / Trip modes removed — always Local bag.
-        if self.source_open_mode != SourceOpenMode::Local {
-            self.source_open_mode = SourceOpenMode::Local;
-        }
-
-        section_label(ui, "Mode");
-        ui.add_space(4.0);
-        field_label(ui, "Open from");
-        source_mode_picker(ui, &mut self.source_open_mode);
-        ui.add_space(12.0);
-
-        section_label(ui, "Recording");
-        ui.label(
-            RichText::new(
-                "Choose a bag on this computer. Data is read in chunks; the first segment opens while the rest loads.",
-            )
-            .size(11.0)
-            .color(theme::TEXT_DIM),
+        self.source_open_mode = SourceOpenMode::Local;
+        source_label(
+            ui,
+            "数据加载",
+            14.0,
+            true,
+            Vec2::new(ui.available_width(), 20.0),
         );
         ui.add_space(8.0);
-
-        field_label(ui, "Bag");
-        let bag_label = if self.open_local_path_draft.is_empty() {
-            "Choose a bag…".to_owned()
-        } else if let Some((_, name)) = self.open_local_path_draft.rsplit_once('/') {
-            name.to_owned()
+        let (row, _) =
+            ui.allocate_exact_size(Vec2::new(ui.available_width(), 38.0), Sense::hover());
+        ui.painter().text(
+            row.left_center(),
+            egui::Align2::LEFT_CENTER,
+            "来源",
+            egui::FontId::proportional(14.0),
+            theme::TEXT,
+        );
+        let combo = Rect::from_min_max(row.min + Vec2::new(104.0, 0.0), row.max);
+        source_mode_picker(
+            &mut ui.new_child(egui::UiBuilder::new().max_rect(combo)),
+            &mut self.source_open_mode,
+        );
+        ui.add_space(14.0);
+        source_field_label(ui, "录制文件");
+        let path = if !self.open_local_path_draft.is_empty() {
+            &self.open_local_path_draft
         } else {
-            self.open_local_path_draft.clone()
+            &self.local_bag
         };
-        // Preserve the existing trigger; select from the browser computer.
-        let choose = source_choose_trigger(ui, &bag_label);
+        let bag_label = if path.is_empty() {
+            "选择录制文件…"
+        } else {
+            path.rsplit('/').next().unwrap_or(path)
+        };
+        let choose = source_choose_trigger(ui, bag_label)
+            .on_hover_text(format!("{path}\n{}", self.open_status_msg));
         source_control_rect(ui, "Choose a bag", choose.rect);
         #[cfg(target_arch = "wasm32")]
-        if choose
-            .on_hover_text("Open the browser file picker")
-            .clicked()
-        {
+        if choose.clicked() {
             crate::web_tools::pick_local_recording_files(
                 ctx.egui_ctx.clone(),
                 self.open_map_path_draft.clone(),
             );
         }
         #[cfg(not(target_arch = "wasm32"))]
-        {
-            let _ = ctx;
-            if choose.clicked() {
-                self.open_status_msg =
-                    "Local file selection is available in the web viewer.".into();
-            }
+        if choose.clicked() {
+            self.open_status_msg = "请在网页端选择本地录制文件。".into();
         }
-
-        ui.add_space(12.0);
-        section_label(ui, "Map");
-        ui.label(
-            RichText::new(
-                "Optional for .record convert. Simulation replay uses its own map. MCAP keeps its embedded map.",
-            )
-            .size(11.0)
-            .color(theme::TEXT_DIM),
-        );
-        ui.add_space(6.0);
-        field_label(ui, "HD map");
+        let _ = ctx;
+        ui.add_space(16.0);
+        source_field_label(ui, "地图");
+        if let Some(error) = &self.source_catalog_error {
+            ui.colored_label(Color32::LIGHT_RED, format!("地图列表加载失败：{error}"));
+        }
         let maps = self.source_catalog.get("maps").cloned().unwrap_or_default();
         source_path_picker(
             ui,
@@ -2084,30 +2214,26 @@ impl AdShell {
             &mut self.open_map_path_draft,
             &maps,
             true,
-            "None — convert without map overlay",
+            "不叠加地图",
         );
-        ui.add_space(4.0);
-        egui::CollapsingHeader::new(
-            RichText::new("Paste map path")
-                .size(11.0)
-                .color(theme::TEXT_DIM),
-        )
-        .id_salt("source_paste_map")
-        .show(ui, |ui| {
-            themed_text_edit(
-                ui,
-                &mut self.open_map_path_draft,
-                "/apollo_workspace/modules/map/data/…",
-            );
-        });
-
-        if !self.open_status_msg.is_empty() {
-            ui.add_space(10.0);
-            ui.label(
-                RichText::new(&self.open_status_msg)
-                    .size(11.0)
-                    .color(theme::ACCENT),
-            );
+        // Routine load progress is shown in the existing progress modal; failures
+        // remain explicit here and full status is available on the file tooltip.
+        let status = self.open_status_msg.to_lowercase();
+        if [
+            "error",
+            "failed",
+            "invalid",
+            "cannot",
+            "unsupported",
+            "失败",
+            "错误",
+            "请在",
+        ]
+        .iter()
+        .any(|s| status.contains(s))
+        {
+            ui.add_space(8.0);
+            ui.colored_label(Color32::LIGHT_RED, &self.open_status_msg);
         }
     }
 
@@ -3491,15 +3617,6 @@ impl AdShell {
     }
 }
 
-fn section_label(ui: &mut Ui, text: &str) {
-    ui.label(
-        RichText::new(text.to_ascii_uppercase())
-            .size(10.0)
-            .strong()
-            .color(theme::ACCENT),
-    );
-}
-
 /// Seed / refresh the shared Source progress modal for Record→MCAP conversion
 /// (upload flow and Sim replay both use this).
 #[cfg(target_arch = "wasm32")]
@@ -3567,35 +3684,298 @@ fn menu_row(ui: &mut Ui, label: &str) -> egui::Response {
     )
 }
 
-fn panel_list_button(ui: &mut Ui, label: &str) -> egui::Response {
-    ui.add(
-        egui::Button::new(
-            RichText::new(format!("+ {label}"))
-                .size(12.0)
-                .color(theme::TEXT),
-        )
-        .fill(theme::CARD_BG)
-        .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.22)))
-        .corner_radius(4.0)
-        .min_size(egui::vec2(ui.available_width(), 28.0)),
+fn layout_section_label(ui: &mut Ui, title: &str) {
+    ui.label(
+        RichText::new(title)
+            .size(13.0)
+            .strong()
+            .color(theme::ACCENT),
+    );
+}
+
+fn layout_drawer_frame() -> egui::Frame {
+    egui::Frame::new()
+        .fill(theme::RAIL_BG)
+        .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.25)))
+        .inner_margin(egui::Margin::same(14))
+}
+
+fn layout_control(ui: &Ui, name: &str, rect: Rect) {
+    let rect = rect.intersect(ui.clip_rect());
+    if !rect.is_positive() {
+        return;
+    }
+    ui.ctx().data_mut(|d| {
+        let key = egui::Id::new("ad_layout_controls");
+        let mut controls = d
+            .get_temp::<serde_json::Value>(key)
+            .unwrap_or_else(|| serde_json::json!({}));
+        controls[name] = serde_json::json!([rect.center().x, rect.center().y]);
+        d.insert_temp(key, controls);
+    });
+}
+
+fn drawer_heading(ui: &mut Ui, title: &str, open: &mut bool) {
+    ui.horizontal(|ui| {
+        ui.label(RichText::new(title).size(18.0).strong().color(theme::TEXT));
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            let close = ui.add(egui::Button::new("‹").frame(false));
+            layout_control(ui, "close_drawer", close.rect);
+            if close.on_hover_text("收起侧栏").clicked() {
+                *open = false;
+            }
+        });
+    });
+}
+
+fn layout_action(ui: &mut Ui, title: &str, primary: bool) -> egui::Response {
+    ui.add_sized(
+        [ui.available_width(), 40.0],
+        egui::Button::new(RichText::new(title).size(14.0).color(theme::TEXT))
+            .fill(if primary {
+                theme::ACCENT_STRONG
+            } else {
+                theme::RAIL_BG
+            })
+            .stroke(Stroke::new(
+                1.0,
+                theme::ACCENT.gamma_multiply(if primary { 0.7 } else { 0.9 }),
+            ))
+            .corner_radius(6.0),
     )
 }
 
+fn library_group(
+    ui: &mut Ui,
+    title: &str,
+    count: usize,
+    default_open: bool,
+    searching: bool,
+    contents: impl FnOnce(&mut Ui),
+) {
+    egui::Frame::new()
+        .fill(theme::CARD_BG.gamma_multiply(0.3))
+        .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.3)))
+        .corner_radius(6.0)
+        .inner_margin(egui::Margin::symmetric(8, 4))
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            let mut header = egui::CollapsingHeader::new(
+                RichText::new(title).size(13.0).strong().color(theme::TEXT),
+            )
+            .id_salt(("panel_library", title, searching))
+            .default_open(default_open);
+            if searching {
+                header = header.open(Some(true));
+            }
+            let response = header.show(ui, |ui| {
+                ui.spacing_mut().item_spacing.y = 0.0;
+                contents(ui);
+            });
+            layout_control(ui, &format!("group_{title}"), response.header_response.rect);
+            let center = Pos2::new(
+                ui.max_rect().right() - 9.0,
+                response.header_response.rect.center().y,
+            );
+            ui.painter()
+                .circle_filled(center, 9.0, theme::ACCENT.gamma_multiply(0.16));
+            ui.painter().text(
+                center,
+                egui::Align2::CENTER_CENTER,
+                count.to_string(),
+                egui::FontId::proportional(11.0),
+                theme::TEXT_DIM,
+            );
+        });
+}
+
+fn library_row(ui: &mut Ui, label: &str) -> egui::Response {
+    let (rect, response) =
+        ui.allocate_exact_size(Vec2::new(ui.available_width(), 32.0), Sense::click());
+    if response.hovered() {
+        ui.painter().rect_filled(rect, 4.0, theme::CARD_BG_HOVER);
+    }
+    ui.painter().text(
+        rect.left_center() + Vec2::new(4.0, 0.0),
+        egui::Align2::LEFT_CENTER,
+        label,
+        egui::FontId::proportional(13.0),
+        theme::TEXT,
+    );
+    ui.painter().text(
+        rect.right_center() - Vec2::new(12.0, 0.0),
+        egui::Align2::CENTER_CENTER,
+        "+",
+        egui::FontId::proportional(19.0),
+        theme::ACCENT,
+    );
+    ui.painter().hline(
+        rect.x_range(),
+        rect.bottom(),
+        Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.12)),
+    );
+    response.on_hover_cursor(egui::CursorIcon::PointingHand)
+}
+
+fn paint_grip(painter: &egui::Painter, center: Pos2) {
+    for x in [-3.0, 3.0] {
+        for y in [-6.0, 0.0, 6.0] {
+            painter.circle_filled(
+                center + Vec2::new(x, y),
+                1.4,
+                theme::TEXT_DIM.gamma_multiply(0.8),
+            );
+        }
+    }
+}
+
+fn panel_display_name(name: &str) -> &str {
+    match name {
+        "Planning 3D" | "Perception 3D" | "Control 3D" | "3D scene" => "三维场景",
+        "Planning profile" => "规划曲线",
+        "Trajectory XY" => "XY 轨迹",
+        "Planning message" => "规划消息",
+        "Speed tracking" => "速度跟踪",
+        "Steering feedback" => "转向反馈",
+        "Tracking errors" => "跟踪误差",
+        "Pedals" => "踏板",
+        "Topic inspector" => "消息检查器",
+        "Signal plot" => "信号曲线",
+        "Value watch" => "值监视",
+        "State transitions" => "状态变化",
+        "Topic health" => "话题健康",
+        other => other,
+    }
+}
+
 fn prop_row(ui: &mut Ui, label: &str, value: &str) {
-    // Long file paths must wrap below the label, never overlap neighboring rows.
-    ui.label(RichText::new(label).size(11.0).color(theme::TEXT_DIM));
-    ui.add(egui::Label::new(RichText::new(value).size(12.0).color(theme::TEXT)).wrap());
+    let (rect, _) = ui.allocate_exact_size(Vec2::new(ui.available_width(), 28.0), Sense::hover());
+    let offset = 154.0_f32.min(rect.width() * 0.4);
+    ui.painter().text(
+        rect.left_center(),
+        egui::Align2::LEFT_CENTER,
+        label,
+        egui::FontId::proportional(14.0),
+        SOURCE_MUTED,
+    );
+    let value_rect = Rect::from_min_max(rect.min + Vec2::new(offset, 0.0), rect.max);
+    let mut child = ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(value_rect)
+            .layout(egui::Layout::left_to_right(egui::Align::Center)),
+    );
+    let text = RichText::new(value).size(14.0).color(theme::TEXT);
+    let text = if label.ends_with("时间") {
+        text.monospace()
+    } else {
+        text
+    };
+    child
+        .add(egui::Label::new(text).truncate())
+        .on_hover_text(value);
     ui.ctx().data_mut(|d| {
-        let key = egui::Id::new("ad_source_ui");
-        if let Some(mut state) = d.get_temp::<serde_json::Value>(key) {
-            state["properties"]
-                .as_array_mut()
-                .expect("source property list")
-                .push(serde_json::json!({"label":label,"value":value}));
-            d.insert_temp(key, state);
+        let key=egui::Id::new("ad_source_ui");
+        if let Some(mut state)=d.get_temp::<serde_json::Value>(key) {
+            state["properties"].as_array_mut().expect("source properties").push(
+                serde_json::json!({"label":label,"value":value,"rect":[rect.left(),rect.top(),rect.right(),rect.bottom()],"value_x":value_rect.left()}));
+            d.insert_temp(key,state);
         }
     });
-    ui.add_space(4.0);
+}
+
+fn format_source_time(ns: i64, tz: TimestampFormat) -> String {
+    let time = re_log_types::Timestamp::from_nanos_since_epoch(ns).to_jiff_zoned(tz);
+    format!(
+        "{}.{:03}",
+        time.strftime("%Y-%m-%d %H:%M:%S"),
+        ns.rem_euclid(1_000_000_000) / 1_000_000
+    )
+}
+
+fn paint_layer_arrow(ui: &Ui, center: Pos2, open: bool) {
+    let points = if open {
+        vec![
+            center + Vec2::new(-3.5, -2.0),
+            center + Vec2::new(3.5, -2.0),
+            center + Vec2::new(0.0, 3.0),
+        ]
+    } else {
+        vec![
+            center + Vec2::new(-2.0, -3.5),
+            center + Vec2::new(-2.0, 3.5),
+            center + Vec2::new(3.0, 0.0),
+        ]
+    };
+    ui.painter().add(egui::Shape::convex_polygon(
+        points,
+        theme::TEXT,
+        Stroke::NONE,
+    ));
+}
+
+fn layer_search_field(ui: &mut Ui, rect: Rect, text: &mut String) -> egui::Response {
+    ui.painter().rect(
+        rect,
+        5.0,
+        SOURCE_INPUT,
+        Stroke::new(1.0, SOURCE_BORDER),
+        StrokeKind::Inside,
+    );
+    let c = rect.left_center() + Vec2::new(16.0, -1.0);
+    ui.painter()
+        .circle_stroke(c, 5.5, Stroke::new(1.2, SOURCE_MUTED));
+    ui.painter().line_segment(
+        [c + Vec2::splat(4.0), c + Vec2::splat(8.0)],
+        Stroke::new(1.2, SOURCE_MUTED),
+    );
+    let mut child = ui.new_child(egui::UiBuilder::new().max_rect(Rect::from_min_max(
+        rect.min + Vec2::new(32.0, 9.0),
+        rect.max - Vec2::new(7.0, 9.0),
+    )));
+    child.add_sized(
+        [rect.width() - 39.0, 20.0],
+        egui::TextEdit::singleline(text)
+            .hint_text("搜索图层…")
+            .font(egui::FontId::proportional(14.0))
+            .frame(egui::Frame::NONE)
+            .margin(Vec2::ZERO),
+    )
+}
+
+fn source_style(ui: &mut Ui) {
+    ui.visuals_mut().override_text_color = Some(theme::TEXT);
+    ui.visuals_mut().widgets.inactive.weak_bg_fill = SOURCE_INPUT;
+    ui.visuals_mut().widgets.inactive.bg_fill = SOURCE_INPUT;
+    ui.visuals_mut().widgets.inactive.bg_stroke = Stroke::new(1.0, SOURCE_BORDER);
+    ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG;
+    ui.visuals_mut().widgets.hovered.fg_stroke = Stroke::new(1.0, theme::TEXT);
+    ui.visuals_mut().text_edit_bg_color = Some(SOURCE_INPUT);
+    ui.visuals_mut().selection.bg_fill = theme::ACCENT_STRONG;
+}
+
+fn source_label(ui: &mut Ui, label: &str, size: f32, strong: bool, extent: Vec2) {
+    let (rect, _) = ui.allocate_exact_size(extent, Sense::hover());
+    let text = RichText::new(label).size(size).color(theme::TEXT);
+    let text = if strong { text.strong() } else { text };
+    let response = ui
+        .new_child(
+            egui::UiBuilder::new()
+                .max_rect(rect)
+                .layout(egui::Layout::left_to_right(egui::Align::Center)),
+        )
+        .add(egui::Label::new(text).truncate());
+    source_control_rect(ui, &format!("label_{label}"), response.rect);
+}
+
+fn source_field_label(ui: &mut Ui, label: &str) {
+    source_label(
+        ui,
+        label,
+        14.0,
+        false,
+        Vec2::new(ui.available_width(), 20.0),
+    );
+    ui.add_space(6.0);
 }
 
 fn source_control_rect(ui: &Ui, name: &str, rect: Rect) {
@@ -3609,139 +3989,111 @@ fn source_control_rect(ui: &Ui, name: &str, rect: Rect) {
     });
 }
 
-fn field_label(ui: &mut Ui, label: &str) {
-    ui.label(RichText::new(label).size(11.0).strong().color(theme::TEXT));
-    ui.add_space(4.0);
-}
-
-/// Mode dropdown (Local bag only — Scenario / Trip removed).
-fn source_mode_picker(ui: &mut Ui, selected: &mut SourceOpenMode) {
-    let height = 34.0;
-    let width = ui.available_width();
-    let (rect, response) = ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
-    let fill = if response.hovered() || response.has_focus() {
-        theme::CARD_BG_HOVER
-    } else {
-        theme::CARD_BG
-    };
+fn source_combo(ui: &mut Ui, label: &str) -> egui::Response {
+    let (rect, response) =
+        ui.allocate_exact_size(Vec2::new(ui.available_width(), 38.0), Sense::click());
     ui.painter().rect(
         rect,
-        6.0,
-        fill,
-        Stroke::new(
-            1.0,
-            if response.hovered() {
-                theme::ACCENT.gamma_multiply(0.55)
-            } else {
-                theme::ACCENT.gamma_multiply(0.32)
-            },
-        ),
+        5.0,
+        if response.hovered() {
+            theme::CARD_BG
+        } else {
+            SOURCE_INPUT
+        },
+        Stroke::new(1.0, SOURCE_BORDER),
         StrokeKind::Inside,
     );
-    let chevron_w = 28.0;
-    let text_rect = egui::Rect::from_min_max(
-        egui::pos2(rect.left() + 10.0, rect.top()),
-        egui::pos2(rect.right() - chevron_w, rect.bottom()),
-    );
-    ui.painter().text(
-        text_rect.left_center(),
-        egui::Align2::LEFT_CENTER,
-        selected.label(),
-        egui::FontId::proportional(13.0),
-        theme::TEXT,
-    );
-    let c = egui::pos2(rect.right() - chevron_w * 0.5, rect.center().y + 0.5);
-    let s = 4.5;
-    ui.painter().add(egui::Shape::convex_polygon(
-        vec![
-            egui::pos2(c.x - s, c.y - s * 0.55),
-            egui::pos2(c.x + s, c.y - s * 0.55),
-            egui::pos2(c.x, c.y + s * 0.7),
-        ],
-        theme::TEXT_DIM,
-        Stroke::NONE,
-    ));
-
-    egui::Popup::menu(&response)
-        .id(egui::Id::new("source_mode_picker"))
-        .align(egui::RectAlign::BOTTOM_START)
-        .gap(4.0)
-        .show(|ui| {
-            egui::Frame::new()
-                .fill(theme::PANEL_BG)
-                .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.4)))
-                .corner_radius(8.0)
-                .inner_margin(egui::Margin::symmetric(8, 8))
-                .show(ui, |ui| {
-                    ui.set_min_width(response.rect.width().max(220.0));
-                    ui.visuals_mut().override_text_color = Some(theme::TEXT);
-                    ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
-                    ui.visuals_mut().selection.bg_fill = theme::ACCENT_STRONG.gamma_multiply(0.45);
-                    for mode in SourceOpenMode::all() {
-                        let on = *selected == mode;
-                        if menu_row(ui, mode.label()).clicked() {
-                            *selected = mode;
-                            ui.close();
-                        }
-                        let _ = on;
-                    }
-                });
-        });
-
-    source_control_rect(ui, "Mode", response.rect);
-}
-
-/// Dropdown-looking control that opens the OS file picker when clicked.
-fn source_choose_trigger(ui: &mut Ui, label: &str) -> egui::Response {
-    let height = 34.0;
-    let width = ui.available_width();
-    let (rect, response) = ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
-    let fill = if response.hovered() || response.has_focus() {
-        theme::CARD_BG_HOVER
-    } else {
-        theme::CARD_BG
-    };
-    ui.painter().rect(
-        rect,
-        6.0,
-        fill,
-        Stroke::new(
-            1.0,
-            if response.hovered() {
-                theme::ACCENT.gamma_multiply(0.55)
-            } else {
-                theme::ACCENT.gamma_multiply(0.32)
-            },
+    clipped_source_text(
+        ui,
+        Rect::from_min_max(
+            rect.min + Vec2::new(13.0, 0.0),
+            rect.max - Vec2::new(30.0, 0.0),
         ),
-        StrokeKind::Inside,
-    );
-    let chevron_w = 28.0;
-    let text_rect = egui::Rect::from_min_max(
-        egui::pos2(rect.left() + 10.0, rect.top()),
-        egui::pos2(rect.right() - chevron_w, rect.bottom()),
-    );
-    ui.painter().text(
-        text_rect.left_center(),
-        egui::Align2::LEFT_CENTER,
         label,
-        egui::FontId::proportional(13.0),
         theme::TEXT,
     );
-    let c = egui::pos2(rect.right() - chevron_w * 0.5, rect.center().y + 0.5);
-    let s = 4.5;
-    ui.painter().add(egui::Shape::convex_polygon(
+    let center = rect.right_center() - Vec2::new(17.0, 0.0);
+    ui.painter().add(egui::Shape::line(
         vec![
-            egui::pos2(c.x - s, c.y - s * 0.55),
-            egui::pos2(c.x + s, c.y - s * 0.55),
-            egui::pos2(c.x, c.y + s * 0.7),
+            center + Vec2::new(-4.0, -2.0),
+            center + Vec2::new(0.0, 2.0),
+            center + Vec2::new(4.0, -2.0),
         ],
-        theme::TEXT_DIM,
-        Stroke::NONE,
+        Stroke::new(1.2, SOURCE_MUTED),
     ));
     response.on_hover_cursor(egui::CursorIcon::PointingHand)
 }
 
-/// Dark path dropdown matching Simulation Config map/vehicle pickers.
+fn clipped_source_text(ui: &mut Ui, rect: Rect, label: &str, color: Color32) {
+    ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(rect)
+            .layout(egui::Layout::left_to_right(egui::Align::Center)),
+    )
+    .add(egui::Label::new(RichText::new(label).size(14.0).color(color)).truncate());
+}
+
+fn source_mode_picker(ui: &mut Ui, selected: &mut SourceOpenMode) {
+    let response = source_combo(ui, selected.label());
+    source_control_rect(ui, "Mode", response.rect);
+    egui::Popup::menu(&response)
+        .id(egui::Id::new("source_mode_picker"))
+        .align(egui::RectAlign::BOTTOM_END)
+        .gap(4.0)
+        .show(|ui| {
+            source_style(ui);
+            ui.set_width((response.rect.width() - 16.0).max(100.0));
+            for mode in SourceOpenMode::all() {
+                if ui
+                    .add_sized(
+                        [ui.available_width(), 30.0],
+                        egui::Button::new(mode.label()),
+                    )
+                    .clicked()
+                {
+                    *selected = mode;
+                    ui.close();
+                }
+            }
+        });
+}
+
+fn source_choose_trigger(ui: &mut Ui, label: &str) -> egui::Response {
+    let (rect, response) =
+        ui.allocate_exact_size(Vec2::new(ui.available_width(), 38.0), Sense::click());
+    ui.painter().rect(
+        rect,
+        5.0,
+        if response.hovered() {
+            theme::CARD_BG
+        } else {
+            SOURCE_INPUT
+        },
+        Stroke::new(1.0, SOURCE_BORDER),
+        StrokeKind::Inside,
+    );
+    let split = rect.right() - 86.0;
+    ui.painter()
+        .vline(split, rect.y_range(), Stroke::new(1.0, SOURCE_BORDER));
+    clipped_source_text(
+        ui,
+        Rect::from_min_max(
+            rect.min + Vec2::new(13.0, 0.0),
+            Pos2::new(split - 10.0, rect.bottom()),
+        ),
+        label,
+        theme::TEXT,
+    );
+    ui.painter().text(
+        Pos2::new(split + 43.0, rect.center().y),
+        egui::Align2::CENTER_CENTER,
+        "更换文件",
+        egui::FontId::proportional(14.0),
+        SOURCE_MUTED,
+    );
+    response.on_hover_cursor(egui::CursorIcon::PointingHand)
+}
+
 fn source_path_picker(
     ui: &mut Ui,
     id: &str,
@@ -3751,122 +4103,64 @@ fn source_path_picker(
     empty_label: &str,
 ) {
     let short = if selected.is_empty() {
-        empty_label.to_owned()
-    } else if let Some((_, name)) = selected.rsplit_once('/') {
-        name.to_owned()
+        empty_label
     } else {
-        selected.clone()
+        selected.rsplit('/').next().unwrap_or(selected)
     };
-
-    let height = 34.0;
-    let width = ui.available_width();
-    let (rect, response) = ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
-    let fill = if response.hovered() || response.has_focus() {
-        theme::CARD_BG_HOVER
-    } else {
-        theme::CARD_BG
-    };
-    ui.painter().rect(
-        rect,
-        6.0,
-        fill,
-        Stroke::new(
-            1.0,
-            if response.hovered() {
-                theme::ACCENT.gamma_multiply(0.55)
-            } else {
-                theme::ACCENT.gamma_multiply(0.32)
-            },
-        ),
-        StrokeKind::Inside,
-    );
-    let chevron_w = 28.0;
-    let text_rect = egui::Rect::from_min_max(
-        egui::pos2(rect.left() + 10.0, rect.top()),
-        egui::pos2(rect.right() - chevron_w, rect.bottom()),
-    );
-    ui.painter().text(
-        text_rect.left_center(),
-        egui::Align2::LEFT_CENTER,
-        &short,
-        egui::FontId::proportional(13.0),
-        theme::TEXT,
-    );
-    let c = egui::pos2(rect.right() - chevron_w * 0.5, rect.center().y + 0.5);
-    let s = 4.5;
-    ui.painter().add(egui::Shape::convex_polygon(
-        vec![
-            egui::pos2(c.x - s, c.y - s * 0.55),
-            egui::pos2(c.x + s, c.y - s * 0.55),
-            egui::pos2(c.x, c.y + s * 0.7),
-        ],
-        theme::TEXT_DIM,
-        Stroke::NONE,
-    ));
-
+    let response =
+        source_combo(ui, short).on_hover_text("地图用于下一次录包转换；MCAP 保留内嵌地图");
+    source_control_rect(ui, "Map", response.rect);
     egui::Popup::menu(&response)
         .id(egui::Id::new(("source_path_picker", id)))
-        .align(egui::RectAlign::BOTTOM_START)
+        .align(egui::RectAlign::BOTTOM_END)
         .gap(4.0)
         .show(|ui| {
-            egui::Frame::new()
-                .fill(theme::PANEL_BG)
-                .stroke(Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.4)))
-                .corner_radius(8.0)
-                .inner_margin(egui::Margin::symmetric(8, 8))
+            source_style(ui);
+            ui.set_width((response.rect.width() - 16.0).max(220.0));
+            ui.set_max_height(300.0);
+            egui::ScrollArea::vertical()
+                .max_height(230.0)
                 .show(ui, |ui| {
-                    ui.set_min_width(response.rect.width().max(260.0));
-                    ui.set_max_height(280.0);
-                    ui.visuals_mut().override_text_color = Some(theme::TEXT);
-                    ui.visuals_mut().widgets.hovered.weak_bg_fill = theme::CARD_BG_HOVER;
-                    ui.visuals_mut().selection.bg_fill = theme::ACCENT_STRONG.gamma_multiply(0.45);
-                    egui::ScrollArea::vertical().show(ui, |ui| {
-                        if optional && menu_row(ui, empty_label).clicked() {
+                    if optional {
+                        let r = ui.add_sized(
+                            [ui.available_width(), 30.0],
+                            egui::Button::new(empty_label),
+                        );
+                        source_control_rect(ui, "map_none", r.rect);
+                        if r.clicked() {
                             selected.clear();
                             ui.close();
                         }
-                        if let Some(values) = values.as_array() {
-                            for item in values {
-                                if let Some(path) = item.as_str() {
-                                    let leaf = path.rsplit('/').next().unwrap_or(path);
-                                    let on = *selected == path;
-                                    let text = RichText::new(leaf).size(12.0).color(if on {
-                                        Color32::WHITE
-                                    } else {
-                                        theme::TEXT
-                                    });
-                                    let r = ui.add_sized(
-                                        [ui.available_width(), 28.0],
-                                        egui::Button::new(text)
-                                            .fill(if on {
-                                                theme::ACCENT_STRONG.gamma_multiply(0.7)
-                                            } else {
-                                                Color32::TRANSPARENT
-                                            })
-                                            .corner_radius(4.0),
-                                    );
-                                    if r.on_hover_text(path).clicked() {
-                                        *selected = path.to_owned();
-                                        ui.close();
-                                    }
-                                }
+                    }
+                    if let Some(values) = values.as_array() {
+                        for path in values.iter().filter_map(serde_json::Value::as_str) {
+                            let r = ui
+                                .add_sized(
+                                    [ui.available_width(), 30.0],
+                                    egui::Button::new(path.rsplit('/').next().unwrap_or(path)),
+                                )
+                                .on_hover_text(path);
+                            source_control_rect(ui, &format!("map_{path}"), r.rect);
+                            if r.clicked() {
+                                *selected = path.into();
+                                ui.close();
                             }
-                            if values.is_empty() {
-                                ui.label(
-                                    RichText::new("No catalog entries yet")
-                                        .size(11.0)
-                                        .color(theme::TEXT_DIM),
-                                );
-                            }
-                        } else {
-                            ui.label(
-                                RichText::new("Loading catalog…")
-                                    .size(11.0)
-                                    .color(theme::TEXT_DIM),
-                            );
                         }
-                    });
+                        if values.is_empty() {
+                            ui.label("暂无可选地图");
+                        }
+                    } else {
+                        ui.label("正在加载地图…");
+                    }
                 });
+            ui.separator();
+            ui.label(
+                RichText::new("自定义地图路径")
+                    .size(12.0)
+                    .color(SOURCE_MUTED),
+            );
+            let r = themed_text_edit(ui, selected, "/apollo_workspace/data/map_data/…");
+            source_control_rect(ui, "map_path", r.rect);
         });
 }
 
@@ -3944,19 +4238,6 @@ fn extract_tagged(haystack: &str, key: &str) -> String {
     String::new()
 }
 
-fn describe_channel_source(src: &LogSource) -> String {
-    match src {
-        LogSource::File { path } => path.display().to_string(),
-        LogSource::HttpStream { url, .. } => url.clone(),
-        LogSource::MessageProxy(uri) => uri.to_string(),
-        LogSource::RedapGrpcStream { uri, .. } => uri.to_string(),
-        LogSource::Sdk => "SDK".into(),
-        LogSource::Stdin => "stdin".into(),
-        LogSource::RrdWebEvent => "web event".into(),
-        LogSource::JsChannel { channel_name } => format!("js:{channel_name}"),
-    }
-}
-
 fn recording_time_bounds(ctx: &AppContext<'_>) -> (String, String) {
     let Some(db) = ctx.active_recording() else {
         return ("—".into(), "—".into());
@@ -3986,15 +4267,6 @@ fn recording_time_bounds(ctx: &AppContext<'_>) -> (String, String) {
 
 fn format_bound(t: TimeInt, timeline: &Timeline, tz: TimestampFormat) -> String {
     timeline.typ().format(t, tz)
-}
-
-/// Format Cyber header time (absolute ns) for Properties — no EntityDb range scan.
-fn format_header_time_ns(ns: i64, tz: TimestampFormat) -> String {
-    if ns <= 0 {
-        return "—".into();
-    }
-    let timeline = Timeline::new_timestamp("header");
-    format_bound(TimeInt::new_temporal(ns), &timeline, tz)
 }
 
 fn paint_brand_logo(painter: &egui::Painter, rect: Rect) {

@@ -97,6 +97,15 @@ struct Suite {
     counts: Counts,
     indices: Vec<usize>,
     newest: f64,
+    sources: std::collections::BTreeSet<String>,
+}
+
+fn source_label(kind: &str) -> &str {
+    match kind {
+        "world" => "WorldSim",
+        "bag" => "LogSim",
+        _ => kind,
+    }
 }
 
 fn title(job: &Value) -> &str {
@@ -155,11 +164,15 @@ fn suites(state: &State) -> Vec<Suite> {
                 counts: Counts::default(),
                 indices: Vec::new(),
                 newest: submitted_at(job),
+                sources: Default::default(),
             });
             result.len() - 1
         });
         let suite = &mut result[position];
         suite.counts.add(job);
+        suite
+            .sources
+            .insert(source_label(job["config"]["kind"].as_str().unwrap_or("未知来源")).into());
         suite.newest = suite.newest.max(submitted_at(job));
         let status = Status::of(job);
         let matches = (state.task_status == Status::All || state.task_status == status)
@@ -284,10 +297,19 @@ fn choice<T: Copy + PartialEq>(
         .find(|(value, _, _)| value == selected)
         .expect("known filter")
         .1;
-    let r = dropdown_trigger(ui, label);
+    let r = dropdown_trigger(
+        ui,
+        if key == "status" && label == "全部状态" {
+            "筛选"
+        } else {
+            label
+        },
+    );
     point(diagnostic, &format!("{key}_filter"), &r);
     egui::Popup::menu(&r)
         .id(egui::Id::new(("sim_task_filter", key)))
+        .align(egui::RectAlign::BOTTOM_END)
+        .align_alternatives(&[egui::RectAlign::TOP_END])
         .show(|ui| {
             dark_menu_frame(ui, |ui| {
                 ui.set_min_width(r.rect.width().max(150.0));
@@ -317,7 +339,7 @@ fn search(ui: &mut egui::Ui, state: &mut State, diagnostic: &mut Value) {
         .fill(theme::PANEL_BG)
         .stroke(Stroke::new(1.0, theme::CARD_BG_HOVER))
         .corner_radius(8.0)
-        .inner_margin(egui::Margin::symmetric(10, 8))
+        .inner_margin(egui::Margin::symmetric(10, 6))
         .show(ui, |ui| {
             ui.horizontal(|ui| {
                 let (rect, _) = ui.allocate_exact_size(vec2(18.0, 18.0), egui::Sense::hover());
@@ -362,13 +384,13 @@ pub(super) fn show(
     diagnostic["task_counts"] = counts.diagnostic();
     let capacity = state.catalog["max_concurrency"].as_u64();
     diagnostic["task_capacity"] = json!(capacity);
-    ui.add_space(10.0);
+    ui.add_space(8.0);
     ui.horizontal(|ui| {
         let running = counts.get(Status::Running);
         let capacity = capacity.map(|n| format!("/{n}")).unwrap_or_default();
         ui.label(
-            RichText::new(format!("运行 {running}{capacity}  ·  后台执行"))
-                .size(15.0)
+            RichText::new(format!("并发 {running}{capacity}"))
+                .size(14.0)
                 .color(theme::TEXT),
         );
         let (rect, response) = ui.allocate_exact_size(vec2(18.0, 18.0), egui::Sense::hover());
@@ -384,8 +406,11 @@ pub(super) fn show(
         response.on_hover_text(
             "关闭面板不会停止任务。显示服务并发上限；每个场景集还受提交时的并发设置限制。",
         );
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            ui.label(RichText::new("后台执行").size(12.0).color(theme::TEXT_DIM));
+        });
     });
-    ui.add_space(14.0);
+    ui.add_space(10.0);
     let previous = (state.task_status, state.task_source, state.filter.clone());
     let narrow = ui.available_width() < 620.0;
     ui.horizontal(|ui| {
@@ -395,8 +420,8 @@ pub(super) fn show(
             (Status::All, "全部"),
             (Status::Running, "运行中"),
             (Status::Queued, "排队"),
-            (Status::Failed, "失败"),
             (Status::Completed, "已完成"),
+            (Status::Failed, "失败"),
         ] {
             let active = state.task_status == status;
             let text = format!(
@@ -471,7 +496,24 @@ pub(super) fn show(
     if previous != (state.task_status, state.task_source, state.filter.clone()) {
         state.task_page = 0;
     }
-    ui.add_space(16.0);
+    ui.add_space(10.0);
+    ui.separator();
+    ui.horizontal(|ui| {
+        ui.label(
+            RichText::new("最近任务")
+                .size(15.0)
+                .strong()
+                .color(theme::TEXT),
+        );
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            ui.label(
+                RichText::new("最近创建 ↓")
+                    .size(12.0)
+                    .color(theme::TEXT_DIM),
+            );
+        });
+    });
+    ui.add_space(4.0);
 
     let groups = suites(state);
     let total = groups
@@ -488,6 +530,7 @@ pub(super) fn show(
     diagnostic["task_source"] = json!(state.task_source.key());
     diagnostic["task_rows"] = json!({});
     diagnostic["task_suites"] = json!([]);
+    diagnostic["task_popups"] = json!({});
     for group in [Group::Running, Group::Queued, Group::Finished] {
         diagnostic["groups"][group.key()] = json!(
             grouped_jobs(&state.jobs, group, &state.filter)
@@ -507,8 +550,8 @@ pub(super) fn show(
         .into_iter()
         .map(|(id, index)| (id.into(), index))
         .collect();
-    let height = (ui.available_height() - 52.0).max(80.0);
-    egui::ScrollArea::vertical()
+    let height = (ui.available_height() - 64.0).max(0.0);
+    let scroll = egui::ScrollArea::vertical()
         .id_salt((
             "sim_tasks_scroll",
             state.task_page,
@@ -535,7 +578,7 @@ pub(super) fn show(
                     ui.add_space(8.0);
                     ui.label(
                         RichText::new(if state.jobs.is_empty() {
-                            "点击右上角「新建任务」开始配置。"
+                            "在「仿真配置」页选择场景并启动任务。"
                         } else {
                             "调整搜索词，或清除筛选后查看全部任务。"
                         })
@@ -565,35 +608,54 @@ pub(super) fn show(
                 if lo == hi {
                     continue;
                 }
-                if suite.key.starts_with("suite:") {
-                    suite_header(ui, suite, state, diagnostic);
-                }
-                if !state.collapsed_suites.contains(&suite.key) {
-                    for &index in &suite.indices[lo..hi] {
-                        let job = state.jobs[index].clone();
-                        let position = job["id"].as_str().and_then(|id| queue.get(id)).copied();
-                        row(ui, &job, position, state, diagnostic, action, replay);
-                        ui.add_space(8.0);
-                    }
-                }
-                ui.add_space(4.0);
+                egui::Frame::new()
+                    .fill(theme::APP_BG)
+                    .stroke(Stroke::new(1.0, theme::CARD_BG))
+                    .corner_radius(8.0)
+                    .show(ui, |ui| {
+                        ui.spacing_mut().item_spacing.y = 0.0;
+                        ui.set_width(ui.available_width());
+                        if suite.key.starts_with("suite:") {
+                            suite_header(ui, suite, state, diagnostic, action);
+                        }
+                        if !state.collapsed_suites.contains(&suite.key) {
+                            for &index in &suite.indices[lo..hi] {
+                                let job = state.jobs[index].clone();
+                                let position =
+                                    job["id"].as_str().and_then(|id| queue.get(id)).copied();
+                                row(ui, &job, position, state, diagnostic, action, replay);
+                            }
+                        }
+                    });
+                ui.add_space(10.0);
             }
         });
+    diagnostic["task_list_rect"] = json!([
+        scroll.inner_rect.left(),
+        scroll.inner_rect.top(),
+        scroll.inner_rect.right(),
+        scroll.inner_rect.bottom()
+    ]);
     ui.add_space(8.0);
     ui.separator();
     pagination(ui, state, diagnostic, pages, total);
 }
 
-fn suite_header(ui: &mut egui::Ui, suite: &Suite, state: &mut State, diagnostic: &mut Value) {
+fn suite_header(
+    ui: &mut egui::Ui,
+    suite: &Suite,
+    state: &mut State,
+    diagnostic: &mut Value,
+    action: &mut Option<Value>,
+) {
     let collapsed = state.collapsed_suites.contains(&suite.key);
-    let narrow = ui.available_width() < 620.0;
-    let (rect, response) = ui.allocate_exact_size(
-        vec2(ui.available_width(), if narrow { 62.0 } else { 44.0 }),
+    let (rect, _) = ui.allocate_exact_size(vec2(ui.available_width(), 66.0), egui::Sense::hover());
+    let response = ui.interact(
+        egui::Rect::from_min_max(rect.min, rect.right_bottom() - vec2(44.0, 0.0)),
+        ui.id().with(("suite_collapse", &suite.key)),
         egui::Sense::click(),
     );
-    ui.painter()
-        .rect_filled(rect, 8.0, theme::CARD_BG.gamma_multiply(0.65));
-    let center = rect.left_top() + vec2(18.0, 22.0);
+    let center = rect.left_top() + vec2(18.0, 25.0);
     let points = if collapsed {
         vec![
             center + vec2(-2.0, -4.0),
@@ -602,66 +664,99 @@ fn suite_header(ui: &mut egui::Ui, suite: &Suite, state: &mut State, diagnostic:
         ]
     } else {
         vec![
-            center + vec2(-4.0, -2.0),
-            center + vec2(0.0, 2.0),
-            center + vec2(4.0, -2.0),
+            center + vec2(-4.0, 2.0),
+            center + vec2(0.0, -2.0),
+            center + vec2(4.0, 2.0),
         ]
     };
     ui.painter()
-        .add(egui::Shape::line(points, Stroke::new(1.8, theme::TEXT)));
+        .add(egui::Shape::line(points, Stroke::new(1.8, theme::TEXT_DIM)));
+    let total = suite.counts.get(Status::All);
+    let status = [
+        Status::Running,
+        Status::Queued,
+        Status::Failed,
+        Status::Interrupted,
+        Status::Cancelled,
+    ]
+    .into_iter()
+    .find(|status| suite.counts.get(*status) > 0)
+    .unwrap_or(Status::Completed);
+    let status_width = 128.0;
     let title_rect = egui::Rect::from_min_size(
-        rect.left_top() + vec2(36.0, 10.0),
-        vec2(
-            if narrow {
-                rect.width() - 50.0
-            } else {
-                (rect.width() - 300.0).max(140.0)
-            },
-            24.0,
-        ),
+        rect.min + vec2(36.0, 10.0),
+        vec2((rect.width() - status_width - 96.0).max(60.0), 24.0),
     );
-    ui.painter()
-        .with_clip_rect(title_rect.intersect(ui.clip_rect()))
-        .text(
-            title_rect.left_center(),
-            egui::Align2::LEFT_CENTER,
-            format!(
-                "{} · {} {}",
-                suite.name,
-                suite.counts.get(Status::All),
-                if suite.key == "single" {
-                    "任务"
-                } else {
-                    "场景"
-                }
-            ),
-            egui::FontId::proportional(15.0),
-            theme::TEXT,
-        );
-    let summary = format!(
-        "运行 {}   排队 {}   失败 {}   完成 {}",
+    left_label(
+        ui,
+        title_rect,
+        egui::Label::new(
+            RichText::new(&suite.name)
+                .size(15.0)
+                .strong()
+                .color(theme::TEXT),
+        )
+        .truncate(),
+    )
+    .on_hover_text(&suite.name);
+    let source = suite
+        .sources
+        .iter()
+        .cloned()
+        .collect::<Vec<_>>()
+        .join(" / ");
+    left_label(
+        ui,
+        egui::Rect::from_min_size(rect.min + vec2(36.0, 37.0), vec2(rect.width() - 52.0, 20.0)),
+        egui::Label::new(
+            RichText::new(format!("{total} 个场景 · {source}"))
+                .size(12.0)
+                .color(theme::TEXT_DIM),
+        )
+        .truncate(),
+    );
+    let status_origin = pos2(rect.right() - status_width - 40.0, rect.top() + 23.0);
+    status_icon(
+        ui,
+        status_origin,
+        status,
+        suite.counts.get(Status::Completed) as f32 / total.max(1) as f32,
+    );
+    left_label(
+        ui,
+        egui::Rect::from_min_size(
+            status_origin + vec2(17.0, -12.0),
+            vec2(status_width - 23.0, 24.0),
+        ),
+        egui::Label::new(
+            RichText::new(format!(
+                "{} {}/{total}",
+                status.label(),
+                suite.counts.get(status)
+            ))
+            .size(12.0)
+            .color(status.color()),
+        )
+        .truncate(),
+    )
+    .on_hover_text(format!(
+        "运行 {} · 排队 {} · 完成 {} · 失败 {} · 取消 {} · 中断 {}",
         suite.counts.get(Status::Running),
         suite.counts.get(Status::Queued),
+        suite.counts.get(Status::Completed),
         suite.counts.get(Status::Failed),
-        suite.counts.get(Status::Completed)
-    );
-    ui.painter().text(
-        if narrow {
-            rect.left_top() + vec2(36.0, 46.0)
-        } else {
-            rect.right_center() - vec2(14.0, 0.0)
-        },
-        if narrow {
-            egui::Align2::LEFT_CENTER
-        } else {
-            egui::Align2::RIGHT_CENTER
-        },
-        summary,
-        egui::FontId::proportional(12.0),
-        theme::TEXT_DIM,
-    );
+        suite.counts.get(Status::Cancelled),
+        suite.counts.get(Status::Interrupted)
+    ));
+    if !collapsed {
+        ui.painter().hline(
+            rect.x_range(),
+            rect.bottom(),
+            Stroke::new(1.0, theme::CARD_BG),
+        );
+    }
     point(diagnostic, &format!("suite_{}", suite.key), &response);
-    diagnostic["task_suites"].as_array_mut().expect("suite diagnostics").push(json!({"key":suite.key,"name":suite.name,"counts":suite.counts.diagnostic(),"collapsed":collapsed}));
+    diagnostic["task_suites"].as_array_mut().expect("suite diagnostics").push(json!({"key":suite.key,"name":suite.name,"source":source,"counts":suite.counts.diagnostic(),"collapsed":collapsed,"rect":[rect.left(),rect.top(),rect.right(),rect.bottom()]}));
     if response.clicked() {
         if collapsed {
             state.collapsed_suites.remove(&suite.key);
@@ -669,15 +764,93 @@ fn suite_header(ui: &mut egui::Ui, suite: &Suite, state: &mut State, diagnostic:
             state.collapsed_suites.insert(suite.key.clone());
         }
     }
-    ui.add_space(8.0);
+    // Positioned controls must not move the list cursor back into the header.
+    let mut menu_ui = ui.new_child(egui::UiBuilder::new().max_rect(rect));
+    suite_menu(&mut menu_ui, rect, suite, state, diagnostic, action);
 }
 
-fn badge(ui: &mut egui::Ui, rect: egui::Rect, text: &str) {
-    ui.painter().rect_filled(rect, 5.0, theme::CARD_BG);
-    ui.put(
-        rect.shrink2(vec2(7.0, 2.0)),
-        egui::Label::new(RichText::new(text).size(12.0).color(theme::TEXT)).truncate(),
+fn suite_menu(
+    ui: &mut egui::Ui,
+    rect: egui::Rect,
+    suite: &Suite,
+    state: &State,
+    diagnostic: &mut Value,
+    action: &mut Option<Value>,
+) {
+    let id = suite.key.strip_prefix("suite:").expect("suite header");
+    let menu_rect = egui::Rect::from_min_size(
+        pos2(rect.right() - 40.0, rect.top() + 9.0),
+        vec2(28.0, 28.0),
     );
+    let menu = row_button(ui, menu_rect, "", true).on_hover_text("场景集操作");
+    for dx in [-5.0, 0.0, 5.0] {
+        ui.painter()
+            .circle_filled(menu_rect.center() + vec2(dx, 0.0), 1.4, theme::TEXT_DIM);
+    }
+    point(diagnostic, &format!("suite_menu_{id}"), &menu);
+    let running = suite.counts.get(Status::Running);
+    let unfinished = running + suite.counts.get(Status::Queued);
+    if let Some(popup) = egui::Popup::menu(&menu)
+        .id(ui.id().with(("suite_menu", id)))
+        .align(egui::RectAlign::BOTTOM_END)
+        .align_alternatives(&[egui::RectAlign::TOP_END])
+        .show(|ui| {
+            dark_menu_frame(ui, |ui| {
+                ui.set_width(180.0);
+                ui.label(
+                    RichText::new(format!("整组 {} 个场景", suite.counts.get(Status::All)))
+                        .size(12.0)
+                        .color(theme::TEXT_DIM),
+                );
+                for (command, label, enabled, color, hint) in [
+                    (
+                        "cancel_suite",
+                        "全部取消",
+                        unfinished > 0,
+                        FAILURE,
+                        "取消整组排队及运行中的任务，保留已结束任务",
+                    ),
+                    (
+                        "retry_suite",
+                        "全部重试",
+                        unfinished == 0,
+                        theme::TEXT,
+                        "整组结束后，按原配置重新提交所有场景并保留原记录",
+                    ),
+                    (
+                        "delete_suite",
+                        "全部删除",
+                        running == 0,
+                        FAILURE,
+                        "删除整组任务及录包、结果和回放缓存；运行中需先取消",
+                    ),
+                ] {
+                    if command == "delete_suite" {
+                        ui.separator();
+                    }
+                    let enabled = enabled && state.pending.is_none();
+                    let r = ui
+                        .add_enabled(
+                            enabled,
+                            egui::Button::new(RichText::new(label).color(color))
+                                .fill(theme::PANEL_BG)
+                                .min_size(vec2(ui.available_width(), 30.0)),
+                        )
+                        .on_hover_text(hint);
+                    point(diagnostic, &format!("{command}_{id}"), &r);
+                    diagnostic[format!("{command}_{id}_enabled")] = json!(enabled);
+                    if r.clicked() {
+                        *action = Some(json!({"action":command,"suite_id":id}));
+                        ui.close();
+                    }
+                }
+            });
+        })
+    {
+        let r = popup.response.rect;
+        diagnostic["task_popups"][format!("suite_{id}")] =
+            json!([r.left(), r.top(), r.right(), r.bottom()]);
+    }
 }
 
 fn status_icon(ui: &egui::Ui, center: egui::Pos2, status: Status, progress: f32) {
@@ -770,220 +943,237 @@ fn row_contents(
     let progress = (job["progress"].as_f64().unwrap_or(0.0) as f32 / 100.0).clamp(0.0, 1.0);
     let (label, subtitle) = status_text(job, queue_position);
     let narrow = ui.available_width() < 620.0;
-    let (rect, _) = ui.allocate_exact_size(
-        vec2(ui.available_width(), if narrow { 200.0 } else { 126.0 }),
+    let (rect, response) = ui.allocate_exact_size(
+        vec2(ui.available_width(), if narrow { 110.0 } else { 82.0 }),
         egui::Sense::hover(),
     );
-    let failed = status == Status::Failed;
-    ui.painter().rect(
-        rect,
-        8.0,
-        theme::PANEL_BG,
-        Stroke::new(
-            1.0,
-            if failed {
-                FAILURE.gamma_multiply(0.75)
-            } else {
-                theme::CARD_BG
-            },
-        ),
-        egui::StrokeKind::Inside,
-    );
-    if failed {
-        ui.painter().rect_filled(
-            egui::Rect::from_min_size(
-                rect.left_top() + vec2(1.0, 6.0),
-                vec2(4.0, rect.height() - 12.0),
-            ),
-            2.0,
-            FAILURE,
-        );
+    let popup_id = ui.id().with("task_popup");
+    let replay_id = ui.id().with("replay_popup");
+    let active =
+        egui::Popup::is_id_open(ui.ctx(), popup_id) || egui::Popup::is_id_open(ui.ctx(), replay_id);
+    if response.hovered() || active {
+        ui.painter()
+            .rect_filled(rect.shrink(1.0), 6.0, theme::CARD_BG.gamma_multiply(0.65));
     }
-    let left_width = if narrow {
-        rect.width() - 68.0
+    ui.painter().hline(
+        rect.x_range(),
+        rect.bottom(),
+        Stroke::new(1.0, theme::CARD_BG),
+    );
+    let action_width = 262.0;
+    let action_left = rect.right() - action_width - 12.0;
+    let status_left = if narrow {
+        rect.right() - 116.0
     } else {
-        (rect.width() * 0.58 - 26.0).max(200.0)
+        action_left
     };
-    let title_rect =
-        egui::Rect::from_min_size(rect.left_top() + vec2(18.0, 13.0), vec2(left_width, 25.0));
-    let r = left_label(
+    let title_rect = egui::Rect::from_min_size(
+        rect.min + vec2(14.0, 10.0),
+        vec2((status_left - rect.left() - 30.0).max(60.0), 24.0),
+    );
+    let title_response = left_label(
         ui,
         title_rect,
         egui::Label::new(
             RichText::new(title(job))
-                .size(17.0)
+                .size(14.0)
                 .strong()
                 .color(theme::TEXT),
         )
-        .halign(egui::Align::Min)
         .truncate()
         .sense(egui::Sense::click()),
     );
-    point(diagnostic, &format!("inspect_{id}"), &r);
-    if r.on_hover_text(format!(
-        "{}\n{id}",
-        job["config"]["source"].as_str().unwrap_or("")
-    ))
-    .clicked()
+    point(diagnostic, &format!("inspect_{id}"), &title_response);
+    if title_response
+        .on_hover_text(format!(
+            "{}\n{id}",
+            job["config"]["source"].as_str().unwrap_or("")
+        ))
+        .clicked()
     {
         state.inspect(job);
     }
+    let status_origin = pos2(status_left + 10.0, rect.top() + 22.0);
+    status_icon(ui, status_origin, status, progress);
+    let status_rect = egui::Rect::from_min_size(
+        status_origin + vec2(18.0, -12.0),
+        vec2(rect.right() - status_origin.x - 30.0, 24.0),
+    );
+    left_label(
+        ui,
+        status_rect,
+        egui::Label::new(RichText::new(label).size(13.0).color(status.color())).truncate(),
+    )
+    .on_hover_text(job["error"].as_str().unwrap_or(&subtitle));
     let short_id: String = id.chars().take(8).collect();
-    let kind = job["config"]["kind"].as_str().unwrap_or("unknown");
     let run = job["run"]
         .as_u64()
-        .map(|run| run.to_string())
+        .map(|n| n.to_string())
         .unwrap_or_else(|| "—".into());
     let repeat = job["config"]["repeat"]
         .as_u64()
-        .map(|run| run.to_string())
+        .map(|n| n.to_string())
         .unwrap_or_else(|| "—".into());
+    let timing = duration(job).unwrap_or_else(|| subtitle.clone());
+    let source = if job["suite_id"].is_string() {
+        String::new()
+    } else {
+        format!(
+            " · {}",
+            source_label(job["config"]["kind"].as_str().unwrap_or("未知来源"))
+        )
+    };
+    let metadata = format!("ID: {short_id} · 运行 {run}/{repeat} · {timing}{source}");
+    let metadata_rect = egui::Rect::from_min_size(rect.min + vec2(14.0, 45.0), vec2(168.0, 22.0));
     left_label(
         ui,
-        egui::Rect::from_min_size(rect.left_top() + vec2(18.0, 43.0), vec2(left_width, 21.0)),
+        metadata_rect,
         egui::Label::new(
-            RichText::new(format!("{kind} · {short_id} · run {run}/{repeat}"))
+            RichText::new(format!("ID: {short_id} · 运行 {run}/{repeat}"))
                 .size(12.0)
                 .color(theme::TEXT_DIM),
         )
-        .halign(egui::Align::Min)
         .truncate(),
-    );
-    badge(
-        ui,
-        egui::Rect::from_min_size(rect.left_top() + vec2(18.0, 79.0), vec2(84.0, 26.0)),
-        match kind {
-            "world" => "WorldSim",
-            "bag" => "LogSim",
-            _ => kind,
-        },
-    );
-    if let Some(suite) = job["suite_name"].as_str() {
-        badge(
-            ui,
-            egui::Rect::from_min_size(
-                rect.left_top() + vec2(110.0, 79.0),
-                vec2((left_width - 100.0).clamp(70.0, 160.0), 26.0),
-            ),
-            suite,
-        );
-    }
-    let status_origin = if narrow {
-        rect.left_top() + vec2(18.0, 122.0)
-    } else {
-        pos2(rect.left() + rect.width() * 0.69, rect.top() + 23.0)
-    };
-    status_icon(ui, status_origin + vec2(10.0, 0.0), status, progress);
-    let right_width = if narrow {
-        rect.width() - 66.0
-    } else {
-        rect.right() - status_origin.x - 48.0
-    };
-    left_label(
-        ui,
-        egui::Rect::from_min_size(status_origin + vec2(30.0, -12.0), vec2(right_width, 24.0)),
-        egui::Label::new(
-            RichText::new(label)
-                .size(15.0)
-                .strong()
-                .color(status.color()),
-        )
-        .halign(egui::Align::Min)
-        .truncate(),
-    );
-    let subtitle_origin = status_origin + vec2(30.0, 14.0);
-    left_label(
-        ui,
-        egui::Rect::from_min_size(subtitle_origin, vec2(right_width, 20.0)),
-        egui::Label::new(RichText::new(&subtitle).size(12.0).color(theme::TEXT_DIM))
-            .halign(egui::Align::Min)
-            .truncate(),
     )
-    .on_hover_text(job["error"].as_str().unwrap_or(&subtitle));
-    if status == Status::Running && !narrow {
+    .on_hover_text(format!("{metadata}\n{subtitle}"));
+    let timing_rect = egui::Rect::from_min_max(
+        rect.min + vec2(190.0, 45.0),
+        pos2(
+            if narrow {
+                rect.right() - 14.0
+            } else {
+                action_left - 12.0
+            },
+            rect.top() + 67.0,
+        ),
+    );
+    left_label(
+        ui,
+        timing_rect,
+        egui::Label::new(
+            RichText::new(format!("{timing}{source}"))
+                .size(12.0)
+                .color(theme::TEXT_DIM),
+        )
+        .truncate(),
+    )
+    .on_hover_text(format!("{timing}{source}\n{subtitle}"));
+    if status == Status::Running {
         let track = egui::Rect::from_min_size(
-            status_origin + vec2(0.0, 44.0),
-            vec2(right_width + 20.0, 6.0),
+            rect.left_bottom() + vec2(14.0, -5.0),
+            vec2(rect.width() - 28.0, 2.0),
         );
-        ui.painter().rect_filled(track, 3.0, theme::CARD_BG);
+        ui.painter().rect_filled(track, 1.0, theme::CARD_BG);
         ui.painter().rect_filled(
-            egui::Rect::from_min_size(track.min, vec2(track.width() * progress, 6.0)),
-            3.0,
+            egui::Rect::from_min_size(track.min, vec2(track.width() * progress, 2.0)),
+            1.0,
             RUNNING,
         );
     }
-    let menu_rect =
-        egui::Rect::from_min_size(rect.right_top() + vec2(-36.0, 12.0), vec2(26.0, 28.0));
-    let menu = ui.interact(menu_rect, ui.id().with("actions"), egui::Sense::click());
-    if menu.hovered() {
-        ui.painter()
-            .rect_filled(menu_rect, 5.0, theme::CARD_BG_HOVER);
+    let y = rect.bottom() - 38.0;
+    let details_rect = egui::Rect::from_min_size(pos2(action_left, y), vec2(56.0, 28.0));
+    let details = row_button(ui, details_rect, "详情", true);
+    point(diagnostic, &format!("details_{id}"), &details);
+    if details.clicked() {
+        state.inspect(job);
     }
-    for dy in [-5.0, 0.0, 5.0] {
-        ui.painter()
-            .circle_filled(menu_rect.center() + vec2(0.0, dy), 1.5, theme::TEXT_DIM);
+    let reuse_rect = egui::Rect::from_min_size(pos2(action_left + 62.0, y), vec2(82.0, 28.0));
+    let reuse = row_button(ui, reuse_rect, "复用配置", true);
+    point(diagnostic, &format!("view_config_{id}"), &reuse);
+    if reuse.clicked()
+        && let Err(error) = state.edit_config(job)
+    {
+        state.error = Some(error);
     }
-    point(diagnostic, &format!("task_menu_{id}"), &menu);
-    egui::Popup::menu(&menu)
-        .id(ui.id().with("task_popup"))
+    let can_replay = Group::for_stage(job["stage"].as_str().unwrap_or("")) == Group::Finished
+        && job["outputs"]
+            .as_array()
+            .is_some_and(|outputs| outputs.iter().any(Value::is_string));
+    let replay_rect = egui::Rect::from_min_size(pos2(action_left + 150.0, y), vec2(78.0, 28.0));
+    let replay_button = row_button(ui, replay_rect, "回放", can_replay);
+    let arrow = replay_rect.right_center() - vec2(10.0, 0.0);
+    ui.painter().add(egui::Shape::convex_polygon(
+        vec![
+            arrow + vec2(-3.5, -2.0),
+            arrow + vec2(3.5, -2.0),
+            arrow + vec2(0.0, 2.5),
+        ],
+        if can_replay {
+            theme::TEXT_DIM
+        } else {
+            theme::TEXT_DIM.gamma_multiply(0.4)
+        },
+        Stroke::NONE,
+    ));
+    point(diagnostic, &format!("replay_menu_{id}"), &replay_button);
+    if let Some(popup) = egui::Popup::menu(&replay_button)
+        .id(replay_id)
+        .align(egui::RectAlign::BOTTOM_END)
+        .align_alternatives(&[egui::RectAlign::TOP_END])
         .show(|ui| {
             dark_menu_frame(ui, |ui| {
-                ui.set_min_width(160.0);
-                let r = ui.add_sized(
-                    [ui.available_width(), 30.0],
-                    egui::Button::new(RichText::new("查看详情").color(theme::TEXT))
-                        .fill(theme::PANEL_BG),
-                );
-                point(diagnostic, &format!("details_{id}"), &r);
-                if r.clicked() {
-                    state.inspect(job);
-                    ui.close();
-                }
-                let r = ui.add_sized(
-                    [ui.available_width(), 30.0],
-                    egui::Button::new(RichText::new("复用配置").color(theme::TEXT))
-                        .fill(theme::PANEL_BG),
-                );
-                point(diagnostic, &format!("view_config_{id}"), &r);
-                if r.clicked() {
-                    if let Err(error) = state.edit_config(job) {
-                        state.error = Some(error);
-                    }
-                    ui.close();
-                }
+                ui.set_width(160.0);
+                ui.set_max_height(220.0);
+                egui::ScrollArea::vertical()
+                    .max_height(220.0)
+                    .show(ui, |ui| {
+                        if let Some(outputs) = job["outputs"].as_array() {
+                            for (index, path) in outputs
+                                .iter()
+                                .enumerate()
+                                .filter_map(|(i, p)| p.as_str().map(|p| (i, p)))
+                            {
+                                let r = ui.add_sized(
+                                    [ui.available_width(), 30.0],
+                                    egui::Button::new(
+                                        RichText::new(format!("第 {} 次运行", index + 1))
+                                            .color(theme::TEXT),
+                                    )
+                                    .fill(theme::PANEL_BG),
+                                );
+                                point(diagnostic, &format!("replay_{id}_{index}"), &r);
+                                if r.clicked() {
+                                    *replay = Some(replay_value(job, path));
+                                    ui.close();
+                                }
+                            }
+                        }
+                    });
+            });
+        })
+    {
+        let r = popup.response.rect;
+        diagnostic["task_popups"][format!("replay_{id}")] =
+            json!([r.left(), r.top(), r.right(), r.bottom()]);
+    }
+    let menu_rect = egui::Rect::from_min_size(pos2(action_left + 234.0, y), vec2(28.0, 28.0));
+    let menu = row_button(ui, menu_rect, "", true);
+    for dx in [-5.0, 0.0, 5.0] {
+        ui.painter()
+            .circle_filled(menu_rect.center() + vec2(dx, 0.0), 1.4, theme::TEXT_DIM);
+    }
+    point(diagnostic, &format!("task_menu_{id}"), &menu);
+    if let Some(popup) = egui::Popup::menu(&menu)
+        .id(popup_id)
+        .align(egui::RectAlign::BOTTOM_END)
+        .align_alternatives(&[egui::RectAlign::TOP_END])
+        .show(|ui| {
+            dark_menu_frame(ui, |ui| {
+                ui.set_width(160.0);
                 if Group::for_stage(job["stage"].as_str().unwrap_or("")) != Group::Finished {
                     let r = ui.add_enabled(
                         state.pending.is_none(),
                         egui::Button::new(RichText::new("取消任务").color(FAILURE))
-                            .fill(theme::PANEL_BG),
+                            .fill(theme::PANEL_BG)
+                            .min_size(vec2(ui.available_width(), 30.0)),
                     );
                     point(diagnostic, &format!("cancel_{id}"), &r);
                     if r.clicked() {
                         *action = Some(json!({"action":"cancel","id":id}));
                         ui.close();
                     }
-                } else if let Some(outputs) = job["outputs"].as_array() {
-                    for (index, path) in outputs
-                        .iter()
-                        .enumerate()
-                        .filter_map(|(i, path)| path.as_str().map(|path| (i, path)))
-                    {
-                        let r = ui.add_sized(
-                            [ui.available_width(), 30.0],
-                            egui::Button::new(
-                                RichText::new(format!("回放第 {} 次运行", index + 1))
-                                    .color(theme::TEXT),
-                            )
-                            .fill(theme::PANEL_BG),
-                        );
-                        point(diagnostic, &format!("replay_{id}_{index}"), &r);
-                        if r.clicked() {
-                            *replay = Some(replay_value(job, path));
-                            ui.close();
-                        }
-                    }
+                    ui.separator();
                 }
-                ui.separator();
                 let can_delete = matches!(
                     job["stage"].as_str(),
                     Some("queued" | "completed" | "failed" | "cancelled" | "interrupted")
@@ -1002,65 +1192,33 @@ fn row_contents(
                     });
                 point(diagnostic, &format!("delete_{id}"), &r);
                 if r.clicked() {
-                    *action = Some(json!({"action":"delete", "id":id}));
+                    *action = Some(json!({"action":"delete","id":id}));
                     ui.close();
                 }
             });
-        });
-    if failed || ui.rect_contains_pointer(rect) {
-        let button_width = if narrow { 72.0 } else { 78.0 };
-        let y = rect.bottom() - 36.0;
-        let left = rect.right() - 3.0 * (button_width + 8.0) - 10.0;
-        for (index, text) in ["查看详情", "复用配置", "回放"].into_iter().enumerate() {
-            let can_replay = Group::for_stage(job["stage"].as_str().unwrap_or(""))
-                == Group::Finished
-                && job["outputs"][0].is_string();
-            let button = egui::Button::new(RichText::new(text).size(12.0).color(theme::TEXT))
-                .fill(if index == 0 && failed {
-                    theme::ACCENT_STRONG
-                } else {
-                    theme::CARD_BG
-                })
-                .corner_radius(6.0);
-            let rect = egui::Rect::from_min_size(
-                pos2(left + index as f32 * (button_width + 8.0), y),
-                vec2(button_width, 28.0),
-            );
-            let r = ui
-                .scope_builder(egui::UiBuilder::new().max_rect(rect), |ui| {
-                    ui.add_enabled_ui(index != 2 || can_replay, |ui| {
-                        ui.add_sized(rect.size(), button)
-                    })
-                    .inner
-                })
-                .inner;
-            let key = match index {
-                0 => format!("details_{id}"),
-                1 => format!("view_config_{id}"),
-                _ => format!("replay_{id}_0"),
-            };
-            if r.enabled() {
-                point(diagnostic, &key, &r);
-            }
-            if r.clicked() {
-                match index {
-                    0 => state.inspect(job),
-                    1 => {
-                        if let Err(error) = state.edit_config(job) {
-                            state.error = Some(error);
-                        }
-                    }
-                    _ => {
-                        *replay = Some(replay_value(
-                            job,
-                            job["outputs"][0].as_str().expect("enabled replay"),
-                        ));
-                    }
-                }
-            }
-        }
+        })
+    {
+        let r = popup.response.rect;
+        diagnostic["task_popups"][format!("more_{id}")] =
+            json!([r.left(), r.top(), r.right(), r.bottom()]);
     }
-    diagnostic["task_rows"][id] = json!({"title":title(job),"created_at":job["created_at"],"stage":job["stage"],"status_label":label,"subtitle":subtitle,"progress":job["progress"],"queue_position":queue_position,"rect":[rect.left(),rect.top(),rect.right(),rect.bottom()]});
+    diagnostic["task_rows"][id] = json!({"title":title(job),"created_at":job["created_at"],"stage":job["stage"],"status_label":label,"subtitle":subtitle,"metadata":metadata,"progress":job["progress"],"queue_position":queue_position,"rect":[rect.left(),rect.top(),rect.right(),rect.bottom()],"status_rect":[status_rect.left(),status_rect.top(),status_rect.right(),status_rect.bottom()],"actions_y":y});
+}
+
+fn row_button(ui: &mut egui::Ui, rect: egui::Rect, text: &str, enabled: bool) -> egui::Response {
+    ui.scope_builder(egui::UiBuilder::new().max_rect(rect), |ui| {
+        ui.add_enabled_ui(enabled, |ui| {
+            ui.add_sized(
+                rect.size(),
+                egui::Button::new(RichText::new(text).size(12.0).color(theme::TEXT))
+                    .fill(theme::CARD_BG)
+                    .stroke(Stroke::new(1.0, theme::CARD_BG_HOVER))
+                    .corner_radius(6.0),
+            )
+        })
+        .inner
+    })
+    .inner
 }
 
 fn pagination(
@@ -1070,71 +1228,77 @@ fn pagination(
     pages: usize,
     total: usize,
 ) {
-    ui.horizontal(|ui| {
+    let footer = ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 6.0;
-        let button = |text: &str, active: bool| {
-            egui::Button::new(RichText::new(text).size(13.0).color(theme::TEXT))
-                .fill(if active {
-                    theme::ACCENT_STRONG
-                } else {
-                    theme::PANEL_BG
-                })
-                .stroke(Stroke::new(1.0, theme::CARD_BG))
-                .corner_radius(7.0)
-                .min_size(vec2(32.0, 32.0))
-        };
-        let previous = ui.add_enabled(state.task_page > 0, button("‹", false));
-        point(diagnostic, "tasks_previous_page", &previous);
-        if previous.clicked() {
-            state.task_page -= 1;
-        }
-        if ui.available_width() < 470.0 {
-            ui.label(
-                RichText::new(format!("{} / {pages}", state.task_page + 1)).color(theme::TEXT),
-            );
-        } else {
-            let mut visible = vec![0, pages - 1, state.task_page];
-            if state.task_page > 0 {
-                visible.push(state.task_page - 1);
-            }
-            if state.task_page + 1 < pages {
-                visible.push(state.task_page + 1);
-            }
-            if state.task_page == 0 && pages > 2 {
-                visible.push(2);
-            }
-            visible.sort_unstable();
-            visible.dedup();
-            let mut last = None;
-            for page in visible {
-                if last.is_some_and(|last| page > last + 1) {
-                    ui.label(RichText::new("…").color(theme::TEXT_DIM));
-                }
-                let r = ui.add(button(&(page + 1).to_string(), page == state.task_page));
-                point(diagnostic, &format!("tasks_page_{}", page + 1), &r);
-                if r.clicked() {
-                    state.task_page = page;
-                }
-                last = Some(page);
-            }
-        }
-        let next = ui.add_enabled(state.task_page + 1 < pages, button("›", false));
-        point(diagnostic, "tasks_next_page", &next);
-        if next.clicked() {
-            state.task_page += 1;
-        }
+        ui.add_sized(
+            [90.0, 32.0],
+            egui::Label::new(
+                RichText::new(format!("共 {total} 条"))
+                    .size(13.0)
+                    .color(theme::TEXT_DIM),
+            ),
+        );
         ui.allocate_ui_with_layout(
             vec2(ui.available_width(), 32.0),
             egui::Layout::right_to_left(egui::Align::Center),
             |ui| {
-                ui.label(
-                    RichText::new(format!("共 {total} 条"))
-                        .size(13.0)
-                        .color(theme::TEXT_DIM),
-                );
+                let button = |text: &str, active: bool| {
+                    egui::Button::new(RichText::new(text).size(13.0).color(theme::TEXT))
+                        .fill(if active {
+                            theme::ACCENT_STRONG
+                        } else {
+                            theme::PANEL_BG
+                        })
+                        .stroke(Stroke::new(1.0, theme::CARD_BG))
+                        .corner_radius(6.0)
+                        .min_size(vec2(32.0, 32.0))
+                };
+                let next = ui.add_enabled(state.task_page + 1 < pages, button("›", false));
+                point(diagnostic, "tasks_next_page", &next);
+                if next.clicked() {
+                    state.task_page += 1;
+                }
+                if ui.available_width() < 330.0 {
+                    ui.label(
+                        RichText::new(format!("{} / {pages}", state.task_page + 1))
+                            .color(theme::TEXT),
+                    );
+                } else {
+                    let mut visible = vec![0, pages - 1, state.task_page];
+                    if state.task_page > 0 {
+                        visible.push(state.task_page - 1);
+                    }
+                    if state.task_page + 1 < pages {
+                        visible.push(state.task_page + 1);
+                    }
+                    if state.task_page == 0 && pages > 2 {
+                        visible.push(2);
+                    }
+                    visible.sort_unstable();
+                    visible.dedup();
+                    let mut last = None;
+                    for page in visible.into_iter().rev() {
+                        if last.is_some_and(|last| last > page + 1) {
+                            ui.label(RichText::new("…").color(theme::TEXT_DIM));
+                        }
+                        let r = ui.add(button(&(page + 1).to_string(), page == state.task_page));
+                        point(diagnostic, &format!("tasks_page_{}", page + 1), &r);
+                        if r.clicked() {
+                            state.task_page = page;
+                        }
+                        last = Some(page);
+                    }
+                }
+                let previous = ui.add_enabled(state.task_page > 0, button("‹", false));
+                point(diagnostic, "tasks_previous_page", &previous);
+                if previous.clicked() {
+                    state.task_page -= 1;
+                }
             },
         );
     });
+    let r = footer.response.rect;
+    diagnostic["task_footer_rect"] = json!([r.left(), r.top(), r.right(), r.bottom()]);
 }
 
 #[cfg(test)]

@@ -75,7 +75,6 @@ struct State {
     concurrency: u32,
     repeat: u32,
     seed: u32,
-    step: u32,
     config_extra: serde_json::Map<String, Value>,
     config_from: Option<String>,
     catalog: Value,
@@ -113,9 +112,8 @@ impl Default for State {
             use_suite: false,
             suite: String::new(),
             concurrency: 30,
-            repeat: 2,
+            repeat: 1,
             seed: 1,
-            step: 10,
             config_extra: Default::default(),
             config_from: None,
             catalog: Value::Null,
@@ -143,11 +141,20 @@ impl Default for State {
     }
 }
 impl State {
-    fn new_task(&mut self) {
-        self.edit_config(&json!({"id":"", "config":Self::default().config()}))
-            .expect("default configuration is valid");
-        self.config_from = None;
-        self.error = None;
+    fn toggle_module(&mut self, index: usize) {
+        self.modules[index] = !self.modules[index];
+        if self.modules[index] {
+            match index {
+                0 => self.modules[1] = false,
+                1 => self.modules[0] = false,
+                2 => self.modules[5] = false,
+                5 => {
+                    self.modules[2] = false;
+                    self.model = "perfect_planning".into();
+                }
+                _ => {}
+            }
+        }
     }
 
     fn starting(&self) -> bool {
@@ -193,7 +200,7 @@ impl State {
         let edited = json!({
             "kind":self.kind,"source":self.source,"map":self.map,"vehicle":self.vehicle,
             "model":self.model,"seed":self.seed,"repeat":self.repeat,
-            "step_ms":self.step,"modules":MODULES.iter().enumerate().filter(|(i,_)|self.modules[*i]).map(|(_,m)|*m).collect::<Vec<_>>()
+            "step_ms":10,"modules":MODULES.iter().enumerate().filter(|(i,_)|self.modules[*i]).map(|(_,m)|*m).collect::<Vec<_>>()
         });
         config.extend(
             edited
@@ -219,7 +226,13 @@ impl State {
                 if let Some(jobs) = reply["jobs"].as_array() {
                     self.apply_jobs(jobs, true);
                 }
-                if let Some(id) = reply["deleted_id"].as_str() {
+                for id in reply["deleted_id"].as_str().into_iter().chain(
+                    reply["deleted_ids"]
+                        .as_array()
+                        .into_iter()
+                        .flatten()
+                        .filter_map(Value::as_str),
+                ) {
                     if self.last_enqueued.as_deref() == Some(id) {
                         self.last_enqueued = None;
                     }
@@ -319,7 +332,6 @@ impl State {
         self.modules = MODULES.map(|m| c.modules.iter().any(|selected| selected == m));
         self.repeat = c.repeat;
         self.seed = c.seed;
-        self.step = c.step_ms;
         self.config_extra = c.extra;
         self.config_from = job["id"].as_str().map(str::to_owned);
         self.tab = Tab::Config;
@@ -371,184 +383,151 @@ pub(super) fn show(
     let mut action = None;
     let mut replay = None;
     let mut diagnostic = json!({"open":true});
-    let task_tab = state.tab == Tab::Tasks;
-    let max_width = (ui.available_width() - 220.0).max(350.0);
-    egui::Panel::left(if task_tab {
-        "ad_sim_tasks_secondary"
-    } else {
-        "ad_sim_secondary"
-    })
-    .resizable(true)
-    .drag_to_open(false)
-    .default_size(if task_tab {
-        900.0_f32.min(max_width)
-    } else {
-        510.0
-    })
-    .min_size(350.0)
-    .max_size(max_width)
-    .frame(egui::Frame {
-        fill: if task_tab {
-            theme::APP_BG
-        } else {
-            theme::RAIL_BG
-        },
-        inner_margin: egui::Margin::same(if task_tab { 18 } else { 12 }),
-        stroke: egui::Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.2)),
-        ..Default::default()
-    })
-    .show_collapsible(ui, open, |ui| {
-        let panel = ui.max_rect();
-        diagnostic["panel_rect"] =
-            json!([panel.left(), panel.top(), panel.right(), panel.bottom()]);
-        // scene_editor structure: fixed tabs above one shared, scrolling content area.
-        ui.horizontal(|ui| {
-            let width = if task_tab {
-                ((ui.available_width() - 134.0) / 2.0).min(190.0)
-            } else {
-                (ui.available_width() - ui.spacing().item_spacing.x) / 2.0
-            };
-            for tab in [Tab::Config, Tab::Tasks] {
-                let active = state.tab == tab;
-                let r = ui.add_sized(
-                    [width, 40.0],
-                    egui::Button::new(
-                        egui::RichText::new(tab.display_label())
-                            .size(15.0)
-                            .strong()
-                            .color(if active {
-                                theme::ACCENT
-                            } else {
-                                theme::TEXT_DIM
-                            }),
-                    )
-                    .fill(if active {
-                        theme::CARD_BG
-                    } else {
-                        egui::Color32::TRANSPARENT
-                    })
-                    .corner_radius(8.0)
-                    .frame(true),
-                );
-                if active {
-                    ui.painter().hline(
-                        r.rect.x_range(),
-                        r.rect.bottom() - 1.0,
-                        egui::Stroke::new(2.0, theme::ACCENT),
+    let max_width = (ui.available_width() - 440.0).max(350.0);
+    // One persisted width for both tabs, including widths chosen by dragging.
+    egui::Panel::left("ad_sim_secondary")
+        .resizable(true)
+        .drag_to_open(false)
+        .default_size(660.0_f32.min(max_width))
+        .min_size(350.0)
+        .max_size(max_width)
+        .frame(egui::Frame {
+            fill: theme::RAIL_BG,
+            inner_margin: egui::Margin::same(12),
+            stroke: egui::Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.2)),
+            ..Default::default()
+        })
+        .show_collapsible(ui, open, |ui| {
+            let panel = ui.max_rect();
+            diagnostic["panel_rect"] =
+                json!([panel.left(), panel.top(), panel.right(), panel.bottom()]);
+            // Fixed equal halves: selection changes paint only, never geometry.
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 0.0;
+                let width = ui.available_width() / 2.0;
+                for tab in [Tab::Config, Tab::Tasks] {
+                    let active = state.tab == tab;
+                    let r = ui.add_sized(
+                        [width, 40.0],
+                        egui::Button::new(
+                            egui::RichText::new(tab.display_label())
+                                .size(15.0)
+                                .strong()
+                                .color(if active {
+                                    theme::ACCENT
+                                } else {
+                                    theme::TEXT_DIM
+                                }),
+                        )
+                        .fill(if active {
+                            theme::CARD_BG
+                        } else {
+                            egui::Color32::TRANSPARENT
+                        })
+                        .stroke(egui::Stroke::NONE)
+                        .corner_radius(8.0)
+                        .frame(true),
                     );
-                }
-                point(
-                    &mut diagnostic,
-                    if tab == Tab::Config {
-                        "config_tab"
+                    if active {
+                        ui.painter().hline(
+                            r.rect.x_range(),
+                            r.rect.bottom() - 1.0,
+                            egui::Stroke::new(2.0, theme::ACCENT),
+                        );
+                    }
+                    point(
+                        &mut diagnostic,
+                        if tab == Tab::Config {
+                            "config_tab"
+                        } else {
+                            "tasks_tab"
+                        },
+                        &r,
+                    );
+                    diagnostic[if tab == Tab::Config {
+                        "config_tab_rect"
                     } else {
-                        "tasks_tab"
-                    },
-                    &r,
-                );
-                if r.clicked() {
-                    state.tab = tab;
-                    if tab == Tab::Tasks {
-                        state.inspected = None;
+                        "tasks_tab_rect"
+                    }] = json!([r.rect.left(), r.rect.top(), r.rect.right(), r.rect.bottom()]);
+                    if r.clicked() {
+                        state.tab = tab;
+                        if tab == Tab::Tasks {
+                            state.inspected = None;
+                        }
                     }
                 }
+            });
+            ui.separator();
+            if let Some(error) = &state.error {
+                ui.colored_label(egui::Color32::LIGHT_RED, error);
+                if state.catalog.is_null()
+                    && state.pending.is_none()
+                    && ui.button("Retry configuration loading").clicked()
+                {
+                    action = Some(json!({"action":"catalog"}));
+                }
             }
-            if task_tab {
-                ui.allocate_ui_with_layout(
-                    egui::vec2(ui.available_width(), 40.0),
-                    egui::Layout::right_to_left(egui::Align::Center),
-                    |ui| {
-                        let r = ui.add_enabled(
-                            state.pending.is_none(),
+            if let Some(error) = &state.stream_error {
+                ui.colored_label(egui::Color32::LIGHT_RED, error);
+            }
+            match state.tab {
+                Tab::Config => {
+                    egui::ScrollArea::vertical()
+                        .id_salt("sim_config_scroll")
+                        .auto_shrink([false, false])
+                        .max_height((ui.available_height() - 78.0).max(0.0))
+                        .show(ui, |ui| {
+                            config_editor(ui, &mut state, &mut diagnostic);
+                        });
+                    config_footer(ui, &state, &mut diagnostic, &mut action);
+                }
+                Tab::Tasks if state.inspected.is_some() => {
+                    let job = state
+                        .inspected
+                        .clone()
+                        .expect("detail branch has a selected task");
+                    ui.horizontal(|ui| {
+                        let back = ui.add(
                             egui::Button::new(
-                                egui::RichText::new("＋ 新建任务")
-                                    .size(14.0)
-                                    .strong()
-                                    .color(egui::Color32::WHITE),
+                                egui::RichText::new("← 返回列表")
+                                    .size(13.0)
+                                    .color(theme::TEXT),
                             )
-                            .fill(theme::ACCENT_STRONG)
-                            .corner_radius(8.0)
-                            .min_size(egui::vec2(116.0, 38.0)),
+                            .fill(theme::CARD_BG)
+                            .corner_radius(6.0),
                         );
-                        point(&mut diagnostic, "new_task", &r);
-                        if r.clicked() {
-                            state.new_task();
+                        point(&mut diagnostic, "back_to_tasks", &back);
+                        if back.clicked() {
+                            state.inspected = None;
                         }
-                    },
-                );
+                        ui.label(
+                            egui::RichText::new("任务详情")
+                                .size(16.0)
+                                .strong()
+                                .color(theme::TEXT),
+                        );
+                    });
+                    ui.add_space(8.0);
+                    egui::ScrollArea::vertical()
+                        .id_salt(("sim_detail_scroll", job["id"].as_str()))
+                        .auto_shrink([false, false])
+                        .show(ui, |ui| {
+                            task_card(
+                                ui,
+                                &job,
+                                &mut state,
+                                &mut diagnostic,
+                                &mut action,
+                                &mut replay,
+                                true,
+                            );
+                        });
+                }
+                Tab::Tasks => {
+                    tasks::show(ui, &mut state, &mut diagnostic, &mut action, &mut replay);
+                }
             }
         });
-        ui.separator();
-        if let Some(error) = &state.error {
-            ui.colored_label(egui::Color32::LIGHT_RED, error);
-            if state.catalog.is_null()
-                && state.pending.is_none()
-                && ui.button("Retry configuration loading").clicked()
-            {
-                action = Some(json!({"action":"catalog"}));
-            }
-        }
-        if let Some(error) = &state.stream_error {
-            ui.colored_label(egui::Color32::LIGHT_RED, error);
-        }
-        match state.tab {
-            Tab::Config => {
-                egui::ScrollArea::vertical()
-                    .id_salt("sim_config_scroll")
-                    .auto_shrink([false, false])
-                    .max_height((ui.available_height() - 78.0).max(0.0))
-                    .show(ui, |ui| {
-                        config_editor(ui, &mut state, &mut diagnostic);
-                    });
-                config_footer(ui, &state, &mut diagnostic, &mut action);
-            }
-            Tab::Tasks if state.inspected.is_some() => {
-                let job = state
-                    .inspected
-                    .clone()
-                    .expect("detail branch has a selected task");
-                ui.horizontal(|ui| {
-                    let back = ui.add(
-                        egui::Button::new(
-                            egui::RichText::new("← 返回列表")
-                                .size(13.0)
-                                .color(theme::TEXT),
-                        )
-                        .fill(theme::CARD_BG)
-                        .corner_radius(6.0),
-                    );
-                    point(&mut diagnostic, "back_to_tasks", &back);
-                    if back.clicked() {
-                        state.inspected = None;
-                    }
-                    ui.label(
-                        egui::RichText::new("任务详情")
-                            .size(16.0)
-                            .strong()
-                            .color(theme::TEXT),
-                    );
-                });
-                ui.add_space(8.0);
-                egui::ScrollArea::vertical()
-                    .id_salt(("sim_detail_scroll", job["id"].as_str()))
-                    .auto_shrink([false, false])
-                    .show(ui, |ui| {
-                        task_card(
-                            ui,
-                            &job,
-                            &mut state,
-                            &mut diagnostic,
-                            &mut action,
-                            &mut replay,
-                            true,
-                        );
-                    });
-            }
-            Tab::Tasks => {
-                tasks::show(ui, &mut state, &mut diagnostic, &mut action, &mut replay);
-            }
-        }
-    });
     if state.pending.is_none() {
         if let Some(action) = action.or_else(|| state.queued_difference.take()) {
             fetch(ctx, &mut state, action);
@@ -646,85 +625,152 @@ fn config_editor(ui: &mut egui::Ui, state: &mut State, diagnostic: &mut Value) {
             }
         }
     });
-    ui.add_space(10.0);
-    let suite_mode = state.kind == "world" && state.use_suite;
-    field_label(
-        ui,
-        if suite_mode {
-            "场景集"
-        } else if state.kind == "world" {
-            "场景文件"
-        } else {
-            "录制文件"
-        },
-    );
-    diagnostic["Scenario"] = picker(
-        ui,
-        "Scenario",
-        if suite_mode {
-            &mut state.suite
-        } else {
-            &mut state.source
-        },
-        &catalog[if suite_mode {
-            "suites"
-        } else if state.kind == "world" {
-            "worlds"
-        } else {
-            "bags"
-        }],
-        false,
-    );
+    config_divider(ui);
+    config_section(ui, "场景来源");
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 10.0;
+        let available = ui.available_width();
+        let type_width = (available * 0.30).max(100.0);
+        ui.allocate_ui(egui::vec2(type_width, 34.0), |ui| {
+            let mut source_type = if state.use_suite { "suite" } else { "single" }.to_owned();
+            let title = if state.kind != "world" {
+                "录制文件"
+            } else if state.use_suite {
+                "场景集合"
+            } else {
+                "场景文件"
+            };
+            let response = ui
+                .add_enabled_ui(state.kind == "world", |ui| {
+                    themed_combo(
+                        ui,
+                        "source_type",
+                        title,
+                        &mut source_type,
+                        |ui, selected| {
+                            for (value, label) in [("single", "场景文件"), ("suite", "场景集合")]
+                            {
+                                let response = ui.selectable_label(*selected == value, label);
+                                point(diagnostic, &format!("{value}_mode"), &response);
+                                if response.clicked() {
+                                    *selected = value.into();
+                                    ui.close();
+                                }
+                            }
+                        },
+                    )
+                })
+                .inner;
+            point(diagnostic, "source_type", &response);
+            state.use_suite = source_type == "suite";
+        });
+        let suite_mode = state.kind == "world" && state.use_suite;
+        ui.allocate_ui(egui::vec2(available - type_width - 10.0, 34.0), |ui| {
+            diagnostic["Scenario"] = picker(
+                ui,
+                "Scenario",
+                if suite_mode {
+                    &mut state.suite
+                } else {
+                    &mut state.source
+                },
+                &catalog[if suite_mode {
+                    "suites"
+                } else if state.kind == "world" {
+                    "worlds"
+                } else {
+                    "bags"
+                }],
+                false,
+            );
+        });
+    });
+    if state.kind == "world" && state.use_suite {
+        ui.add_space(8.0);
+        ui.horizontal(|ui| {
+            ui.label(
+                egui::RichText::new("并发场景数")
+                    .size(12.0)
+                    .color(theme::TEXT),
+            );
+            number_stepper(
+                ui,
+                &mut state.concurrency,
+                1..=30,
+                "concurrency",
+                diagnostic,
+            );
+        });
+    }
 
     config_divider(ui);
     config_section(ui, "地图与车辆");
     let label_width = 58.0;
     let gap = 12.0;
     let column = (ui.available_width() - label_width - gap * 2.0) / 2.0;
-    egui::Grid::new("sim_environment_grid")
-        .spacing([gap, 10.0])
-        .show(ui, |ui| {
-            ui.allocate_space(egui::vec2(label_width, 0.0));
-            ui.label(
-                egui::RichText::new("资源")
-                    .color(theme::TEXT_DIM)
-                    .size(12.0),
-            );
-            ui.label(
-                egui::RichText::new("版本")
-                    .color(theme::TEXT_DIM)
-                    .size(12.0),
-            );
-            ui.end_row();
-            for (label, key, value, values) in [
-                ("地图", "Map", &mut state.map, &catalog["maps"]),
-                ("车辆", "Vehicle", &mut state.vehicle, &catalog["vehicles"]),
-            ] {
-                ui.label(egui::RichText::new(label).size(13.0).color(theme::TEXT));
-                ui.allocate_ui(egui::vec2(column, 36.0), |ui| {
-                    diagnostic[key] = picker(ui, key, value, values, true);
-                });
-                ui.allocate_ui(egui::vec2(column, 36.0), |ui| {
-                    // Catalog resources are concrete paths, not versioned assets.
-                    let text = if value.is_empty() {
-                        "跟随场景"
-                    } else {
-                        "当前版本"
-                    };
-                    let r = ui
-                        .add_enabled_ui(false, |ui| dropdown_trigger(ui, text))
-                        .inner;
-                    point(diagnostic, &format!("{key}_version"), &r);
-                });
-                ui.end_row();
-            }
-        });
+    // Grid retains old column widths and can expand the enclosing sidebar after
+    // a tab switch. Lay out these fixed slots from this frame's available width.
+    let (header, _) =
+        ui.allocate_exact_size(egui::vec2(ui.available_width(), 20.0), egui::Sense::hover());
+    for (index, text) in ["资源", "版本"].into_iter().enumerate() {
+        ui.painter().text(
+            header.left_center()
+                + egui::vec2(label_width + gap + index as f32 * (column + gap), 0.0),
+            egui::Align2::LEFT_CENTER,
+            text,
+            egui::FontId::proportional(12.0),
+            theme::TEXT_DIM,
+        );
+    }
+    for (label, key, value, values) in [
+        ("地图", "Map", &mut state.map, &catalog["maps"]),
+        ("车辆", "Vehicle", &mut state.vehicle, &catalog["vehicles"]),
+    ] {
+        ui.add_space(2.0);
+        let (rect, _) =
+            ui.allocate_exact_size(egui::vec2(ui.available_width(), 36.0), egui::Sense::hover());
+        ui.painter().text(
+            rect.left_center(),
+            egui::Align2::LEFT_CENTER,
+            label,
+            egui::FontId::proportional(13.0),
+            theme::TEXT,
+        );
+        let resource_rect = egui::Rect::from_min_size(
+            rect.min + egui::vec2(label_width + gap, 0.0),
+            egui::vec2(column, 36.0),
+        );
+        let version_rect = resource_rect.translate(egui::vec2(column + gap, 0.0));
+        let mut resource_ui = ui.new_child(
+            egui::UiBuilder::new()
+                .max_rect(resource_rect)
+                .id_salt((key, "resource"))
+                .layout(egui::Layout::top_down(egui::Align::Min)),
+        );
+        diagnostic[key] = picker(&mut resource_ui, key, value, values, true);
+        let mut version_ui = ui.new_child(
+            egui::UiBuilder::new()
+                .max_rect(version_rect)
+                .id_salt((key, "version"))
+                .layout(egui::Layout::top_down(egui::Align::Min)),
+        );
+        // Catalog resources are concrete paths, not versioned assets.
+        let text = if value.is_empty() {
+            "跟随场景"
+        } else {
+            "当前版本"
+        };
+        let response = version_ui
+            .add_enabled_ui(false, |ui| dropdown_trigger(ui, text))
+            .inner;
+        point(diagnostic, &format!("{key}_version"), &response);
+    }
 
     config_divider(ui);
     config_section(ui, "算法模块");
     let columns = if ui.available_width() >= 420.0 { 3 } else { 2 };
     let width = (ui.available_width() - 10.0 * (columns - 1) as f32) / columns as f32;
-    for row in [2_usize, 0, 3, 4, 1].chunks(columns) {
+    for row in [2_usize, 5, 4, 0, 1, 3].chunks(columns) {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 10.0;
             for &index in row {
@@ -732,131 +778,75 @@ fn config_editor(ui: &mut egui::Ui, state: &mut State, diagnostic: &mut Value) {
                 let r = module_checkbox(ui, module_label(MODULES[index]), on, width);
                 point(diagnostic, MODULES[index], &r);
                 if r.clicked() {
-                    state.modules[index] = !on;
-                    if !on {
-                        match index {
-                            0 => state.modules[1] = false,
-                            1 => state.modules[0] = false,
-                            2 => state.modules[5] = false,
-                            _ => {}
-                        }
-                    }
+                    state.toggle_module(index);
                 }
             }
         });
         ui.add_space(6.0);
     }
 
-    config_divider(ui);
-    config_section(ui, "执行参数");
-    ui.columns(2, |cols| {
-        for (ui, (label, id, value, range)) in cols.iter_mut().zip([
-            ("随机种子", "seed", &mut state.seed, 0..=u32::MAX),
-            ("运行次数", "runs", &mut state.repeat, 1..=3),
-        ]) {
-            ui.horizontal(|ui| {
-                ui.set_min_height(36.0);
-                ui.label(egui::RichText::new(label).size(12.0).color(theme::TEXT));
-                number_stepper(ui, value, range, id, diagnostic);
-            });
+    if state.kind == "world" {
+        config_divider(ui);
+        config_section(ui, "Ego Model");
+        let title = match state.model.as_str() {
+            "perfect_planning" => "Perfect planning",
+            "kinematic_control" => "Kinematic control",
+            other => other,
         }
-    });
+        .to_owned();
+        let response = themed_combo(ui, "ego_model", &title, &mut state.model, |ui, selected| {
+            menu_option(ui, selected, "perfect_planning".into(), "Perfect planning");
+            ui.add_enabled_ui(!state.modules[5], |ui| {
+                menu_option(
+                    ui,
+                    selected,
+                    "kinematic_control".into(),
+                    "Kinematic control",
+                );
+            })
+            .response
+            .on_disabled_hover_text("ML Planning 使用 Perfect planning");
+        });
+        point(diagnostic, "ego_model", &response);
+    }
+
+    config_divider(ui);
+    config_section(ui, "确定性测试");
+    let enabled = state.repeat > 1;
+    let response = module_checkbox(ui, "启用确定性测试", enabled, ui.available_width());
+    point(diagnostic, "determinism", &response);
+    if response.clicked() {
+        state.repeat = if enabled { 1 } else { 2 };
+    }
+    if state.repeat > 1 {
+        ui.add_space(8.0);
+        ui.columns(2, |cols| {
+            for (ui, (label, id, value, range)) in cols.iter_mut().zip([
+                ("随机种子", "seed", &mut state.seed, 0..=u32::MAX),
+                ("运行次数", "runs", &mut state.repeat, 2..=3),
+            ]) {
+                ui.horizontal(|ui| {
+                    ui.set_min_height(36.0);
+                    ui.label(egui::RichText::new(label).size(12.0).color(theme::TEXT));
+                    number_stepper(ui, value, range, id, diagnostic);
+                });
+            }
+        });
+    } else {
+        ui.add_space(6.0);
+        ui.label(
+            egui::RichText::new("关闭时仅运行一次")
+                .size(12.0)
+                .color(theme::TEXT_DIM),
+        );
+    }
+    if state.config_extra.is_empty() {
+        return;
+    }
     ui.add_space(12.0);
     let advanced = egui::CollapsingHeader::new("更多设置")
         .id_salt("sim_advanced_settings")
         .show(ui, |ui| {
-            field_label(ui, "Planner");
-            let mut planner = if state.modules[5] {
-                "ML_PLANNING"
-            } else {
-                "PLANNING"
-            }
-            .to_owned();
-            let title = planner.clone();
-            let planner_response =
-                themed_combo(ui, "planner", &title, &mut planner, |ui, selected| {
-                    menu_option(ui, selected, "PLANNING".into(), "Planning");
-                    menu_option(ui, selected, "ML_PLANNING".into(), "ML Planning");
-                });
-            point(diagnostic, "planner", &planner_response);
-            if planner != title {
-                state.modules[2] = planner == "PLANNING";
-                state.modules[5] = planner == "ML_PLANNING";
-                state.modules[4] = true;
-                if state.modules[5] {
-                    state.modules[0] = false;
-                    state.modules[1] = false;
-                    state.modules[3] = false;
-                    state.model = "perfect_planning".into();
-                } else if !state.modules[0] && !state.modules[1] {
-                    state.modules[1] = true;
-                }
-            }
-
-            if state.kind == "world" {
-                ui.horizontal(|ui| {
-                    for (enabled, label) in [(false, "单个场景"), (true, "场景集")] {
-                        let r = module_chip(ui, label, state.use_suite == enabled);
-                        point(
-                            diagnostic,
-                            if enabled { "suite_mode" } else { "single_mode" },
-                            &r,
-                        );
-                        if r.clicked() {
-                            state.use_suite = enabled;
-                        }
-                    }
-                });
-                if state.use_suite {
-                    field_label(ui, "并发场景数");
-                    themed_drag(
-                        ui,
-                        &mut state.concurrency,
-                        Some(1..=30),
-                        "concurrency",
-                        diagnostic,
-                    );
-                }
-                field_label(ui, "Ego model");
-                let mut ego = state.model.clone();
-                let ego_button = match ego.as_str() {
-                    "perfect_planning" => "Perfect planning".to_owned(),
-                    "kinematic_control" => "Kinematic control".to_owned(),
-                    other => other.to_owned(),
-                };
-                themed_combo(ui, "ego_model", &ego_button, &mut ego, |ui, selected| {
-                    menu_option(
-                        ui,
-                        selected,
-                        "perfect_planning".into(),
-                        "Perfect planning trajectory",
-                    );
-                    menu_option(
-                        ui,
-                        selected,
-                        "kinematic_control".into(),
-                        "Kinematic control",
-                    );
-                });
-                state.model = ego;
-                ui.add_space(8.0);
-                field_label(ui, "Step");
-                let mut step_key = state.step.to_string();
-                themed_combo(
-                    ui,
-                    "step_ms",
-                    &format!("{} ms", state.step),
-                    &mut step_key,
-                    |ui, selected| {
-                        for ms in [1_u32, 2, 5, 10] {
-                            menu_option(ui, selected, ms.to_string(), &format!("{ms} ms"));
-                        }
-                    },
-                );
-                if let Ok(ms) = step_key.parse::<u32>() {
-                    state.step = ms;
-                }
-            }
             if !state.config_extra.is_empty() {
                 ui.add_space(10.0);
                 section_card(ui, "Advanced", |ui| {
@@ -1111,44 +1101,11 @@ fn section_card(ui: &mut egui::Ui, title: &str, add_contents: impl FnOnce(&mut e
         });
 }
 
-fn field_label(ui: &mut egui::Ui, text: &str) {
-    ui.label(
-        egui::RichText::new(text)
-            .size(11.0)
-            .color(theme::TEXT)
-            .strong(),
-    );
-    ui.add_space(4.0);
-}
-
-fn module_chip(ui: &mut egui::Ui, label: &str, on: bool) -> egui::Response {
-    let fill = if on {
-        theme::ACCENT_STRONG.gamma_multiply(0.85)
-    } else {
-        theme::CARD_BG
-    };
-    let text = if on {
-        egui::Color32::WHITE
-    } else {
-        theme::TEXT
-    };
-    ui.add(
-        egui::Button::new(egui::RichText::new(label).size(12.0).color(text))
-            .fill(fill)
-            .corner_radius(0.0)
-            .stroke(egui::Stroke::new(
-                1.0,
-                if on {
-                    theme::ACCENT
-                } else {
-                    theme::ACCENT.gamma_multiply(0.28)
-                },
-            ))
-            .min_size(egui::vec2(0.0, 28.0)),
-    )
-}
-
 fn dropdown_trigger(ui: &mut egui::Ui, text: &str) -> egui::Response {
+    selection_trigger(ui, text, false)
+}
+
+fn selection_trigger(ui: &mut egui::Ui, text: &str, file_action: bool) -> egui::Response {
     let height = 34.0;
     let width = ui.available_width();
     let (rect, response) = ui.allocate_exact_size(egui::vec2(width, height), egui::Sense::click());
@@ -1170,7 +1127,7 @@ fn dropdown_trigger(ui: &mut egui::Ui, text: &str) -> egui::Response {
         .rect(rect, 8.0, fill, stroke, egui::StrokeKind::Inside);
 
     // Right chevron well — makes this read as a select, not a label.
-    let chevron_w = 28.0;
+    let chevron_w = if file_action { 82.0 } else { 28.0 };
     let split_x = rect.right() - chevron_w;
     ui.painter().vline(
         split_x,
@@ -1194,18 +1151,28 @@ fn dropdown_trigger(ui: &mut egui::Ui, text: &str) -> egui::Response {
         },
     );
 
-    // Drawn triangle (no Unicode glyph — web fonts often miss ▾ and show □).
-    let c = egui::pos2(rect.right() - chevron_w * 0.5, rect.center().y + 0.5);
-    let s = 4.5;
-    ui.painter().add(egui::Shape::convex_polygon(
-        vec![
-            egui::pos2(c.x - s, c.y - s * 0.55),
-            egui::pos2(c.x + s, c.y - s * 0.55),
-            egui::pos2(c.x, c.y + s * 0.7),
-        ],
-        theme::TEXT_DIM,
-        egui::Stroke::NONE,
-    ));
+    if file_action {
+        ui.painter().text(
+            egui::pos2(rect.right() - chevron_w * 0.5, rect.center().y),
+            egui::Align2::CENTER_CENTER,
+            "更换文件",
+            egui::FontId::proportional(12.0),
+            theme::TEXT,
+        );
+    } else {
+        // Drawn triangle (no Unicode glyph — web fonts often miss ▾ and show □).
+        let c = egui::pos2(rect.right() - chevron_w * 0.5, rect.center().y + 0.5);
+        let s = 4.5;
+        ui.painter().add(egui::Shape::convex_polygon(
+            vec![
+                egui::pos2(c.x - s, c.y - s * 0.55),
+                egui::pos2(c.x + s, c.y - s * 0.55),
+                egui::pos2(c.x, c.y + s * 0.7),
+            ],
+            theme::TEXT_DIM,
+            egui::Stroke::NONE,
+        ));
+    }
 
     response.on_hover_cursor(egui::CursorIcon::PointingHand)
 }
@@ -1229,27 +1196,6 @@ fn themed_combo(
             });
         });
     response
-}
-
-fn themed_drag(
-    ui: &mut egui::Ui,
-    value: &mut u32,
-    range: Option<std::ops::RangeInclusive<u32>>,
-    id: &str,
-    diagnostic: &mut Value,
-) {
-    ui.scope(|ui| {
-        ui.visuals_mut().extreme_bg_color = theme::CARD_BG;
-        ui.visuals_mut().override_text_color = Some(theme::TEXT);
-        ui.visuals_mut().widgets.inactive.bg_fill = theme::CARD_BG;
-        ui.visuals_mut().widgets.inactive.weak_bg_fill = theme::CARD_BG;
-        let mut drag = egui::DragValue::new(value);
-        if let Some(range) = range {
-            drag = drag.range(range);
-        }
-        let r = ui.add(drag);
-        point(diagnostic, id, &r);
-    });
 }
 
 fn dark_menu_frame(ui: &mut egui::Ui, add_contents: impl FnOnce(&mut egui::Ui)) {
@@ -1313,7 +1259,7 @@ fn picker(
         selected.clone()
     };
 
-    let response = dropdown_trigger(ui, &short);
+    let response = selection_trigger(ui, &short, label == "Scenario");
 
     egui::Popup::menu(&response)
         .id(egui::Id::new(("path_picker", label)))
@@ -2001,6 +1947,22 @@ fn fetch(_: &AppContext<'_>, state: &mut State, _: Value) {
 mod tests {
     use super::*;
     #[test]
+    fn default_is_one_run_at_ten_ms_and_module_pairs_are_exclusive() {
+        let mut state = State::default();
+        assert_eq!(state.config()["repeat"], 1);
+        assert_eq!(state.config()["step_ms"], 10);
+        state.model = "kinematic_control".into();
+        state.toggle_module(5);
+        assert!(state.modules[5] && !state.modules[2]);
+        assert_eq!(state.model, "perfect_planning");
+        state.toggle_module(2);
+        assert!(state.modules[2] && !state.modules[5]);
+        state.toggle_module(1);
+        assert!(state.modules[1] && !state.modules[0]);
+        state.toggle_module(0);
+        assert!(state.modules[0] && !state.modules[1]);
+    }
+    #[test]
     fn pushed_jobs_preserve_submission_draft_and_selection() {
         let mut state = State::default();
         state.source = "draft.record".into();
@@ -2033,6 +1995,24 @@ mod tests {
         assert_eq!(state.start_label(), "Start simulation");
         state.pending_action = Some("enqueue_suite".into());
         assert_eq!(state.start_label(), "Starting…");
+    }
+
+    #[test]
+    fn suite_deletion_clears_removed_references_and_preserves_the_draft() {
+        let mut state = State::default();
+        state.source = "unsubmitted-scenario".into();
+        state.last_enqueued = Some("a".into());
+        state.config_from = Some("b".into());
+        state.inspect(&json!({"id":"b","stage":"completed"}));
+        let draft = state.config();
+        state.receive(Ok(json!({"status":"ok","deleted_ids":["a","b"],
+            "jobs":[{"id":"other","stage":"completed"}]})));
+        assert!(state.last_enqueued.is_none());
+        assert!(state.config_from.is_none());
+        assert!(state.inspected.is_none());
+        assert_eq!(state.jobs.len(), 1);
+        assert_eq!(state.jobs[0]["id"], "other");
+        assert_eq!(state.config(), draft);
     }
 
     #[test]
@@ -2119,7 +2099,7 @@ mod tests {
         assert_eq!(state.config(), before);
     }
     #[test]
-    fn opening_config_round_trips_all_fields_and_edits_only_a_copy() {
+    fn opening_config_uses_fixed_step_and_edits_only_a_copy() {
         let mut config = State::default().config();
         config["kind"] = json!("world");
         config["model"] = json!("kinematic_control");
@@ -2135,7 +2115,9 @@ mod tests {
         let mut state = State::default();
         state.edit_config(&job).unwrap();
         assert!(state.tab == Tab::Config && state.inspected.is_none());
-        assert_eq!(state.config(), config);
+        let mut expected = config.clone();
+        expected["step_ms"] = json!(10);
+        assert_eq!(state.config(), expected);
         state.seed = 99;
         state.source = "modified.json".into();
         assert_eq!(job["config"], config);

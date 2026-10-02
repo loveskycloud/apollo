@@ -9,6 +9,26 @@ from bag_diff import compare, algorithm_payload
 
 
 class QueueTests(unittest.TestCase):
+    def test_default_runs_once_at_ten_ms_and_explicit_repeats_are_preserved(self):
+        with tempfile.TemporaryDirectory() as path:
+            root = Path(path)
+            source = root / "input.record"
+            source.touch()
+            vehicle = root / "vehicle.pb.txt"
+            vehicle.touch()
+            map_dir = root / "map"
+            map_dir.mkdir()
+            for name in ("base_map.bin", "sim_map.bin"):
+                (map_dir / name).touch()
+            request = {"kind": "bag", "source": str(source), "map": str(map_dir),
+                       "vehicle": str(vehicle), "modules": ["PLANNING"]}
+            with patch("task_service.INPUT_ROOTS", [root]):
+                config = validate(request)
+                self.assertEqual((config["repeat"], config["step_ms"]), (1, 10))
+                self.assertEqual(validate({**request, "repeat": 3})["repeat"], 3)
+                with self.assertRaisesRegex(ValueError, "either PLANNING or ML_PLANNING"):
+                    validate({**request, "modules": ["PLANNING", "ML_PLANNING"]})
+
     def test_parking_scorecard_keeps_failed_suite_member_without_analysis(self):
         with tempfile.TemporaryDirectory() as path:
             service=TaskService(path)

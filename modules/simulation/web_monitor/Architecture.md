@@ -34,9 +34,11 @@
 | 启动器 | `web_monitor_main.cc` | 解析 gflags，设置 `AD_LAYOUT_DIR`，exec `bin/rerun` |
 | 构建包装 | `BUILD`、`scripts/build_viewer.sh` | Cargo 编 Viewer；genrule 拷贝 `bin/rerun`；apollo_package 安装 |
 | AD UI 壳 | `rerun/.../ui/ad_shell.rs` | Source/Layout/Panel/Sim、主题、布局 `include_bytes`、窗口化播放 |
-| 仿真侧栏 | `rerun/.../ui/ad_sim.rs` + `ad_sim_tasks.rs` + `ad_sim_events.rs` | 与 Source 等互斥停靠；仿真配置 / 仿真任务标签；任务页包含状态计数、搜索与来源/状态筛选、可折叠场景集、每页 10 条卡片与实时详情；SSE 快照与增量推送独立于操作请求，无任务列表轮询；View config 复制历史配置至可编辑表单，新提交不改旧任务 |
+| 数据源侧栏 | `ad_shell.rs` | 数据加载 / 数据概览两区；本地文件选择、转换地图下拉和自定义路径；七行真实录制元数据；Apollo Topic 数量只计原始 `/apollo/` 话题，排除派生渲染通道 |
+| 仿真侧栏 | `rerun/.../ui/ad_sim.rs` + `ad_sim_tasks.rs` + `ad_sim_events.rs` | 与 Source 等互斥停靠；配置 / 任务共用侧栏宽度、等宽标签；任务页顶部筛选、紧凑可折叠场景集、每页 10 条任务与底部分页；每行直接选择回放运行次数，菜单限制在侧栏内；SSE 快照与增量推送独立于操作请求，无任务列表轮询；View config 复制历史配置至可编辑表单，新提交不改旧任务 |
 | 仿真任务推送 | `simulator/task_service.py` → `debug_query.rs` → `re_web_viewer_server/simulation_events.rs` | 队列变更唤醒事件线程，经独立事件消息送至 `/api/sim/events`；慢订阅者合并同一任务的更新，重连获取完整快照 |
-| 视口 Layers | `ad_shell` + `ad_layers.rs`，3D 左上角 | 语义图层树、父子复选框；空间 View 的 EntityBehavior.visible 独立于缓存/TF 加载 |
+| 场景集批量操作 | `ad_sim_tasks.rs` → `task_service.py` | 按提交 `suite_id` 全部取消、重试、删除，不受筛选分页影响；重试校验保存的全部成员配置后创建新集合并保留原记录；整组删除先检查运行/转换状态，再清理任务产物并推送完整快照；无暂停接口 |
+| 视口 Layers | `ad_shell` + `ad_layers.rs`，3D 左上角 | 中文语义图层树、父子三态复选框、折叠、中文/路径/topic 搜索、全选/清空；空间 View 的 EntityBehavior.visible 独立于缓存/TF 加载 |
 | 应用状态 | `rerun/.../app_state.rs` | 侧栏优先 AD shell；关 welcome；时间面板收起 |
 | 播放条 | `rerun/.../re_time_panel/` | scene_editor 风格媒体栏；时钟/步长下拉、实时可编辑原始时间戳，无设置菜单/复位/跳到终点动作，保留 `TimeControlCommand` 与回执缓存，见 `docs/PLAYBACK_BAR.md` |
 | Web 资源 | `re_web_viewer_server/web_viewer/` | wasm/js/`index.html`（full-bleed / 无官方顶栏） |
@@ -57,7 +59,7 @@
 
 ## Data Flow
 
-1. **打开录制**：CLI 参数 / Source 下拉选择模式 + Open Path  
+1. **打开录制**：CLI 参数 / Source → 数据加载 → 本地文件 → 更换文件；普通 record 转换前可在地图下拉选择资源
    - `.rrd`/`.rbl`：wasm → host `open_local` → 整文件 stream → proxy → Viewer  
    - `.mcap` / convert 产出：wasm → host `mcap_topics` + Topics 勾选 → `playback_window`（2 秒窗口、1 秒回看、目标预加载 5 秒，首窗兼顾 H264 关键帧）→ 过滤 `McapImporter` → proxy → 数据入库回执确认缓存条  
    - **禁止**对大 MCAP 再走整包 `open_local`（会堵 gRPC / 顶满内存）
@@ -99,12 +101,14 @@ buildtool build -p simulation   # 或文档指定的 package；避免 backup 树
 
 Simulation tasks use a separate persistent JSON-lines worker behind `/api/sim`;
 the viewer only edits/polls the queue. Sim is a resizable docked sidebar, with
-Simulation Config / Simulation Tasks tabs over one scrolling content area.
+equal-width Simulation Config / Simulation Tasks tabs sharing the same persisted sidebar width.
+The configuration scrolls above its Start button; task filters and pagination surround
+a separate scrolling grouped list. New tasks start from the configuration page.
 Accepted submissions select Tasks; selecting a task opens live detail without
 modifying the draft. An explicit View config action copies its submitted config
 into the editable form, preserving extra fields; Start always enqueues a new ID.
 Configuration reuse does not edit historical jobs.
-Task cards are ordered newest-first by submission timestamp, not ID or status;
+Task rows are ordered newest-first by submission timestamp, not ID or status;
 suite members with equal timestamps retain manifest order.
 Deleting a queued or finished task removes its private directory and associated
 recording conversion caches, persists the queue and broadcasts a complete SSE snapshot.

@@ -514,7 +514,15 @@ impl<'a> egui_tiles::Behavior<ViewId> for TilesDelegate<'a, '_> {
     fn tab_title_for_pane(&mut self, view_id: &ViewId) -> egui::WidgetText {
         if let Some(view) = self.viewport_blueprint.view(view_id) {
             // Note: the formatting for unnamed views is handled by `TabWidget::new()`
-            view.display_name_or_default().as_ref().into()
+            if view.class_identifier().as_str() == "AdDebug" {
+                let name = view.display_name_or_default();
+                egui::RichText::new(debug_panel_title(name.as_ref()))
+                    .size(16.0)
+                    .strong()
+                    .into()
+            } else {
+                view.display_name_or_default().as_ref().into()
+            }
         } else {
             // All panes are views, so this shouldn't happen unless we have a bug
             re_log::warn_once!("ViewId missing during egui_tiles");
@@ -631,13 +639,63 @@ impl<'a> egui_tiles::Behavior<ViewId> for TilesDelegate<'a, '_> {
             return;
         };
         let num_views = tiles.tiles().filter(|tile| tile.is_pane()).count();
+        let debug_panel = view_blueprint.class_identifier().as_str() == "AdDebug";
+        let mut header_controls = BTreeMap::<String, [f32; 4]>::new();
+        if debug_panel {
+            ui.spacing_mut().item_spacing.x = 8.0;
+            ui.painter()
+                .rect_filled(ui.max_rect(), 4.0, egui::Color32::from_rgb(40, 36, 59));
+            ui.painter().hline(
+                ui.max_rect().x_range(),
+                ui.max_rect().bottom(),
+                egui::Stroke::new(1.0, egui::Color32::from_rgb(74, 66, 103)),
+            );
+            // This slot flows right-to-left: reserve the outside margin first.
+            ui.add_space(8.0);
+            let more = re_ui::ad_panel_more_button(ui);
+            header_controls.insert("more".into(), debug_button_rect(&more));
+            egui::Popup::menu(&more)
+                .id(egui::Id::new(("debug_panel_more", view_id)))
+                .show(|ui| {
+                    ui.set_min_width(140.0);
+                    ui.spacing_mut().item_spacing.y = 4.0;
+                    let hide =
+                        ui.add_sized([140.0, 30.0], egui::Button::new("隐藏面板").frame(false));
+                    header_controls.insert("hide".into(), debug_button_rect(&hide));
+                    if hide.clicked() {
+                        self.viewport_blueprint.set_content_visibility(
+                            self.ctx,
+                            &Contents::View(view_id),
+                            false,
+                        );
+                        self.viewport_blueprint.mark_user_interaction(self.ctx);
+                        ui.close();
+                    }
+                    let delete =
+                        ui.add_sized([140.0, 30.0], egui::Button::new("删除面板").frame(false));
+                    header_controls.insert("delete".into(), debug_button_rect(&delete));
+                    if delete.clicked() {
+                        self.viewport_blueprint
+                            .remove_contents(Contents::View(view_id));
+                        self.viewport_blueprint.mark_user_interaction(self.ctx);
+                        ui.close();
+                    }
+                });
+        }
 
-        ui.add_space(8.0); // margin within the frame
+        if !debug_panel {
+            ui.add_space(8.0); // margin within the frame
+        }
 
         if *self.maximized == Some(view_id) {
             // Show minimize-button:
-            if ui
-                .small_icon_button(&re_ui::icons::MINIMIZE, "Restore viewport")
+            let restore = if debug_panel {
+                re_ui::ad_panel_icon_button(ui, &icons::AD_PANEL_RESTORE, "还原面板")
+            } else {
+                ui.small_icon_button(&icons::MINIMIZE, "Restore viewport")
+            };
+            header_controls.insert("maximize".into(), debug_button_rect(&restore));
+            if restore
                 .on_hover_ui(|ui| {
                     Help::new_without_title()
                         .control(
@@ -657,8 +715,13 @@ impl<'a> egui_tiles::Behavior<ViewId> for TilesDelegate<'a, '_> {
             let is_view_the_only_selected =
                 self.ctx.selection().is_view_the_only_selected(&view_id);
             let toggle = is_view_the_only_selected && ui.input_mut(is_toggle_maximize_view_pressed);
-            if ui
-                .small_icon_button(&re_ui::icons::MAXIMIZE, "Maximize view")
+            let maximize = if debug_panel {
+                re_ui::ad_panel_icon_button(ui, &icons::AD_PANEL_MAXIMIZE, "放大面板")
+            } else {
+                ui.small_icon_button(&icons::MAXIMIZE, "Maximize view")
+            };
+            header_controls.insert("maximize".into(), debug_button_rect(&maximize));
+            if maximize
                 .on_hover_ui(|ui| {
                     if is_view_the_only_selected {
                         Help::new_without_title()
@@ -683,7 +746,7 @@ impl<'a> egui_tiles::Behavior<ViewId> for TilesDelegate<'a, '_> {
             }
         }
 
-        if 1 < num_views {
+        if 1 < num_views && !debug_panel {
             // Show button to hide this view:
             let mut visible = true;
             ui.visibility_toggle_button(&mut visible)
@@ -697,6 +760,20 @@ impl<'a> egui_tiles::Behavior<ViewId> for TilesDelegate<'a, '_> {
             }
         }
 
+        if debug_panel {
+            header_controls.insert(
+                "header_rect".into(),
+                [
+                    ui.max_rect().left(),
+                    ui.max_rect().top(),
+                    ui.max_rect().right(),
+                    ui.max_rect().bottom(),
+                ],
+            );
+            ui.ctx().data_mut(|d| {
+                d.insert_temp(egui::Id::new(("ad_debug_header", view_id)), header_controls)
+            });
+        }
         let view_class = view_blueprint.class(self.ctx.view_class_registry());
 
         // give the view a chance to display some extra UI in the top bar.
@@ -719,11 +796,66 @@ impl<'a> egui_tiles::Behavior<ViewId> for TilesDelegate<'a, '_> {
                 );
             });
 
-        ui.help_button(|ui| {
-            view_class.help(ui.os()).ui(ui);
-        });
+        if !debug_panel {
+            ui.help_button(|ui| {
+                view_class.help(ui.os()).ui(ui);
+            });
+        }
 
         self.reports_button(ui, view_id);
+    }
+
+    fn tab_bar_trailing_ui(
+        &mut self,
+        tiles: &egui_tiles::Tiles<ViewId>,
+        ui: &mut egui::Ui,
+        _: egui_tiles::TileId,
+        tabs: &egui_tiles::Tabs,
+    ) {
+        if let Some(egui_tiles::Tile::Pane(view_id)) = tabs.active.and_then(|id| tiles.get(id))
+            && self
+                .viewport_blueprint
+                .view(view_id)
+                .is_some_and(|v| v.class_identifier().as_str() == "AdDebug")
+            && let Some(topic) = ui
+                .ctx()
+                .data(|d| d.get_temp::<String>(egui::Id::new(("ad_debug_topic", *view_id))))
+            && !topic.is_empty()
+        {
+            // Keep badges inside the space left after the pinned actions.
+            if ui.available_width() >= 100.0 {
+                ui.add_space(12.0);
+                let color = egui::Color32::from_rgb(206, 186, 252);
+                let text = ui.painter().layout_no_wrap(
+                    topic.clone(),
+                    egui::FontId::proportional(12.0),
+                    color,
+                );
+                let width = (text.size().x + 34.0).min(ui.available_width());
+                let (rect, response) =
+                    ui.allocate_exact_size(egui::vec2(width, 24.0), egui::Sense::hover());
+                ui.painter().rect_filled(
+                    rect.shrink2(egui::vec2(0.0, 1.0)),
+                    4.0,
+                    egui::Color32::from_rgb(62, 47, 96),
+                );
+                icons::AD_PANEL_TOPIC.as_image().tint(color).paint_at(
+                    ui,
+                    egui::Rect::from_center_size(
+                        egui::pos2(rect.left() + 13.0, rect.center().y),
+                        egui::Vec2::splat(16.0),
+                    ),
+                );
+                ui.painter()
+                    .with_clip_rect(rect.shrink(3.0).intersect(ui.clip_rect()))
+                    .galley(
+                        egui::pos2(rect.left() + 26.0, rect.center().y - text.size().y / 2.0),
+                        text,
+                        color,
+                    );
+                response.on_hover_text(topic);
+            }
+        }
     }
 
     // Styling:
@@ -971,6 +1103,7 @@ struct TabWidget {
     bg_color: egui::Color32,
     text_color: egui::Color32,
     unnamed_style: bool,
+    debug_panel: bool,
     label: Option<String>,
 }
 
@@ -1147,6 +1280,12 @@ impl TabWidget {
             tab_viewer.tab_text_color(ui.visuals(), tiles, tile_id, tab_state)
         };
 
+        let debug_panel = matches!(tiles.get(tile_id), Some(egui_tiles::Tile::Pane(id)) if tab_viewer.viewport_blueprint.view(id).is_some_and(|v| v.class_identifier().as_str() == "AdDebug"));
+        let bg_color = if debug_panel {
+            egui::Color32::from_rgb(40, 36, 59)
+        } else {
+            bg_color
+        };
         let bg_color = bg_color.gamma_multiply(alpha);
         let text_color = text_color.gamma_multiply(alpha);
 
@@ -1160,6 +1299,7 @@ impl TabWidget {
             bg_color,
             text_color,
             unnamed_style: !tab_desc.user_named,
+            debug_panel,
             label: tab_desc.label,
         }
     }
@@ -1172,7 +1312,19 @@ impl TabWidget {
             .as_image()
             .fit_to_exact_size(self.icon_size)
             .tint(self.text_color);
-        icon_image.paint_at(ui, self.icon_rect);
+        if self.debug_panel {
+            for x in [-3.0, 3.0] {
+                for y in [-5.0, 0.0, 5.0] {
+                    ui.painter().circle_filled(
+                        self.icon_rect.center() + egui::vec2(x, y),
+                        1.3,
+                        egui::Color32::from_rgb(167, 145, 210),
+                    );
+                }
+            }
+        } else {
+            icon_image.paint_at(ui, self.icon_rect);
+        }
 
         //TODO(ab): use design tokens
         let label_color = if self.unnamed_style {
@@ -1192,6 +1344,33 @@ impl TabWidget {
 }
 
 // ----------------------------------------------------------------------------
+
+fn debug_panel_title(name: &str) -> &str {
+    match name {
+        "Planning profile" => "规划曲线",
+        "Trajectory XY" => "XY 轨迹",
+        "Planning message" => "规划消息",
+        "Speed tracking" => "速度跟踪",
+        "Steering feedback" => "转向反馈",
+        "Tracking errors" => "跟踪误差",
+        "Pedals" => "踏板",
+        "Topic inspector" => "消息检查器",
+        "Signal plot" => "信号曲线",
+        "Value watch" => "值监视",
+        "State transitions" => "状态变化",
+        "Topic health" => "话题健康",
+        "Acceleration tracking" => "加速度跟踪",
+        "Heading error" => "航向误差",
+        "Controller runtime" => "控制器耗时",
+        "Full control dashboard" => "控制仪表盘",
+        other => other,
+    }
+}
+
+fn debug_button_rect(response: &egui::Response) -> [f32; 4] {
+    let rect = response.rect;
+    [rect.left(), rect.top(), rect.right(), rect.bottom()]
+}
 
 /// This enables best-effort animation when one maximizes/restores a view.
 ///
