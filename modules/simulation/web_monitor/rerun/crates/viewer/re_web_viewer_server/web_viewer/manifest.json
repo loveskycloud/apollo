@@ -1,10 +1,10 @@
 {
-  "name": "Rerun Viewer",
-  "short_name": "rerun-viewer-pwa",
+  "name": "sim scope",
+  "short_name": "sim scope",
   "icons": [
     {
-      "src": "./icon-256.png",
-      "sizes": "256x256",
+      "src": "./sim_scope.png",
+      "sizes": "1254x1254",
       "type": "image/png"
     }
   ],

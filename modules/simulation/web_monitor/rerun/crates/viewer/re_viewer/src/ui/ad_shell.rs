@@ -900,7 +900,12 @@ impl AdShell {
             .show_inside(ui, |ui| {
                 // Brand mark only (no product name text).
                 let (logo_rect, _) = ui.allocate_exact_size(Vec2::splat(52.0), Sense::hover());
-                paint_brand_logo(ui.painter(), logo_rect);
+                ui.put(
+                    logo_rect,
+                    egui::Image::new(egui::include_image!("../../data/sim_scope.png"))
+                        .fit_to_exact_size(logo_rect.size()),
+                )
+                .on_hover_text("sim scope");
                 ui.add_space(14.0);
 
                 for id in AdNavId::all() {
@@ -4267,53 +4272,6 @@ fn recording_time_bounds(ctx: &AppContext<'_>) -> (String, String) {
 
 fn format_bound(t: TimeInt, timeline: &Timeline, tz: TimestampFormat) -> String {
     timeline.typ().format(t, tz)
-}
-
-fn paint_brand_logo(painter: &egui::Painter, rect: Rect) {
-    let c = rect.center();
-    let r = rect.width() * 0.42;
-
-    // Soft purple tile.
-    painter.rect_filled(rect, CornerRadius::same(12), theme::CARD_BG);
-    painter.rect_stroke(
-        rect.shrink(0.5),
-        CornerRadius::same(12),
-        Stroke::new(1.0, theme::ACCENT.gamma_multiply(0.45)),
-        StrokeKind::Inside,
-    );
-
-    // Outer ring — "monitor / radar".
-    painter.circle_stroke(c, r * 0.92, Stroke::new(1.6, theme::ACCENT));
-    painter.circle_stroke(
-        c,
-        r * 0.58,
-        Stroke::new(1.2, theme::ACCENT.gamma_multiply(0.7)),
-    );
-
-    // Crosshair arms.
-    let arm = r * 0.78;
-    painter.line_segment(
-        [c - Vec2::new(arm, 0.0), c + Vec2::new(arm, 0.0)],
-        Stroke::new(1.2, theme::ACCENT.gamma_multiply(0.55)),
-    );
-    painter.line_segment(
-        [c - Vec2::new(0.0, arm), c + Vec2::new(0.0, arm)],
-        Stroke::new(1.2, theme::ACCENT.gamma_multiply(0.55)),
-    );
-
-    // Center diamond (vehicle / focus).
-    let d = r * 0.28;
-    let diamond = [
-        c + Vec2::new(0.0, -d),
-        c + Vec2::new(d, 0.0),
-        c + Vec2::new(0.0, d),
-        c + Vec2::new(-d, 0.0),
-    ];
-    painter.add(egui::Shape::convex_polygon(
-        diamond.to_vec(),
-        theme::ACCENT_STRONG,
-        Stroke::NONE,
-    ));
 }
 
 fn paint_nav_icon(painter: &egui::Painter, id: AdNavId, center: Pos2, color: Color32) {

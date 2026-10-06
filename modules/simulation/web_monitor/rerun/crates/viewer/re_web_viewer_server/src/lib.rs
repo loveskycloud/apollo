@@ -180,8 +180,8 @@ impl WebViewerData {
 
         Ok(Self {
             index_html: read_file(dir, "index.html")?,
-            favicon: read_file(dir, "favicon.ico")?,
-            apple_touch_icon: read_file(dir, "apple-touch-icon.png")?,
+            favicon: read_file(dir, "sim_scope.png")?,
+            apple_touch_icon: read_file(dir, "sim_scope.png")?,
             sw_js: read_file(dir, "sw.js")?,
             viewer_js: read_file(dir, "re_viewer.js")?,
             viewer_wasm: read_file(dir, "re_viewer_bg.wasm")?,
@@ -220,8 +220,8 @@ impl WebViewerData {
 
         Ok(Self {
             index_html: extract_file(zip, "index.html")?,
-            favicon: extract_file(zip, "favicon.ico")?,
-            apple_touch_icon: extract_file(zip, "apple-touch-icon.png")?,
+            favicon: extract_file(zip, "sim_scope.png")?,
+            apple_touch_icon: extract_file(zip, "sim_scope.png")?,
             sw_js: extract_file(zip, "sw.js")?,
             viewer_js: extract_file(zip, "re_viewer.js")?,
             viewer_wasm: extract_file(zip, "re_viewer_bg.wasm")?,
@@ -275,8 +275,8 @@ impl WebViewerData {
         // If you add/remove/change the paths here, also update the include-list in `Cargo.toml`!
         Ok(Self {
             index_html: Cow::Borrowed(include_bytes!("../web_viewer/index.html")),
-            favicon: Cow::Borrowed(include_bytes!("../web_viewer/favicon.ico")),
-            apple_touch_icon: Cow::Borrowed(include_bytes!("../web_viewer/apple-touch-icon.png")),
+            favicon: Cow::Borrowed(include_bytes!("../web_viewer/sim_scope.png")),
+            apple_touch_icon: Cow::Borrowed(include_bytes!("../web_viewer/sim_scope.png")),
             sw_js: Cow::Borrowed(include_bytes!("../web_viewer/sw.js")),
             viewer_js: Cow::Borrowed(include_bytes!("../web_viewer/re_viewer.js")),
             viewer_wasm: Cow::Borrowed(include_bytes!("../web_viewer/re_viewer_bg.wasm")),
@@ -1444,7 +1444,7 @@ impl WebViewerServerInner {
         let data = &self.data;
         let (mime, bytes): (&str, &[u8]) = match path {
             "/" | "/index.html" => ("text/html", data.index_html()),
-            "/favicon.ico" => ("image/x-icon", data.favicon()),
+            "/sim_scope.png" | "/favicon.ico" => ("image/png", data.favicon()),
             "/apple-touch-icon.png" => ("image/png", data.apple_touch_icon()),
             "/sw.js" => ("text/javascript", data.sw_js()),
             "/re_viewer.js" => ("text/javascript", data.viewer_js()),
@@ -1544,10 +1544,9 @@ mod tests {
     }
 
     #[cfg(not(disable_web_viewer_server))]
-    const ASSET_FILE_NAMES: [&str; 8] = [
+    const ASSET_FILE_NAMES: [&str; 7] = [
         "index.html",
-        "favicon.ico",
-        "apple-touch-icon.png",
+        "sim_scope.png",
         "sw.js",
         "re_viewer.js",
         "re_viewer_bg.wasm",
@@ -1587,7 +1586,7 @@ mod tests {
     fn archive_with_missing_file_fails() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("web_viewer.zip");
-        write_asset_archive(&path, &ASSET_FILE_NAMES[..7]); // No `signed-out.html`
+        write_asset_archive(&path, &ASSET_FILE_NAMES[..6]); // No `signed-out.html`
 
         let err = WebViewerData::from_archive(&path).unwrap_err();
         assert!(

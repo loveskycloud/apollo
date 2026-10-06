@@ -25,8 +25,7 @@ from pathlib import Path
 # The files `re_web_viewer_server` serves. Must match the list in its `lib.rs`.
 REQUIRED_FILES = [
     "index.html",
-    "favicon.ico",
-    "apple-touch-icon.png",
+    "sim_scope.png",
     "sw.js",
     "re_viewer.js",
     "re_viewer_bg.wasm",

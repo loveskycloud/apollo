@@ -6,6 +6,11 @@
 
 ## 当前任务
 
+- 2026-10-02：web_monitor 品牌更新为 `sim scope`；导航栏图标及浏览器 favicon / touch icon 使用用户提供的 `sim_scope.png` 原图，页面标题与 manifest 名称同步更新。
+  图标作为源码资源嵌入，HTTP 路由、Cargo 包清单和外部资源 ZIP 清单保持一致；旧 favicon / touch icon URL 也返回新图。
+  Wasm 与服务端 Clippy、6 项服务端测试、发布构建通过；9090 已更新，HTML/图标/JS/WASM SHA256 与最终资源一致，914 条任务逐项保留。
+  正式浏览器首开/刷新均验证标题与原图哈希，真实 MCAP 文件选择、数据源/图层及三个调试查询复测通过；证据：容器 `/tmp/wm-sim-scope-deployed/`、`/tmp/wm-sim-scope-real-recording/`。
+
 - 2026-10-02：数据源侧栏与 3D 图层浮窗按 `source_and_layger.png` 重构。
   数据加载采用来源下拉、文件名/更换文件组合、地图下拉；概览统一七行真实元数据，Apollo Topic 数量排除派生渲染通道。
   图层使用中文树、三态复选框、折叠、中文/英文路径/topic 搜索、全选/清空及关闭按钮；保留当前空几何与加载错误提示。
