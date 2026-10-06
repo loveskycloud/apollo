@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from playwright.async_api import async_playwright
-from sim_browser_helpers import sim_click, sim_state
+from sim_browser_helpers import assert_menu_hover, sim_click, sim_state
 
 
 async def main():
@@ -18,7 +18,7 @@ async def main():
     args.out.mkdir(parents=True, exist_ok=True)
     submitted, errors, evidence = [], [], []
     catalog = {'worlds': ['/fixtures/会车.scenario.json'], 'suites': ['/fixtures/会车场景集合.json'],
-               'bags': ['/fixtures/test.record'], 'maps': [], 'vehicles': []}
+               'bags': ['/fixtures/test.record'], 'maps': ['/fixtures/测试地图'], 'vehicles': ['/fixtures/测试车辆']}
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(headless=True, args=[
             '--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
@@ -58,6 +58,8 @@ async def main():
         async def choose_source(expected):
             await sim_click(page, 'Scenario')
             x, y = (await sim_state(page))['Scenario']
+            await assert_menu_hover(page, [(x, y + 76)], args.out,
+                'suite-choice' if expected in catalog['suites'] else 'scene-choice', sample_offset=80, sample_y_offset=0)
             await page.mouse.click(x, y + 76)
             await page.keyboard.press('Escape')
             await page.wait_for_timeout(300)
@@ -83,6 +85,23 @@ async def main():
             assert s['draft_config']['repeat'] == 1 and s['draft_config']['step_ms'] == 10
             assert 'ego_model' in s and 'ML_PLANNING' in s
             assert all(k not in s for k in ('planner', 'step_ms', 'runs', 'seed'))
+            for key, field, values in [('Map', 'map', catalog['maps']), ('Vehicle', 'vehicle', catalog['vehicles'])]:
+                await sim_click(page, key)
+                x, y = (await sim_state(page))[key]
+                point = (x, y + 108)
+                await assert_menu_hover(page, [point], args.out, key.lower() + '-choice', sample_offset=30, sample_y_offset=0)
+                await page.mouse.click(*point)
+                await page.wait_for_timeout(300)
+                assert (await sim_state(page))['draft_config'][field] == values[0]
+                await sim_click(page, key)
+                await assert_menu_hover(page, [(x, y + 76)], args.out, key.lower() + '-follow-scene', sample_offset=30, sample_y_offset=0)
+                await page.keyboard.press('Escape')
+                assert (await sim_state(page))['draft_config'][field] == values[0]
+            await sim_click(page, 'ego_model')
+            x, y = (await sim_state(page))['ego_model']
+            await assert_menu_hover(page, [(x, y + 80)], args.out, 'ego-model-choice', sample_offset=80, sample_y_offset=0)
+            await page.keyboard.press('Escape')
+            assert (await sim_state(page))['draft_config']['model'] == 'perfect_planning'
             await choose_source(catalog['worlds'][0])
             await capture('02-scene-selected')
             await sim_click(page, 'ML_PLANNING')

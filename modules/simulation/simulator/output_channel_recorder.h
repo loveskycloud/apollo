@@ -6,6 +6,7 @@
 #define SIMULATION_SIMULATOR_OUTPUT_CHANNEL_RECORDER_H_
 
 #include <memory>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -25,7 +26,8 @@ namespace simulation {
 class OutputChannelRecorder {
  public:
   bool Start(const std::shared_ptr<cyber::Node>& node, ResultSink* sink,
-             const std::vector<std::string>& channels);
+             const std::vector<std::string>& channels,
+             const std::map<std::string, std::string>& channel_types = {});
   void Stop();
   size_t reader_count() const { return readers_.size(); }
 

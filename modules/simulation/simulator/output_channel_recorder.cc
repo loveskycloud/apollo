@@ -13,6 +13,16 @@
 #include "modules/common_msgs/chassis_msgs/chassis.pb.h"
 #include "modules/common_msgs/control_msgs/control_cmd.pb.h"
 #include "modules/common_msgs/localization_msgs/localization.pb.h"
+#include "modules/common_msgs/localization_msgs/gps.pb.h"
+#include "modules/common_msgs/localization_msgs/imu.pb.h"
+#include "modules/common_msgs/localization_msgs/localization_status.pb.h"
+#include "modules/common_msgs/sensor_msgs/ins.pb.h"
+#include "modules/common_msgs/sensor_msgs/pointcloud.pb.h"
+#include "modules/common_msgs/sensor_msgs/sensor_image.pb.h"
+#include "modules/common_msgs/sensor_msgs/conti_radar.pb.h"
+#include "modules/common_msgs/sensor_msgs/oculii_radar.pb.h"
+#include "modules/common_msgs/perception_msgs/traffic_light_detection.pb.h"
+#include "modules/common_msgs/transform_msgs/transform.pb.h"
 #include "modules/common_msgs/perception_msgs/perception_obstacle.pb.h"
 #include "modules/common_msgs/planning_msgs/planning.pb.h"
 #include "modules/common_msgs/planning_msgs/planning_command.pb.h"
@@ -47,7 +57,8 @@ bool OutputChannelRecorder::AddTypedReader(const std::string& channel) {
 
 bool OutputChannelRecorder::Start(const std::shared_ptr<cyber::Node>& node,
                                   ResultSink* sink,
-                                  const std::vector<std::string>& channels) {
+                                  const std::vector<std::string>& channels,
+                                  const std::map<std::string, std::string>& channel_types) {
   node_ = node;
   sink_ = sink;
   readers_.clear();
@@ -58,13 +69,44 @@ bool OutputChannelRecorder::Start(const std::shared_ptr<cyber::Node>& node,
 
   bool ok = true;
   for (const auto& channel : channels) {
+    // Original bag topics are written byte-for-byte by the source/controller,
+    // never subscribed as algorithm inputs or reserialized here.
+    if (channel.rfind("/bag/", 0) == 0) {
+      continue;
+    }
     bool added = false;
-    if (channel == "/apollo/perception/obstacles") {
+    const auto schema = channel_types.find(channel);
+    const std::string type = schema == channel_types.end() ? "" : schema->second;
+    if (type == drivers::Image::descriptor()->full_name()) {
+      added = AddTypedReader<drivers::Image>(channel);
+    } else if (type == drivers::ContiRadar::descriptor()->full_name()) {
+      added = AddTypedReader<drivers::ContiRadar>(channel);
+    } else if (type == drivers::OculiiPointCloud::descriptor()->full_name()) {
+      added = AddTypedReader<drivers::OculiiPointCloud>(channel);
+    } else if (type == drivers::PointCloud::descriptor()->full_name() ||
+        channel == "/apollo/sensor/lidar16/compensator/PointCloud2" ||
+        channel == "/apollo/sensor/velodyne64/compensator/PointCloud2" ||
+        channel == "/apollo/sensor/velodyne128/compensator/PointCloud2" ||
+        channel == "/apollo/sensor/rslidar/up/PointCloud2") {
+      added = AddTypedReader<drivers::PointCloud>(channel);
+    } else if (channel == "/apollo/perception/obstacles") {
       added = AddTypedReader<perception::PerceptionObstacles>(channel);
+    } else if (channel == "/apollo/perception/traffic_light") {
+      added = AddTypedReader<perception::TrafficLightDetection>(channel);
     } else if (channel == "/apollo/localization/pose") {
       added = AddTypedReader<localization::LocalizationEstimate>(channel);
     } else if (channel == "/apollo/canbus/chassis") {
       added = AddTypedReader<canbus::Chassis>(channel);
+    } else if (channel == "/apollo/sensor/gnss/odometry") {
+      added = AddTypedReader<localization::Gps>(channel);
+    } else if (channel == "/apollo/sensor/gnss/corrected_imu") {
+      added = AddTypedReader<localization::CorrectedImu>(channel);
+    } else if (channel == "/apollo/sensor/gnss/ins_stat") {
+      added = AddTypedReader<drivers::gnss::InsStat>(channel);
+    } else if (channel == "/apollo/localization/msf_status") {
+      added = AddTypedReader<localization::LocalizationStatus>(channel);
+    } else if (channel == "/tf" || channel == "/tf_static") {
+      added = AddTypedReader<transform::TransformStampeds>(channel);
     } else if (channel == "/apollo/prediction") {
       added = AddTypedReader<prediction::PredictionObstacles>(channel);
     } else if (channel == "/apollo/planning") {

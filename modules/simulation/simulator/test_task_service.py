@@ -9,6 +9,29 @@ from bag_diff import compare, algorithm_payload
 
 
 class QueueTests(unittest.TestCase):
+    def test_sensor_modules_are_bag_modules_and_world_rejects_them(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "input.record"
+            source.touch()
+            world = root / "world.json"
+            world.write_text('{}')
+            vehicle = root / "vehicle.pb.txt"
+            vehicle.touch()
+            map_dir = root / "map"
+            map_dir.mkdir()
+            for name in ("base_map.bin", "sim_map.bin"):
+                (map_dir / name).touch()
+            request = {"kind": "bag", "source": str(source), "map": str(map_dir),
+                       "vehicle": str(vehicle), "modules": ["LOCALIZATION"]}
+            with patch("task_service.INPUT_ROOTS", [root]):
+                for module in ("LOCALIZATION", "PERCEPTION"):
+                    with self.subTest(module=module):
+                        sensor_request = {**request, "modules": [module]}
+                        self.assertEqual(validate(sensor_request)["modules"], [module])
+                        with self.assertRaisesRegex(ValueError, "BAG sensor inputs"):
+                            validate({**sensor_request, "kind": "world", "source": str(world)})
+
     def test_default_runs_once_at_ten_ms_and_explicit_repeats_are_preserved(self):
         with tempfile.TemporaryDirectory() as path:
             root = Path(path)
@@ -259,13 +282,13 @@ class QueueTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as path:
             runtime = Path(path)
             with self.assertRaisesRegex(ValueError, "fake_prediction has no DAG"):
-                preflight_module_dags(runtime, ["fake_prediction"])
+                preflight_module_dags({"fake_prediction": runtime / MODULES["fake_prediction"][0]})
             dag = runtime / MODULES["fake_prediction"][0]
             dag.parent.mkdir(parents=True)
             dag.write_text((SIM_PKG / "fake_prediction/dag/fake_prediction.dag").read_text())
-            preflight_module_dags(runtime, ["fake_prediction"])
+            preflight_module_dags({"fake_prediction": runtime / MODULES["fake_prediction"][0]})
             with self.assertRaisesRegex(ValueError, "ML_PLANNING has no DAG"):
-                preflight_module_dags(runtime, ["fake_prediction", "ML_PLANNING"])
+                preflight_module_dags({m: runtime / MODULES[m][0] for m in ["fake_prediction", "ML_PLANNING"]})
 
     def test_world_preflight_missing_schema_does_not_load_legacy_copy(self):
         import builtins

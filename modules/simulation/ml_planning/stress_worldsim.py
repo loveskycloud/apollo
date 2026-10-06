@@ -24,7 +24,7 @@ def run(item):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--weights", type=Path, default=HERE / "models/v2/unified.weights")
+    parser.add_argument("--weights", type=Path, default=HERE / "models/v5/unified.weights")
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--instances", type=int, default=32)
     parser.add_argument("--seed", type=int, default=20260929)

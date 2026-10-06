@@ -24,6 +24,8 @@
 
 #include "modules/simulation/logsim/record_file_source.h"
 #include "modules/simulation/simulator/message_source_factory.h"
+#include "modules/simulation/simulator/scenario_util.h"
+#include "modules/transform/buffer.h"
 
 namespace apollo {
 namespace simulation {
@@ -133,12 +135,33 @@ bool SimInitializer::Warmup(const logsim::SimulationTask& task) {
   return true;
 }
 
-bool SimInitializer::Init(const std::string& task_dir, Context* ctx) {
+bool SimInitializer::Init(const std::string& task_dir,
+                          const simulator::Scenario& scenario, Context* ctx) {
   if (!ctx || !LoadTask(task_dir, &ctx->task)) {
     AERROR << "LoadTask failed: " << task_dir;
     return false;
   }
   ctx->task.set_task_dir(task_dir);
+  const bool run_localization = ScenarioUtil::IsEnabled(
+      scenario, simulator::LOCALIZATION);
+  const bool run_perception = ScenarioUtil::IsEnabled(
+      scenario, simulator::PERCEPTION);
+  if ((run_localization || run_perception) &&
+      ctx->task.input_kind() != logsim::SimulationTask::BAG) {
+    AERROR << "Sensor modules require BAG sensor inputs; WORLD supplies ground-truth state";
+    return false;
+  }
+  if (run_localization) {
+    auto* policy = ctx->task.mutable_channel_policy();
+    for (const std::string topic : {"/apollo/localization/pose",
+                                    "/apollo/localization/msf_status", "/tf"}) {
+      policy->add_suppress_channels(topic);
+    }
+  }
+  if (run_perception) {
+    ctx->task.mutable_channel_policy()->add_suppress_channels(
+        "/apollo/perception/obstacles");
+  }
   if (!SetupCyber(ctx->task)) {
     AERROR << "SetupCyber failed";
     return false;
@@ -161,12 +184,6 @@ bool SimInitializer::Init(const std::string& task_dir, Context* ctx) {
   for (const auto& c : ctx->task.channel_policy().inject_channels()) {
     inject_channels.push_back(c);
   }
-  if (!ctx->consumer.Init(ctx->node, inject_channels)) {
-    AERROR << "MessageConsumer::Init failed";
-    return false;
-  }
-  AINFO << "MessageConsumer init ok, inject=" << inject_channels.size();
-
   SourceConfig src_cfg;
   src_cfg.type = SourceType::RECORD_FILE;
   for (const auto& p : ctx->task.record_paths()) {
@@ -180,6 +197,37 @@ bool SimInitializer::Init(const std::string& task_dir, Context* ctx) {
   }
   for (const auto& channel : inject_channels) {
     src_cfg.whitelist.insert(channel);
+  }
+  for (const auto& mapping : ctx->task.channel_policy().bag_topic_mappings()) {
+    if (ctx->task.input_kind() != logsim::SimulationTask::BAG ||
+        mapping.source_topic().empty() || mapping.source_topic().front() != '/' ||
+        mapping.source_topic().rfind("/bag/", 0) == 0 ||
+        mapping.target_topic() != "/bag" + mapping.source_topic() ||
+        !src_cfg.bag_topic_mappings.emplace(mapping.source_topic(),
+                                            mapping.target_topic()).second) {
+      AERROR << "Invalid or duplicate /bag topic mapping: " << mapping.DebugString();
+      return false;
+    }
+  }
+  if (run_localization) {
+    src_cfg.bootstrap_channels.insert("/tf_static");
+    src_cfg.required_channels = {"/apollo/sensor/gnss/odometry",
+                                 "/apollo/sensor/gnss/corrected_imu",
+                                 "/apollo/sensor/gnss/ins_stat"};
+  }
+  if (run_perception) {
+    src_cfg.bootstrap_channels.insert("/tf_static");
+    src_cfg.require_bootstrap = run_localization;
+    src_cfg.required_channels.insert("/tf_static");
+    for (const auto& channel : inject_channels) {
+      if (channel.rfind("/apollo/sensor/", 0) == 0) {
+        src_cfg.required_channels.insert(channel);
+      }
+    }
+    if (!run_localization) {
+      src_cfg.bootstrap_channels.insert("/tf");
+      src_cfg.required_channels.insert("/tf");
+    }
   }
   if (ctx->task.input_kind() == logsim::SimulationTask::WORLD) {
     src_cfg.type = SourceType::WORLD_SCENARIO;
@@ -200,6 +248,11 @@ bool SimInitializer::Init(const std::string& task_dir, Context* ctx) {
   AINFO << "record opened, begin_ns=" << source->begin_ns()
         << " end_ns=" << source->end_ns()
         << " total=" << source->total_messages();
+  const auto channel_types = source->ChannelTypes();
+  if (!ctx->consumer.Init(ctx->node, inject_channels, channel_types)) {
+    AERROR << "MessageConsumer::Init failed";
+    return false;
+  }
   const uint64_t record_begin_ns = source->begin_ns();
   const uint64_t record_end_ns = source->end_ns();
   cyber::Clock::SetNow(cyber::Time(record_begin_ns));
@@ -208,6 +261,12 @@ bool SimInitializer::Init(const std::string& task_dir, Context* ctx) {
   ec_opts.source = std::move(source);
   ec_opts.consumer = &ctx->consumer;
   ec_opts.channel_policy = ctx->task.channel_policy();
+  ec_opts.record_bag_reference = [ctx](const SimEvent& event) {
+    const auto& reference = *event.bag_reference;
+    return ctx->result_sink.WriteRaw(reference.target_topic, event.payload,
+                                     event.sim_time_ns, reference.message_type,
+                                     reference.proto_desc);
+  };
   if (!ctx->controller.Init(ec_opts)) {
     ctx->monitor.AddFatal("emulator controller init failed");
     AERROR << "EmulatorController::Init failed";
@@ -229,6 +288,18 @@ bool SimInitializer::Init(const std::string& task_dir, Context* ctx) {
   for (const auto& c : ctx->task.channel_policy().inject_channels()) {
     record_channels.insert(c);
   }
+  for (const auto& mapping : src_cfg.bag_topic_mappings) {
+    record_channels.insert(mapping.second);
+  }
+  if (ctx->task.input_kind() != logsim::SimulationTask::BAG) {
+    for (auto it = record_channels.begin(); it != record_channels.end();) {
+      if (it->rfind("/bag/", 0) == 0) {
+        it = record_channels.erase(it);
+      } else {
+        ++it;
+      }
+    }
+  }
   const std::string output_path = ResolveOutputRecordPath(ctx->task);
   const std::string output_dir = cyber::common::GetDirName(output_path);
   AINFO << "opening ResultSink: " << output_path;
@@ -245,9 +316,21 @@ bool SimInitializer::Init(const std::string& task_dir, Context* ctx) {
   std::vector<std::string> recorder_channels(record_channels.begin(),
                                              record_channels.end());
   if (!ctx->output_recorder.Start(ctx->node, &ctx->result_sink,
-                                  recorder_channels)) {
+                                  recorder_channels, channel_types)) {
     AERROR << "OutputChannelRecorder failed; refusing incomplete simulation bag";
     return false;
+  }
+  if (run_localization || run_perception) {
+    // RTK Init resolves imu -> localization extrinsics before it subscribes.
+    // Create the real TF buffer first, then replay only static configuration
+    // available at/before the selected start, without advancing the mock clock.
+    transform::Buffer::Instance();
+    for (const auto& event : ec_opts.source->BootstrapEvents()) {
+      if (!ctx->consumer.Publish(event.channel, event.payload)) {
+        AERROR << "Static TF bootstrap failed";
+        return false;
+      }
+    }
   }
 
   SimProgressState ps;

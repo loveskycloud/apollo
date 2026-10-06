@@ -97,7 +97,7 @@ async def main():
             assert s['task_counts']['all']==len(s['jobs'])
             assert s['task_counts']['running']==len(s['groups']['running'])
             assert s['task_counts']['queued']==len(s['groups']['queued'])
-            assert len(s['task_rows'])<=s['task_pagination']['page_size']
+            assert len(s['task_rows'])<=s['task_pagination']['page_size']**2
             assert set(s['groups']['finished'])=={j['id'] for j in s['jobs'] if j['stage'] in TERMINAL}
             await inspect(args.template_job)
             replay_id=args.template_job

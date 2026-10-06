@@ -10,6 +10,7 @@
 
 #include "cyber/node/node.h"
 #include "modules/simulation/logsim/proto/simulation_task.pb.h"
+#include "modules/simulation/simulator/proto/scenario.pb.h"
 #include "modules/simulation/simulator/emulator_controller.h"
 #include "modules/simulation/simulator/message_consumer.h"
 #include "modules/simulation/simulator/output_channel_recorder.h"
@@ -37,7 +38,8 @@ class SimInitializer {
     SimEngine engine;
   };
 
-  bool Init(const std::string& task_dir, Context* ctx);
+  bool Init(const std::string& task_dir, const simulator::Scenario& scenario,
+            Context* ctx);
   int Run(Context* ctx);
 
  private:

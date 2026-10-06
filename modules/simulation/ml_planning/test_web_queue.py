@@ -13,7 +13,11 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
-    root = Path(__file__).resolve().parents[2]
+    root = Path(__file__).resolve().parents[3]
+    from model_selection import read_model_selection
+    ml = Path(__file__).resolve().parent
+    selected_model = read_model_selection(ml / "conf/ml_planning.pb.txt", ml / "models")
+    assert selected_model["version"] == "v5", selected_model
     flags = root / "modules/common/data/global_flagfile.txt"
     before = hashlib.sha256(flags.read_bytes()).hexdigest()
     profile = (root / "profiles/current").readlink()
@@ -50,6 +54,8 @@ def main():
     task = Path(job["outputs"][0]).parent
     manifest = json.loads(Path(job["analysis"]["manifest"]).read_text())
     model = job["effective_configuration"]["ml_planning_model"]
+    assert model["version"] == "v5", model
+    assert model["sha256"] == selected_model["sha256"], model
     frozen_weights = Path(model["frozen_weights"])
     assert frozen_weights.parent.name == model["version"]
     assert hashlib.sha256(frozen_weights.read_bytes()).hexdigest() == model["sha256"]

@@ -1,7 +1,0 @@
-{
-  "kind": "worldsim-evaluation",
-  "version": 1,
-  "scenario_sha256": "fd5ea93c0b2d10c653e2f985aa23e1854b7989449e16475d9b2e82806168fa12",
-  "expectation": "reach_goal",
-  "reason": "道路可通行，预期无碰撞到达终点。"
-}

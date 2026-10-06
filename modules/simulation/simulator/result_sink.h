@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <map>
 #include <mutex>
 #include <set>
 #include <string>
@@ -31,6 +32,9 @@ class ResultSink {
   bool Open(const std::string& output_path,
             const std::set<std::string>& record_channels);
   void Write(const OutputRecord& record);
+  bool WriteRaw(const std::string& channel, const std::string& payload,
+                uint64_t sim_time_ns, const std::string& message_type,
+                const std::string& proto_desc);
 
   template <typename MessageT>
   bool WriteTyped(const std::string& channel, const MessageT& message,
@@ -65,6 +69,7 @@ class ResultSink {
       return false;
     }
     ++written_count_;
+    ++channel_counts_[channel];
     return true;
   }
 
@@ -72,6 +77,10 @@ class ResultSink {
   const std::vector<OutputRecord>& records() const { return records_; }
   const std::string& path() const { return path_; }
   uint64_t written_count() const { return written_count_; }
+  uint64_t written_count(const std::string& channel) const {
+    const auto found = channel_counts_.find(channel);
+    return found == channel_counts_.end() ? 0 : found->second;
+  }
   bool opened() const { return opened_; }
   bool healthy() const { return healthy_; }
 
@@ -81,6 +90,7 @@ class ResultSink {
   std::set<std::string> record_channels_;
   std::string path_;
   uint64_t written_count_ = 0;
+  std::map<std::string, uint64_t> channel_counts_;
   bool opened_ = false;
   bool healthy_ = true;
   std::mutex mutex_;

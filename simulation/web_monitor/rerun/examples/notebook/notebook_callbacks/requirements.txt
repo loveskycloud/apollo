@@ -1,3 +1,0 @@
-rerun-sdk[notebook]
-ipywidgets
-numpy

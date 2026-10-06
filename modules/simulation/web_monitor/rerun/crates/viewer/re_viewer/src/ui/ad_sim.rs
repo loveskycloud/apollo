@@ -9,13 +9,15 @@ type Reply = std::sync::Arc<parking_lot::Mutex<Option<Result<Value, String>>>>;
 mod events;
 #[path = "ad_sim_tasks.rs"]
 mod tasks;
-const MODULES: [&str; 6] = [
+const MODULES: [&str; 8] = [
     "PREDICTION",
     "fake_prediction",
     "PLANNING",
     "CONTROL",
     "ROUTING",
     "ML_PLANNING",
+    "LOCALIZATION",
+    "PERCEPTION",
 ];
 
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
@@ -69,7 +71,7 @@ struct State {
     /// vehicle_param + applies the profile overlay, like Dreamview CHANGE_VEHICLE.
     vehicle: String,
     model: String,
-    modules: [bool; 6],
+    modules: [bool; 8],
     use_suite: bool,
     suite: String,
     concurrency: u32,
@@ -98,6 +100,7 @@ struct State {
     task_status: tasks::Status,
     task_source: tasks::Source,
     task_page: usize,
+    suite_pages: std::collections::HashMap<String, usize>,
     collapsed_suites: std::collections::HashSet<String>,
 }
 impl Default for State {
@@ -108,7 +111,7 @@ impl Default for State {
             map: String::new(),
             vehicle: String::new(),
             model: "perfect_planning".into(),
-            modules: [true, false, true, true, false, false],
+            modules: [true, false, true, true, false, false, false, false],
             use_suite: false,
             suite: String::new(),
             concurrency: 30,
@@ -136,12 +139,16 @@ impl Default for State {
             task_status: tasks::Status::All,
             task_source: tasks::Source::All,
             task_page: 0,
+            suite_pages: Default::default(),
             collapsed_suites: Default::default(),
         }
     }
 }
 impl State {
     fn toggle_module(&mut self, index: usize) {
+        if index >= 6 && self.kind != "bag" {
+            return;
+        }
         self.modules[index] = !self.modules[index];
         if self.modules[index] {
             match index {
@@ -260,6 +267,7 @@ impl State {
                     self.task_status = tasks::Status::All;
                     self.task_source = tasks::Source::All;
                     self.task_page = 0;
+                    self.suite_pages.clear();
                     self.collapsed_suites.clear();
                 }
             }
@@ -307,6 +315,10 @@ impl State {
         if !["bag", "world"].contains(&c.kind.as_str())
             || !["perfect_planning", "kinematic_control"].contains(&c.model.as_str())
             || c.modules.iter().any(|m| !MODULES.contains(&m.as_str()))
+            || (c.kind == "world"
+                && c.modules
+                    .iter()
+                    .any(|m| ["LOCALIZATION", "PERCEPTION"].contains(&m.as_str())))
             || !(1..=3).contains(&c.repeat)
             || ![1, 2, 5, 10].contains(&c.step_ms)
         {
@@ -621,6 +633,8 @@ fn config_editor(ui: &mut egui::Ui, state: &mut State, diagnostic: &mut Value) {
                     state.modules[3] = false;
                     state.modules[0] = false;
                     state.modules[1] = !state.modules[5];
+                    state.modules[6] = false;
+                    state.modules[7] = false;
                 }
             }
         }
@@ -770,14 +784,19 @@ fn config_editor(ui: &mut egui::Ui, state: &mut State, diagnostic: &mut Value) {
     config_section(ui, "算法模块");
     let columns = if ui.available_width() >= 420.0 { 3 } else { 2 };
     let width = (ui.available_width() - 10.0 * (columns - 1) as f32) / columns as f32;
-    for row in [2_usize, 5, 4, 0, 1, 3].chunks(columns) {
+    for row in [2_usize, 5, 4, 0, 1, 3, 6, 7].chunks(columns) {
         ui.horizontal(|ui| {
             ui.spacing_mut().item_spacing.x = 10.0;
             for &index in row {
                 let on = state.modules[index];
-                let r = module_checkbox(ui, module_label(MODULES[index]), on, width);
+                let enabled = index < 6 || state.kind == "bag";
+                let r = ui
+                    .add_enabled_ui(enabled, |ui| {
+                        module_checkbox(ui, module_label(MODULES[index]), on, width)
+                    })
+                    .inner;
                 point(diagnostic, MODULES[index], &r);
-                if r.clicked() {
+                if enabled && r.clicked() {
                     state.toggle_module(index);
                 }
             }
@@ -832,13 +851,6 @@ fn config_editor(ui: &mut egui::Ui, state: &mut State, diagnostic: &mut Value) {
                 });
             }
         });
-    } else {
-        ui.add_space(6.0);
-        ui.label(
-            egui::RichText::new("关闭时仅运行一次")
-                .size(12.0)
-                .color(theme::TEXT_DIM),
-        );
     }
     if state.config_extra.is_empty() {
         return;
@@ -1077,6 +1089,8 @@ fn module_label(module: &str) -> &'static str {
         "PLANNING" => "Planning",
         "ML_PLANNING" => "ML Planning",
         "CONTROL" => "Control",
+        "LOCALIZATION" => "Localization",
+        "PERCEPTION" => "Perception",
         "ROUTING" => "Routing",
         _ => "Module",
     }
@@ -1223,13 +1237,7 @@ fn menu_option(ui: &mut egui::Ui, selected: &mut String, value: String, label: &
     let response = ui
         .add_sized(
             [ui.available_width(), 28.0],
-            egui::Button::new(text)
-                .fill(if on {
-                    theme::ACCENT_STRONG.gamma_multiply(0.7)
-                } else {
-                    egui::Color32::TRANSPARENT
-                })
-                .corner_radius(6.0),
+            egui::Button::selectable(on, text).corner_radius(6.0),
         )
         .on_hover_text(&value);
     if response.clicked() {
@@ -1946,6 +1954,37 @@ fn fetch(_: &AppContext<'_>, state: &mut State, _: Value) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn perception_is_selectable_only_for_bag() {
+        let mut state = State::default();
+        state.toggle_module(7);
+        assert!(
+            state.config()["modules"]
+                .as_array()
+                .unwrap()
+                .contains(&json!("PERCEPTION"))
+        );
+        state.modules[7] = false;
+        state.kind = "world".into();
+        state.toggle_module(7);
+        assert!(!state.modules[7]);
+    }
+    #[test]
+    fn localization_is_selectable_for_bag_and_preserved_in_config() {
+        let mut state = State::default();
+        state.toggle_module(6);
+        assert!(state.modules[6]);
+        assert!(
+            state.config()["modules"]
+                .as_array()
+                .unwrap()
+                .contains(&json!("LOCALIZATION"))
+        );
+        state.modules[6] = false;
+        state.kind = "world".into();
+        state.toggle_module(6);
+        assert!(!state.modules[6]);
+    }
     #[test]
     fn default_is_one_run_at_ten_ms_and_module_pairs_are_exclusive() {
         let mut state = State::default();

@@ -6,4 +6,10 @@ message ChannelPolicy {
   repeated string inject_channels = 1;
   repeated string suppress_channels = 2;
   repeated string record_channels = 3;
+  // Preserve original bag evidence independently of algorithm input filtering.
+  message BagTopicMapping {
+    optional string source_topic = 1;
+    optional string target_topic = 2;
+  }
+  repeated BagTopicMapping bag_topic_mappings = 4;
 }

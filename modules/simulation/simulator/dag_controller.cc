@@ -47,6 +47,16 @@ bool DagController::Start(const simulator::Scenario& scenario, EgoCar* ego,
     AWARN << "DagController: continue without full plugin set";
   }
 
+  if (ENABLE(LOCALIZATION)) {
+    if (!LoadModule(simulator::LOCALIZATION)) {
+      return false;
+    }
+  }
+  if (ENABLE(PERCEPTION)) {
+    if (!LoadModule(simulator::PERCEPTION)) {
+      return false;
+    }
+  }
   if (ENABLE(PREDICTION)) {
     if (!LoadModule(simulator::PREDICTION)) {
       return false;
@@ -110,13 +120,20 @@ bool DagController::LoadModule(simulator::ModuleType type) {
     return false;
   }
 
-  std::string resolved_lib;
-  if (!LoadLibraryForDag(dag_config, spec, &resolved_lib)) {
+  if (dag_config.module_config_size() == 0) {
     return false;
   }
-  if (!class_controller_.CreateInitAndAppend(
-          dag_config, type, spec.name(), resolved_dag, resolved_lib)) {
-    return false;
+  // A perception DAG contains several libraries. Each component must be
+  // instantiated by the library belonging to its own module_config.
+  for (const auto& module_config : dag_config.module_config()) {
+    cyber::proto::DagConfig component_dag;
+    *component_dag.add_module_config() = module_config;
+    std::string resolved_lib;
+    if (!LoadLibraryForDag(component_dag, spec, &resolved_lib) ||
+        !class_controller_.CreateInitAndAppend(
+            component_dag, type, spec.name(), resolved_dag, resolved_lib)) {
+      return false;
+    }
   }
   return ego_ == nullptr || !ego_->ready() || ego_->VerifyEnvironment();
 }

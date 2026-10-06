@@ -1,9 +1,0 @@
-{
-  "entryPoints": ["index.ts"],
-  "out": "./docs",
-  "name": "Web Viewer",
-  "readme": "./README.md",
-  "includeVersion": true,
-
-  "highlightLanguages": ["js", "ts", "jsx"]
-}

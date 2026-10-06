@@ -36,6 +36,7 @@ bool EmulatorController::Init(const Options& opts) {
   source_ = opts.source;
   consumer_ = opts.consumer;
   channel_policy_ = opts.channel_policy;
+  record_bag_reference_ = opts.record_bag_reference;
   error_.clear();
   frozen_clock_ns_ = 0;
   return source_ != nullptr && consumer_ != nullptr;
@@ -85,7 +86,7 @@ bool EmulatorController::PublishNext() {
       error_ = "timer queue changed during synchronous execution";
       return false;
     }
-    if (ev.process || ev.type == SimEventType::TIMER_FIRE ||
+    if (ev.bag_reference || ev.process || ev.type == SimEventType::TIMER_FIRE ||
         (!ShouldSuppress(ev.channel) && ShouldInject(ev.channel))) {
       break;
     }
@@ -97,6 +98,15 @@ bool EmulatorController::PublishNext() {
   cyber::Clock::SetNow(cyber::Time(ev.sim_time_ns));
   frozen_clock_ns_ = ev.sim_time_ns;
   current_channel_ = ev.channel;
+  if (ev.bag_reference) {
+    if (!record_bag_reference_ || !record_bag_reference_(ev)) {
+      error_ = "bag reference recording failed: " + ev.bag_reference->target_topic;
+      return false;
+    }
+    if (ShouldSuppress(ev.channel) || !ShouldInject(ev.channel)) {
+      return true;
+    }
+  }
   // MODE_SIMULATION Intra publication completes its dependent callbacks before
   // returning. Advancing the clock before this returns would violate causality.
   const bool ok = ev.process ? ev.process()

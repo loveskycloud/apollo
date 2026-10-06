@@ -17,6 +17,7 @@ bool ResultSink::Open(const std::string& output_path,
   record_channels_ = record_channels;
   path_ = output_path;
   written_count_ = 0;
+  channel_counts_.clear();
   healthy_ = true;
   records_.clear();
   writer_ = std::make_unique<cyber::record::RecordWriter>();
@@ -49,6 +50,35 @@ void ResultSink::Write(const OutputRecord& record) {
     return;
   }
   ++written_count_;
+  ++channel_counts_[record.channel];
+}
+
+bool ResultSink::WriteRaw(const std::string& channel, const std::string& payload,
+                          uint64_t sim_time_ns, const std::string& message_type,
+                          const std::string& proto_desc) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (!opened_ || !writer_ || message_type.empty() || proto_desc.empty() ||
+      (!record_channels_.empty() && record_channels_.count(channel) == 0)) {
+    healthy_ = false;
+    return false;
+  }
+  if (writer_->GetMessageType(channel).empty()) {
+    if (!writer_->WriteChannel(channel, message_type, proto_desc)) {
+      healthy_ = false;
+      return false;
+    }
+  } else if (writer_->GetMessageType(channel) != message_type ||
+             writer_->GetProtoDesc(channel) != proto_desc) {
+    healthy_ = false;
+    return false;
+  }
+  if (!writer_->WriteMessage(channel, payload, sim_time_ns)) {
+    healthy_ = false;
+    return false;
+  }
+  ++written_count_;
+  ++channel_counts_[channel];
+  return true;
 }
 
 void ResultSink::Flush() {

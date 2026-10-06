@@ -10,6 +10,15 @@
   <depend>common</depend>
   <depend>common-msgs</depend>
   <depend>map</depend>
+  <depend>transform</depend>
+  <depend>localization</depend>
+  <depend>perception-pointcloud-preprocess</depend>
+  <depend>perception-pointcloud-map-based-roi</depend>
+  <depend>perception-pointcloud-ground-detection</depend>
+  <depend>perception-lidar-detection</depend>
+  <depend>perception-lidar-detection-filter</depend>
+  <depend>perception-lidar-tracking</depend>
+  <depend>perception-lidar-output</depend>
   <!-- Restore together with ML Planning custom command support.
   <depend>external-command-proto</depend>
   -->

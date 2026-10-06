@@ -24,6 +24,7 @@ class EmulatorController {
     std::shared_ptr<IMessageSource> source;
     MessageConsumer* consumer = nullptr;
     logsim::ChannelPolicy channel_policy;
+    std::function<bool(const SimEvent&)> record_bag_reference;
   };
 
   bool Init(const Options& opts);
@@ -42,6 +43,7 @@ class EmulatorController {
   std::shared_ptr<IMessageSource> source_;
   MessageConsumer* consumer_ = nullptr;
   logsim::ChannelPolicy channel_policy_;
+  std::function<bool(const SimEvent&)> record_bag_reference_;
   EmulatorMessageQueue message_queue_;
   uint64_t frozen_clock_ns_ = 0;
   std::string current_channel_;

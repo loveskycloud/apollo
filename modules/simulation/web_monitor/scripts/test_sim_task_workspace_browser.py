@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 from playwright.async_api import async_playwright
+from sim_browser_helpers import assert_menu_hover
 
 
 def fixtures():
@@ -42,6 +43,7 @@ async def main():
     parser.add_argument('--url', default='http://127.0.0.1:9090/?renderer=webgl&theme=dark')
     parser.add_argument('--staging-assets', type=Path)
     parser.add_argument('--live-task', help='Read-only verification of an existing completed task and its second recording')
+    parser.add_argument('--pagination-regression', action='store_true', help='Read-only pagination checks against existing task suites')
     parser.add_argument('--out', type=Path, required=True)
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
@@ -70,7 +72,7 @@ async def main():
             if action not in mutations:
                 await route.continue_()
                 return
-            assert not args.live_task, 'Read-only verification must never mutate tasks'
+            assert not (args.live_task or args.pagination_regression), 'Read-only verification must never mutate tasks'
             assert action not in ('enqueue', 'enqueue_suite'), 'Browser test must never submit a real task'
             reply = {'status':'ok'}
             if action.endswith('_suite'):
@@ -107,6 +109,18 @@ async def main():
             return await page.evaluate('() => window._handle.get_simulation_state()')
 
         async def click(key):
+            if key.startswith('suite_tasks_'):
+                for _ in range(8):
+                    current = await state()
+                    bounds = current['task_list_rect']
+                    target = current.get(key)
+                    if target and bounds[1] + 20 <= target[1] <= bounds[3] - 20:
+                        break
+                    await page.mouse.move((bounds[0]+bounds[2])/2, (bounds[1]+bounds[3])/2)
+                    await page.mouse.wheel(0, target[1] - (bounds[1]+bounds[3])/2 if target else 500)
+                    await page.wait_for_timeout(250)
+                else:
+                    raise AssertionError(f'Pagination control outside visible list: {key}')
             await page.wait_for_function('key=>window._handle.get_simulation_state()?.[key]', arg=key)
             await page.mouse.click(*(await state())[key])
             await page.wait_for_timeout(250)
@@ -125,7 +139,10 @@ async def main():
             assert not errors, errors
             assert not await page.evaluate('() => window._handle.has_panicked()')
             if value['page'] == 'tasks':
-                assert len(value['task_rows']) <= 10
+                assert len(value['task_rows']) <= 10 * value['task_pagination']['page_size']
+                for suite in value['task_suites']:
+                    ids = {j['id'] for j in value['jobs'] if 'suite:' + str(j.get('suite_id')) == suite['key']}
+                    assert len(ids.intersection(value['task_rows'])) <= 10
                 panel = value['panel_rect']
                 for row in value['task_rows'].values():
                     assert row['rect'][0] >= panel[0] and row['rect'][2] <= panel[2]+1, (panel,row)
@@ -157,6 +174,10 @@ async def main():
             await page.keyboard.press('Tab')
             await page.wait_for_timeout(300)
 
+        async def replay_hover(task_id, prefix):
+            points = [(await state())[f'replay_{task_id}_{index}'] for index in range(2)]
+            await assert_menu_hover(page, points, args.out, prefix)
+
         try:
             await page.goto(args.url, wait_until='domcontentloaded')
             await page.wait_for_function('() => window._handle && !window._handle.has_panicked()', timeout=90000)
@@ -173,6 +194,51 @@ async def main():
             views = (await page.evaluate('()=>window._handle.get_layout_state()'))['views']
             assert len(views)==4, views
             await click('tasks_tab')
+            if args.pagination_regression:
+                await page.wait_for_function('()=>window._handle.get_simulation_state()?.jobs?.length > 0')
+                await page.wait_for_timeout(5000)
+                actual = await capture('pagination-01-all-suites')
+                total = len(actual['jobs'])
+                suites = actual['task_suites']
+                assert 2 <= len(suites) <= 10, suites
+                assert actual['task_pagination']['total'] == total
+                assert actual['task_pagination']['pages'] == 1
+                first, second = suites[:2]
+                first_ids = {j['id'] for j in actual['jobs'] if 'suite:' + str(j.get('suite_id')) == first['key']}
+                second_ids = {j['id'] for j in actual['jobs'] if 'suite:' + str(j.get('suite_id')) == second['key']}
+                assert len(first_ids) > 10 and len(second_ids) > 10
+                assert first_ids.intersection(actual['task_rows']) and second_ids.intersection(actual['task_rows'])
+                await click('suite_' + first['key'])
+                collapsed = await capture('pagination-02-first-suite-collapsed')
+                assert not first_ids.intersection(collapsed['task_rows'])
+                assert len(second_ids.intersection(collapsed['task_rows'])) == 10
+                assert collapsed['task_pagination']['total'] == total and collapsed['task_pagination']['pages'] == 1
+                await click('suite_tasks_' + second['key'] + '_next_page')
+                second_page = await capture('pagination-03-second-suite-page-two')
+                assert second_page['suite_pagination'][second['key']]['page'] == 2
+                assert len(second_ids.intersection(second_page['task_rows'])) == min(10, len(second_ids)-10)
+                # Return to the top before expanding the first suite.
+                bounds = second_page['task_list_rect']
+                await page.mouse.move((bounds[0]+bounds[2])/2, (bounds[1]+bounds[3])/2)
+                await page.mouse.wheel(0, -10000)
+                await page.wait_for_timeout(300)
+                await click('suite_' + first['key'])
+                last_page = actual['suite_pagination'][first['key']]['pages']
+                await click('suite_tasks_' + first['key'] + '_page_' + str(last_page))
+                last = await capture('pagination-04-independent-last-pages')
+                assert last['suite_pagination'][first['key']]['page'] == last_page
+                assert last['suite_pagination'][second['key']]['page'] == 2
+                assert len(first_ids.intersection(last['task_rows'])) == (len(first_ids)-1)%10+1
+                assert second_ids.intersection(last['task_rows'])
+                await search(next(iter(second_ids)))
+                filtered = await capture('pagination-05-filter-resets-pages')
+                assert filtered['task_pagination']['total'] == 1 and len(filtered['task_rows']) == 1
+                assert filtered['suite_pagination'][second['key']]['page'] == 1
+                await search('')
+                actions = [json.loads(r['body'])['action'] for r in requests if r['body']]
+                assert not set(actions)&{'list','enqueue','enqueue_suite','cancel','delete','cancel_suite','retry_suite','delete_suite'}, actions
+                print(f'PASS: {total} existing tasks; all suites, collapse, independent pagination and filter reset; no task mutations', flush=True)
+                return
             if args.live_task:
                 await page.wait_for_function('id=>window._handle.get_simulation_state()?.jobs?.some(j=>j.id===id)', arg=args.live_task)
                 await page.wait_for_timeout(5000)
@@ -196,6 +262,7 @@ async def main():
                     await page.wait_for_function('()=>Object.keys(window._handle.get_simulation_state().task_popups).length===0')
                 await click(f'replay_menu_{args.live_task}')
                 await capture('live-02-replay-menu')
+                await replay_hover(args.live_task, 'live-replay-hover')
                 old_mcap=await page.evaluate('()=>window._handle.get_playback_state().mcap')
                 await click(f'replay_{args.live_task}_1')
                 await page.wait_for_function('old=>window._handle.get_playback_state()?.mcap&&window._handle.get_playback_state().mcap!==old', arg=old_mcap, timeout=120000)
@@ -232,7 +299,7 @@ async def main():
             await page.mouse.wheel(0,-2000)
             await page.wait_for_timeout(400)
             assert s['task_counts'] == dict(all=23, running=2, queued=3, failed=3, completed=13, cancelled=1, interrupted=1), s['task_counts']
-            assert s['task_pagination'] == dict(page=1,pages=3,page_size=10,total=23)
+            assert s['task_pagination'] == dict(page=1,pages=1,page_size=10,total=23,group_total=2,unit='groups')
             assert s['task_rows']['fixture-0100']['subtitle'] == '68%'
             assert s['task_rows']['fixture-0101']['queue_position'] == 3
 
@@ -240,6 +307,7 @@ async def main():
             await search('fixture-0102')
             await click('suite_menu_meeting')
             active_menu=await capture('suite-01-running-menu')
+            await assert_menu_hover(page, [active_menu['cancel_suite_meeting']], args.out, 'suite-cancel-hover')
             assert active_menu['cancel_suite_meeting_enabled']
             assert not active_menu['retry_suite_meeting_enabled']
             assert not active_menu['delete_suite_meeting_enabled']
@@ -272,7 +340,11 @@ async def main():
             await search('')
 
             await click('suite_suite:meeting')
-            assert not any(k.startswith('fixture-01') for k in (await state())['task_rows'])
+            collapsed = await capture('01-collapsed-suite')
+            assert not any(k.startswith('fixture-01') for k in collapsed['task_rows'])
+            assert len(collapsed['task_rows']) == 10
+            assert len(collapsed['task_suites']) == 2
+            assert collapsed['task_pagination']['pages'] == 1
             await click('suite_suite:meeting')
             await click('status_chip_failed')
             s = await capture('02-failed-tasks')
@@ -280,28 +352,35 @@ async def main():
             assert all(row['stage']=='failed' for row in s['task_rows'].values())
             await click('source_filter')
             await capture('03-source-menu')
+            await assert_menu_hover(page, [(await state())['source_option_bag']], args.out, 'source-filter-hover')
             await click('source_option_bag')
             assert (await state())['task_pagination']['total'] == 1
             await click('status_filter')
             await capture('04-status-menu')
+            await assert_menu_hover(page, [(await state())['status_option_cancelled']], args.out, 'status-filter-hover')
             await click('status_option_cancelled')
             assert (await state())['task_pagination']['total'] == 0
             await capture('05-empty-filter')
             await click('clear_task_filters')
 
-            await click('tasks_next_page')
+            # Fold the first suite so the older suite's own pagination is visible.
+            await click('suite_suite:meeting')
+            await click('suite_tasks_suite:traffic_next_page')
             s = await capture('06-page-two')
-            assert s['task_pagination']['page']==2 and len(s['task_rows'])==10
+            assert s['task_pagination']['page']==1 and len(s['task_rows'])==6
+            assert s['suite_pagination']['suite:traffic']['page']==2
             updated = copy.deepcopy(jobs[6]); updated['progress']=42
             await push([updated])
-            assert (await state())['task_pagination']['page']==2
-            await click('tasks_page_3')
-            assert len((await state())['task_rows'])==3
+            assert (await state())['suite_pagination']['suite:traffic']['page']==2
+            await click('suite_tasks_suite:traffic_page_1')
+            assert len((await state())['task_rows'])==10
+            await click('suite_suite:meeting')
             await search('fixture-0101')
             s = await state()
             assert s['task_pagination']['page']==1 and s['task_pagination']['total']==1
             await click('task_menu_fixture-0101')
             await capture('07-task-actions-menu')
+            await assert_menu_hover(page, [(await state())['cancel_fixture-0101']], args.out, 'task-cancel-hover')
             await click('cancel_fixture-0101')
             await page.wait_for_function('() => !window._handle.get_simulation_state().pending')
             changed = copy.deepcopy(jobs[-6]); changed['stage']='cancelled'
@@ -360,6 +439,7 @@ async def main():
             await click('replay_menu_fixture-0104')
             s=await capture('09-replay-run-menu')
             assert 'replay_fixture-0104_0' in s and 'replay_fixture-0104_1' in s
+            await replay_hover('fixture-0104', 'replay-hover')
             await click('replay_fixture-0104_1')
             await page.wait_for_function('()=>window._handle.get_playback_state()?.convert_error || window._handle.get_simulation_state()?.open')
             await page.wait_for_timeout(1000)

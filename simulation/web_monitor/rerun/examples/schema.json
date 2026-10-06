@@ -1,3 +1,0 @@
-{
-  "description": "This schema exists to stop Even \"Better\" Toml from incorrectly validating the manifest file using a schema it got from some mysterious place"
-}

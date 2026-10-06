@@ -161,7 +161,7 @@ static int RunTask(int argc, char** argv) {
   // 2) Cyber + emulator pipeline.
   apollo::simulation::SimInitializer initializer;
   apollo::simulation::SimInitializer::Context ctx;
-  if (!initializer.Init(FLAGS_task_dir, &ctx)) {
+  if (!initializer.Init(FLAGS_task_dir, scenario, &ctx)) {
     std::cerr << "SimInitializer failed\n";
     return 1;
   }
@@ -204,8 +204,20 @@ static int RunTask(int argc, char** argv) {
     }
   }
 
-  const int code = initializer.Run(&ctx);
+  int code = initializer.Run(&ctx);
+  if (!FLAGS_skip_modules && apollo::simulation::ScenarioUtil::IsEnabled(
+          scenario, apollo::simulation::simulator::LOCALIZATION) &&
+      ctx.result_sink.written_count("/apollo/localization/pose") == 0) {
+    std::cerr << "LOCALIZATION produced no pose; check GNSS/IMU/INS status and static TF\n";
+    code = 1;
+  }
   const std::string bag_path = ctx.result_sink.path();
+  if (!FLAGS_skip_modules && apollo::simulation::ScenarioUtil::IsEnabled(
+          scenario, apollo::simulation::simulator::PERCEPTION) &&
+      ctx.result_sink.written_count("/apollo/perception/obstacles") == 0) {
+    std::cerr << "PERCEPTION produced no obstacles message; check pointcloud channel, TF, models and GPU\n";
+    code = 1;
+  }
   const uint64_t bag_msgs = ctx.result_sink.written_count();
   cleanup();
 

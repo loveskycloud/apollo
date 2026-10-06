@@ -31,12 +31,20 @@ class RecordFileSource : public IMessageSource {
   uint64_t begin_ns() const override { return begin_ns_; }
   uint64_t end_ns() const override { return end_ns_; }
   uint64_t total_messages() const override { return total_messages_; }
+  std::vector<SimEvent> BootstrapEvents() const override {
+    return bootstrap_events_;
+  }
+  std::map<std::string, std::string> ChannelTypes() const override {
+    return channel_types_;
+  }
 
  private:
   bool LoadAll(const SourceConfig& cfg);
   bool PassesFilter(const std::string& channel) const;
 
   std::queue<SimEvent> events_;
+  std::vector<SimEvent> bootstrap_events_;
+  std::map<std::string, std::string> channel_types_;
   uint64_t begin_ns_ = 0;
   uint64_t end_ns_ = std::numeric_limits<uint64_t>::max();
   uint64_t total_messages_ = 0;

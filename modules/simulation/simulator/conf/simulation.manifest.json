@@ -1,0 +1,140 @@
+{
+  "modules": [
+    {
+      "name": "LOCALIZATION",
+      "inputs": [
+        "/apollo/sensor/gnss/odometry",
+        "/bag/apollo/sensor/gnss/odometry",
+        "/apollo/sensor/gnss/corrected_imu",
+        "/bag/apollo/sensor/gnss/corrected_imu",
+        "/apollo/sensor/gnss/ins_stat",
+        "/bag/apollo/sensor/gnss/ins_stat",
+        "/tf_static",
+        "/bag/tf_static"
+      ],
+      "outputs": [
+        "/apollo/localization/pose",
+        "/bag/apollo/localization/pose",
+        "/apollo/localization/msf_status",
+        "/bag/apollo/localization/msf_status",
+        "/tf",
+        "/bag/tf"
+      ]
+    },
+    {
+      "name": "PERCEPTION",
+      "inputs": [
+        "/apollo/sensor/lidar16/compensator/PointCloud2",
+        "/apollo/sensor/velodyne64/compensator/PointCloud2",
+        "/apollo/sensor/velodyne128/compensator/PointCloud2",
+        "/apollo/sensor/rslidar/up/PointCloud2",
+        "/apollo/localization/pose",
+        "/tf",
+        "/tf_static"
+      ],
+      "outputs": [
+        "/apollo/perception/obstacles",
+        "/bag/apollo/perception/obstacles"
+      ]
+    },
+    {
+      "name": "PREDICTION",
+      "inputs": [
+        "/apollo/perception/obstacles",
+        "/bag/apollo/perception/obstacles",
+        "/apollo/localization/pose",
+        "/bag/apollo/localization/pose",
+        "/apollo/planning",
+        "/bag/apollo/planning"
+      ],
+      "outputs": [
+        "/apollo/prediction",
+        "/bag/apollo/prediction"
+      ]
+    },
+    {
+      "name": "fake_prediction",
+      "inputs": [],
+      "outputs": [
+        "/apollo/prediction",
+        "/bag/apollo/prediction"
+      ]
+    },
+    {
+      "name": "PLANNING",
+      "inputs": [
+        "/apollo/prediction",
+        "/bag/apollo/prediction",
+        "/apollo/localization/pose",
+        "/bag/apollo/localization/pose",
+        "/apollo/canbus/chassis",
+        "/bag/apollo/canbus/chassis",
+        "/apollo/planning/command",
+        "/bag/apollo/planning/command",
+        "/apollo/planning/pad",
+        "/bag/apollo/planning/pad"
+      ],
+      "outputs": [
+        "/apollo/planning",
+        "/bag/apollo/planning",
+        "/apollo/planning/command_status",
+        "/bag/apollo/planning/command_status"
+      ]
+    },
+    {
+      "name": "ML_PLANNING",
+      "inputs": [
+        "/apollo/perception/obstacles",
+        "/bag/apollo/perception/obstacles",
+        "/apollo/localization/pose",
+        "/bag/apollo/localization/pose",
+        "/apollo/planning/command",
+        "/bag/apollo/planning/command",
+        "/apollo/planning/pad",
+        "/bag/apollo/planning/pad"
+      ],
+      "outputs": [
+        "/apollo/planning",
+        "/bag/apollo/planning",
+        "/apollo/planning/command_status",
+        "/bag/apollo/planning/command_status",
+        "/apollo/planning/reference_line_offset_command_status",
+        "/bag/apollo/planning/reference_line_offset_command_status"
+      ]
+    },
+    {
+      "name": "CONTROL",
+      "inputs": [
+        "/apollo/localization/pose",
+        "/bag/apollo/localization/pose",
+        "/apollo/canbus/chassis",
+        "/bag/apollo/canbus/chassis",
+        "/apollo/planning",
+        "/bag/apollo/planning",
+        "/apollo/planning/command_status",
+        "/bag/apollo/planning/command_status"
+      ],
+      "outputs": [
+        "/apollo/control",
+        "/bag/apollo/control"
+      ]
+    },
+    {
+      "name": "ROUTING",
+      "inputs": [
+        "/apollo/raw_routing_request",
+        "/bag/apollo/raw_routing_request"
+      ],
+      "outputs": [
+        "/apollo/raw_routing_response",
+        "/bag/apollo/raw_routing_response"
+      ]
+    }
+  ],
+  "common": [
+    "/apollo/localization/pose",
+    "/bag/apollo/localization/pose",
+    "/apollo/canbus/chassis",
+    "/bag/apollo/canbus/chassis"
+  ]
+}

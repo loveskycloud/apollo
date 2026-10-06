@@ -21,6 +21,15 @@ void FillDefault(simulator::ModuleSpec* spec, simulator::ModuleType type,
 }  // namespace
 
 ModuleCatalog::ModuleCatalog() {
+  simulator::ModuleSpec perception;
+  FillDefault(&perception, simulator::PERCEPTION, "perception",
+              "modules/perception/lidar_output/dag/lidar_output.dag");
+  defaults_[static_cast<int>(simulator::PERCEPTION)] = perception;
+  simulator::ModuleSpec localization;
+  FillDefault(&localization, simulator::LOCALIZATION, "localization",
+              "modules/localization/dag/dag_streaming_rtk_localization.dag");
+  defaults_[static_cast<int>(simulator::LOCALIZATION)] = localization;
+
   simulator::ModuleSpec pred;
   FillDefault(&pred, simulator::PREDICTION, "prediction",
               "modules/prediction/dag/prediction.dag");
@@ -82,6 +91,10 @@ simulator::ModuleSpec ModuleCatalog::ResolveSpec(
 
 std::string ModuleCatalog::ModuleTypeName(simulator::ModuleType type) {
   switch (type) {
+    case simulator::PERCEPTION:
+      return "PERCEPTION";
+    case simulator::LOCALIZATION:
+      return "LOCALIZATION";
     case simulator::PREDICTION:
       return "PREDICTION";
     case simulator::PLANNING:
@@ -97,6 +110,12 @@ std::string ModuleCatalog::ModuleTypeName(simulator::ModuleType type) {
 
 simulator::ModuleType ModuleCatalog::ParseModuleType(
     const std::string& name) {
+  if (name == "PERCEPTION" || name == "perception") {
+    return simulator::PERCEPTION;
+  }
+  if (name == "LOCALIZATION" || name == "localization") {
+    return simulator::LOCALIZATION;
+  }
   if (name == "PREDICTION" || name == "prediction" ||
       name == "fake_prediction" || name == "FAKE_PREDICTION") {
     // fake_prediction reuses the PREDICTION slot; dag_path override selects

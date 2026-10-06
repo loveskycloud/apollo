@@ -15,7 +15,7 @@ def run(item):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--out',type=Path,required=True);p.add_argument('--workers',type=int,default=4)
-    p.add_argument('--weights',type=Path,default=HERE/'models/v2/unified.weights',help='Development-only checkpoint evaluation; UI always uses the deployed unified actor')
+    p.add_argument('--weights',type=Path,default=HERE/'models/v5/unified.weights',help='Development-only checkpoint evaluation; UI always uses the deployed unified actor')
     a=p.parse_args()
     if not 1 <= a.workers <= 32:
         p.error('workers must be 1..32')

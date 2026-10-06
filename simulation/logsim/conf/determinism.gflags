@@ -1,3 +1,0 @@
---determinism flags for LogSim (append to runtime.gflags)
---use_sim_time=true
---align_prediction_time=false

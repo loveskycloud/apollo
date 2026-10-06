@@ -9,6 +9,8 @@ enum ModuleType {
   PLANNING = 2;
   CONTROL = 3;
   ROUTING = 4;
+  LOCALIZATION = 5;
+  PERCEPTION = 6;
 }
 
 message ModuleSpec {

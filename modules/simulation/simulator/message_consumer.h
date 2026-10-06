@@ -28,7 +28,8 @@ class MessageConsumer {
 
   virtual ~MessageConsumer() = default;
   bool Init(const std::shared_ptr<cyber::Node>& node,
-            const std::vector<std::string>& inject_channels);
+            const std::vector<std::string>& inject_channels,
+            const std::map<std::string, std::string>& channel_types = {});
   virtual bool Publish(const std::string& channel, const std::string& payload);
 
   // Optional: override / extend channel → typed publisher (e.g. from record

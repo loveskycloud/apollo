@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -28,6 +29,10 @@ struct SourceConfig {
   uint64_t end_ns = std::numeric_limits<uint64_t>::max();
   std::set<std::string> whitelist;
   std::set<std::string> blacklist;
+  std::map<std::string, std::string> bag_topic_mappings;
+  std::set<std::string> bootstrap_channels;
+  bool require_bootstrap = true;
+  std::set<std::string> required_channels;
   uint32_t step_ms = 10;
   std::string ego_model = "perfect_planning";
   std::string collision_report_path;
@@ -44,6 +49,8 @@ class IMessageSource {
   virtual uint64_t begin_ns() const = 0;
   virtual uint64_t end_ns() const = 0;
   virtual uint64_t total_messages() const = 0;
+  virtual std::vector<SimEvent> BootstrapEvents() const { return {}; }
+  virtual std::map<std::string, std::string> ChannelTypes() const { return {}; }
 };
 
 }  // namespace simulation

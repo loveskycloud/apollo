@@ -19,7 +19,7 @@ class ModelVersionTests(unittest.TestCase):
         self.root=Path(self.temp.name)
         self.conf=self.root/'conf/ml_planning.pb.txt'
         self.conf.parent.mkdir()
-        for version in ('v3','v4'):
+        for version in ('v5','v6'):
             target=self.root/'models'/version/'unified.weights'
             target.parent.mkdir(parents=True)
             target.write_text(version+' weights')
@@ -28,7 +28,7 @@ class ModelVersionTests(unittest.TestCase):
         previous=os.environ.get('ML_PLANNING_WEIGHTS')
         os.environ['ML_PLANNING_WEIGHTS']='/missing/old/environment.weights'
         try:
-            for version in ('v3','v4'):
+            for version in ('v5','v6'):
                 self.conf.write_text(f'model_version: "{version}"\n')
                 selected=read_model_selection(self.conf,self.root/'models')
                 self.assertEqual(selected['version'],version)
@@ -39,14 +39,14 @@ class ModelVersionTests(unittest.TestCase):
             else:os.environ['ML_PLANNING_WEIGHTS']=previous
 
     def test_invalid_missing_and_unknown_versions_do_not_fall_back(self):
-        for text in ('','model_version: ""','model_version: "../v4"','model_version: "latest"','unknown: "v4"','model_version: "v5"'):
+        for text in ('','model_version: ""','model_version: "../v5"','model_version: "latest"','unknown: "v5"','model_version: "v999"'):
             with self.subTest(config=text):
                 self.conf.write_text(text)
                 with self.assertRaises((ValueError, FileNotFoundError, ParseError)):
                     read_model_selection(self.conf,self.root/'models')
 
     def test_frozen_selector_and_weights_survive_source_switch(self):
-        self.conf.write_text('model_version: "v4"\n')
+        self.conf.write_text('model_version: "v5"\n')
         frozen=self.root/'job/modules/simulation/ml_planning'
         (frozen/'conf').mkdir(parents=True)
         shutil.copy2(self.conf,frozen/'conf/ml_planning.pb.txt')
@@ -54,10 +54,10 @@ class ModelVersionTests(unittest.TestCase):
         destination=frozen/'models'/selected['version']/'unified.weights'
         destination.parent.mkdir(parents=True)
         shutil.copy2(selected['weights'],destination)
-        self.conf.write_text('model_version: "v3"\n')
+        self.conf.write_text('model_version: "v6"\n')
         Path(selected['weights']).write_text('changed source')
         actual=read_model_selection(frozen/'conf/ml_planning.pb.txt',frozen/'models')
-        self.assertEqual(actual['version'],'v4')
+        self.assertEqual(actual['version'],'v5')
         self.assertEqual(actual['sha256'],selected['sha256'])
 
 

@@ -129,8 +129,12 @@ if str(ROOT / "modules/simulation/logsim/tools") not in sys.path:
 from bag_diff import compare, messages, difference_page
 from configuration_tools import APOLLO_GLOBAL_FLAGS, update_global_flagfile, vehicle_geometry
 from scenario_evaluation import evaluation_path, load_evaluation, evaluate_record
+from simulation_manifest import MANIFEST_PATH, load_manifest, channel_policy
+from perception_pipeline import DEFAULT_LAUNCH, prepare_perception_pipeline
 
 MODULES = {
+    "LOCALIZATION": ("modules/localization/dag/dag_streaming_rtk_localization.dag", "/apollo/localization/pose"),
+    "PERCEPTION": (DEFAULT_LAUNCH, "/apollo/perception/obstacles"),
     "PREDICTION": ("modules/prediction/dag/prediction.dag", "/apollo/prediction"),
     "fake_prediction": ("modules/simulation/fake_prediction/dag/fake_prediction.dag", "/apollo/prediction"),
     "PLANNING": ("modules/planning/planning_component/dag/planning.dag", "/apollo/planning"),
@@ -138,7 +142,6 @@ MODULES = {
     "CONTROL": ("modules/control/control_component/dag/control.dag", "/apollo/control"),
     "ROUTING": ("modules/routing/dag/routing.dag", "/apollo/raw_routing_response"),
 }
-INPUTS = ["/apollo/canbus/chassis", "/apollo/localization/pose", "/apollo/perception/obstacles"]
 STAGES = ["queued", "data_preparation", "map_update", "profile_update", "model_update",
           "simulation_start", "simulation_running", "simulation_end", "result_analysis", "completed"]
 TERMINAL = {"completed", "failed", "cancelled", "interrupted"}
@@ -189,9 +192,9 @@ def preflight_plugins(runtime, modules):
             raise ValueError(f"Profile requires unavailable planning plugins: {', '.join(missing)} ({path}); install the matching plugins or explicitly select a compatible profile")
 
 
-def preflight_module_dags(runtime, modules):
-    for module in modules:
-        path = Path(runtime) / MODULES[module][0]
+def preflight_module_dags(module_dags):
+    for module, path in module_dags.items():
+        path = Path(path)
         if not path.is_file():
             raise ValueError(f"Selected module {module} has no DAG: {path}")
 
@@ -381,6 +384,8 @@ def validate(request):
         raise ValueError("Choose distinct algorithm modules")
     if any(module not in MODULES for module in selected):
         raise ValueError("Unsupported algorithm module")
+    if config["kind"] == "world" and {"LOCALIZATION", "PERCEPTION"}.intersection(selected):
+        raise ValueError("LOCALIZATION/PERCEPTION requires BAG sensor inputs; WORLD supplies ground-truth pose and obstacles")
     if "PREDICTION" in selected and "fake_prediction" in selected:
         raise ValueError("Choose either PREDICTION or fake_prediction, not both")
     if "ML_PLANNING" in selected and "PLANNING" in selected:
@@ -388,6 +393,8 @@ def validate(request):
     if "ML_PLANNING" in selected and config.get("model", "perfect_planning") != "perfect_planning":
         raise ValueError("ML_PLANNING currently requires perfect_planning")
     config["modules"] = [module for module in MODULES if module in selected]
+    if "PERCEPTION" in selected and config.get("perception_launch"):
+        config["perception_launch"] = str(resolve(config["perception_launch"]))
     config["repeat"] = int(config.get("repeat", 1))
     if config["repeat"] not in (1, 2, 3):
         raise ValueError("Repeat count must be 1, 2 or 3")
@@ -862,6 +869,8 @@ class TaskService:
             return target
 
         self.update(job_id, stage="data_preparation")
+        recording_manifest = load_manifest(snapshot(
+            MANIFEST_PATH, job_dir / "simulation.manifest.json"))
         source = snapshot(config["source"], job_dir / "input" / Path(config["source"]).name)
         if config["kind"] == "world":
             sidecar = evaluation_path(config["source"])
@@ -981,7 +990,25 @@ class TaskService:
             atomic_json(job_dir / "configuration.json", effective)
             self.update(job_id, effective_configuration=effective)
         self.update(job_id, stage="model_update")
-        preflight_module_dags(runtime, config["modules"])
+        prepared_dags = {}
+        if "PERCEPTION" in config["modules"]:
+            launch = runtime / DEFAULT_LAUNCH
+            if config.get("perception_launch"):
+                launch = snapshot(config["perception_launch"],
+                                  runtime / ("modules/perception/launch/simulation" +
+                                             Path(config["perception_launch"]).suffix))
+            target = runtime / "modules/perception/simulation/simulation.dag"
+            recording_manifest = prepare_perception_pipeline(runtime, launch, target, recording_manifest)
+            prepared_dags = {"PERCEPTION": str(target)}
+            for path in prepared_dags.values():
+                manifests[str(Path(path).relative_to(job_dir))] = digest(path)
+            atomic_json(job_dir / "simulation.manifest.json", recording_manifest)
+            manifests["simulation.manifest.json"] = digest(job_dir / "simulation.manifest.json")
+        policy = channel_policy(config["modules"], recording_manifest,
+                                "BAG" if config["kind"] == "bag" else "WORLD")
+        module_dags = {m: str(prepared_dags.get(m, runtime / MODULES[m][0]))
+                       for m in config["modules"]}
+        preflight_module_dags(module_dags)
         preflight_plugins(runtime, config["modules"])
         binary = Path(os.environ.get("SIMULATOR_BINARY", "/opt/apollo/neo/bin/simulator_main")).resolve(strict=True)
         if not os.access(binary, os.X_OK):
@@ -989,7 +1016,7 @@ class TaskService:
         manifests["simulator_binary"] = digest(binary)
         runtime_libraries = sorted(Path("/opt/apollo/neo/lib/simulation").rglob("*.so"))
         runtime_libraries += sorted(Path("/opt/apollo/neo/lib/modules/simulation").rglob("*.so"))
-        for module in ["common", "map"] + [m.lower() for m in config["modules"]]:
+        for module in ["common", "map"] + [_module_dir_name(m) for m in config["modules"]]:
             runtime_libraries += sorted((Path("/opt/apollo/neo/lib/modules") / module).rglob("*.so"))
         library_hashes = {str(p): digest(p) for p in runtime_libraries}
         model_hashes = {str(p.resolve()): digest(p) for p in modules_dir.rglob("*")
@@ -1006,22 +1033,6 @@ class TaskService:
             run_dir.mkdir()
             output = run_dir / "simulation.record"
             progress = run_dir / "progress.json"
-            inject = list(INPUTS)
-            if config["kind"] == "world":
-                inject += ["/apollo/raw_routing_request", "/apollo/planning/command"]
-            else:
-                inject += ["/apollo/planning/command", "/apollo/planning_command_history"]
-                if "ROUTING" in config["modules"]:
-                    inject.append("/apollo/raw_routing_request")
-                if not _prediction_selected(config["modules"]):
-                    inject.append("/apollo/prediction")
-                if not {"PLANNING", "ML_PLANNING"}.intersection(config["modules"]):
-                    inject.append("/apollo/planning")
-            if "ML_PLANNING" in config["modules"]:
-                inject.append("/apollo/planning/pad")
-            suppress = [MODULES[m][1] for m in config["modules"]]
-            if "ML_PLANNING" in config["modules"]:
-                suppress += ["/apollo/planning/command_status", "/apollo/planning/reference_line_offset_command_status"]
             fields = {"scenario_id": job_id, "task_dir": str(run_dir), "map_dir": str(map_dir),
                 "vehicle_config_path": str(vehicle), "output_record_path": str(output),
                 "progress_path": str(progress), "random_seed": config["seed"], "step_ms": config["step_ms"],
@@ -1045,10 +1056,13 @@ class TaskService:
             lines = [f"{key}: {pb(value)}" for key, value in fields.items()]
             lines += ["input_kind: " + ("WORLD" if config["kind"] == "world" else "BAG")]
             lines += [f"runtime_modules: {pb(simulator_module(m))}" for m in config["modules"]]
-            lines += [f"dag_paths: {pb(str(runtime / MODULES[m][0]))}" for m in config["modules"]]
+            lines += [f"dag_paths: {pb(module_dags[m])}" for m in config["modules"]]
             lines += ["channel_policy {"]
-            for key, values in (("inject_channels", inject), ("suppress_channels", suppress), ("record_channels", list(dict.fromkeys(inject + suppress)))):
+            for key in ("inject_channels", "suppress_channels", "record_channels"):
+                values = policy[key]
                 lines += [f"  {key}: {pb(value)}" for value in values]
+            lines += [f"  bag_topic_mappings {{ source_topic: {pb(source_topic)} target_topic: {pb(target_topic)} }}"
+                      for source_topic, target_topic in policy["bag_topic_mappings"].items()]
             lines += ["}"]
             (run_dir / "task.pb.txt").write_text("\n".join(lines) + "\n")
             self.update(job_id, stage="simulation_start", run=run + 1, progress=0, simulation={})
@@ -1059,6 +1073,7 @@ class TaskService:
                 APOLLO_LIB_PATH="/opt/apollo/neo/lib", APOLLO_DAG_PATH=str(runtime),
                 APOLLO_RUNTIME_PATH=str(runtime), APOLLO_ENV_WORKROOT=str(runtime),
                 APOLLO_FLAG_PATH=str(runtime), APOLLO_CONF_PATH=str(runtime),
+                APOLLO_MODEL_PATH=str(runtime / "modules/perception/data/models"),
                 LD_LIBRARY_PATH="/opt/apollo/neo/lib:" + env.get("LD_LIBRARY_PATH", ""))
             env.pop("SIM_OUTPUT_RECORD", None)
             env["SIM_PARENT_PID"] = str(os.getpid())

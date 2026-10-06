@@ -11,7 +11,7 @@ with isolated configuration snapshots; completion includes output inspection and
 repeat comparison. Output bags can be opened with **Replay bag**.
 
 The planner selector chooses exactly one of `PLANNING` and `ML_PLANNING`.
-ML uses its frozen `models/v2/unified.weights`, Routing, and `perfect_planning`.
+ML uses its frozen `models/v5/unified.weights`, Routing, and `perfect_planning`.
 Planning requires Prediction or Fake prediction; new WorldSim configurations use
 Fake prediction explicitly, while the real Prediction module remains selectable.
 The included [Beijing scene suite](../scene_editor/examples/beijing_zongyuan_1haolou/README.md)

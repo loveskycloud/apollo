@@ -316,13 +316,11 @@ fn choice<T: Copy + PartialEq>(
                 for &(value, label, name) in options {
                     let r = ui.add_sized(
                         [ui.available_width(), 32.0],
-                        egui::Button::new(RichText::new(label).color(theme::TEXT).size(14.0))
-                            .fill(if *selected == value {
-                                theme::CARD_BG_HOVER
-                            } else {
-                                Color32::TRANSPARENT
-                            })
-                            .corner_radius(5.0),
+                        egui::Button::selectable(
+                            *selected == value,
+                            RichText::new(label).color(theme::TEXT).size(14.0),
+                        )
+                        .corner_radius(5.0),
                     );
                     point(diagnostic, &format!("{key}_option_{name}"), &r);
                     if r.clicked() {
@@ -495,6 +493,7 @@ pub(super) fn show(
     });
     if previous != (state.task_status, state.task_source, state.filter.clone()) {
         state.task_page = 0;
+        state.suite_pages.clear();
     }
     ui.add_space(10.0);
     ui.separator();
@@ -520,16 +519,16 @@ pub(super) fn show(
         .iter()
         .map(|suite| suite.indices.len())
         .sum::<usize>();
-    let pages = total.div_ceil(PAGE_SIZE).max(1);
+    let pages = groups.len().div_ceil(PAGE_SIZE).max(1);
     state.task_page = state.task_page.min(pages - 1);
     let start = state.task_page * PAGE_SIZE;
-    let end = (start + PAGE_SIZE).min(total);
-    diagnostic["task_pagination"] =
-        json!({"page":state.task_page+1,"pages":pages,"page_size":PAGE_SIZE,"total":total});
+    let end = (start + PAGE_SIZE).min(groups.len());
+    diagnostic["task_pagination"] = json!({"page":state.task_page+1,"pages":pages,"page_size":PAGE_SIZE,"total":total,"group_total":groups.len(),"unit":"groups"});
     diagnostic["task_status"] = json!(state.task_status.key());
     diagnostic["task_source"] = json!(state.task_source.key());
     diagnostic["task_rows"] = json!({});
     diagnostic["task_suites"] = json!([]);
+    diagnostic["suite_pagination"] = json!({});
     diagnostic["task_popups"] = json!({});
     for group in [Group::Running, Group::Queued, Group::Finished] {
         diagnostic["groups"][group.key()] = json!(
@@ -596,18 +595,22 @@ pub(super) fn show(
                             state.task_status = Status::All;
                             state.task_source = Source::All;
                             state.task_page = 0;
+                            state.suite_pages.clear();
                         }
                     }
                 });
             }
-            let mut offset = 0;
-            for suite in &groups {
-                let lo = start.saturating_sub(offset).min(suite.indices.len());
-                let hi = end.saturating_sub(offset).min(suite.indices.len());
-                offset += suite.indices.len();
-                if lo == hi {
-                    continue;
-                }
+            for suite in &groups[start..end] {
+                let suite_total = suite.indices.len();
+                let suite_page_count = suite_total.div_ceil(PAGE_SIZE).max(1);
+                let suite_page = state.suite_pages.entry(suite.key.clone()).or_default();
+                *suite_page = (*suite_page).min(suite_page_count - 1);
+                let lo = *suite_page * PAGE_SIZE;
+                let hi = (lo + PAGE_SIZE).min(suite_total);
+                diagnostic["suite_pagination"][&suite.key] = json!({
+                    "page":*suite_page+1,"pages":suite_page_count,
+                    "page_size":PAGE_SIZE,"total":suite_total
+                });
                 egui::Frame::new()
                     .fill(theme::APP_BG)
                     .stroke(Stroke::new(1.0, theme::CARD_BG))
@@ -625,6 +628,22 @@ pub(super) fn show(
                                     job["id"].as_str().and_then(|id| queue.get(id)).copied();
                                 row(ui, &job, position, state, diagnostic, action, replay);
                             }
+                            if suite_page_count > 1 {
+                                ui.add_space(8.0);
+                                ui.separator();
+                                let page = state
+                                    .suite_pages
+                                    .get_mut(&suite.key)
+                                    .expect("suite page was initialized before rendering");
+                                pagination(
+                                    ui,
+                                    page,
+                                    diagnostic,
+                                    suite_page_count,
+                                    &format!("共 {suite_total} 条"),
+                                    &format!("suite_tasks_{}", suite.key),
+                                );
+                            }
                         }
                     });
                 ui.add_space(10.0);
@@ -638,7 +657,16 @@ pub(super) fn show(
     ]);
     ui.add_space(8.0);
     ui.separator();
-    pagination(ui, state, diagnostic, pages, total);
+    let footer = pagination(
+        ui,
+        &mut state.task_page,
+        diagnostic,
+        pages,
+        &format!("{} 组 · {total} 条", groups.len()),
+        "tasks",
+    );
+    diagnostic["task_footer_rect"] =
+        json!([footer.left(), footer.top(), footer.right(), footer.bottom()]);
 }
 
 fn suite_header(
@@ -832,8 +860,7 @@ fn suite_menu(
                     let r = ui
                         .add_enabled(
                             enabled,
-                            egui::Button::new(RichText::new(label).color(color))
-                                .fill(theme::PANEL_BG)
+                            egui::Button::selectable(false, RichText::new(label).color(color))
                                 .min_size(vec2(ui.available_width(), 30.0)),
                         )
                         .on_hover_text(hint);
@@ -1125,11 +1152,11 @@ fn row_contents(
                             {
                                 let r = ui.add_sized(
                                     [ui.available_width(), 30.0],
-                                    egui::Button::new(
+                                    egui::Button::selectable(
+                                        false,
                                         RichText::new(format!("第 {} 次运行", index + 1))
                                             .color(theme::TEXT),
-                                    )
-                                    .fill(theme::PANEL_BG),
+                                    ),
                                 );
                                 point(diagnostic, &format!("replay_{id}_{index}"), &r);
                                 if r.clicked() {
@@ -1163,8 +1190,7 @@ fn row_contents(
                 if Group::for_stage(job["stage"].as_str().unwrap_or("")) != Group::Finished {
                     let r = ui.add_enabled(
                         state.pending.is_none(),
-                        egui::Button::new(RichText::new("取消任务").color(FAILURE))
-                            .fill(theme::PANEL_BG)
+                        egui::Button::selectable(false, RichText::new("取消任务").color(FAILURE))
                             .min_size(vec2(ui.available_width(), 30.0)),
                     );
                     point(diagnostic, &format!("cancel_{id}"), &r);
@@ -1181,8 +1207,7 @@ fn row_contents(
                 let r = ui
                     .add_enabled(
                         state.pending.is_none() && can_delete,
-                        egui::Button::new(RichText::new("删除任务").color(FAILURE))
-                            .fill(theme::PANEL_BG)
+                        egui::Button::selectable(false, RichText::new("删除任务").color(FAILURE))
                             .min_size(vec2(ui.available_width(), 30.0)),
                     )
                     .on_hover_text(if can_delete {
@@ -1223,87 +1248,197 @@ fn row_button(ui: &mut egui::Ui, rect: egui::Rect, text: &str, enabled: bool) ->
 
 fn pagination(
     ui: &mut egui::Ui,
-    state: &mut State,
+    current_page: &mut usize,
     diagnostic: &mut Value,
     pages: usize,
-    total: usize,
-) {
-    let footer = ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = 6.0;
-        ui.add_sized(
-            [90.0, 32.0],
-            egui::Label::new(
-                RichText::new(format!("共 {total} 条"))
-                    .size(13.0)
-                    .color(theme::TEXT_DIM),
-            ),
-        );
-        ui.allocate_ui_with_layout(
-            vec2(ui.available_width(), 32.0),
-            egui::Layout::right_to_left(egui::Align::Center),
-            |ui| {
-                let button = |text: &str, active: bool| {
-                    egui::Button::new(RichText::new(text).size(13.0).color(theme::TEXT))
-                        .fill(if active {
-                            theme::ACCENT_STRONG
-                        } else {
-                            theme::PANEL_BG
-                        })
-                        .stroke(Stroke::new(1.0, theme::CARD_BG))
-                        .corner_radius(6.0)
-                        .min_size(vec2(32.0, 32.0))
-                };
-                let next = ui.add_enabled(state.task_page + 1 < pages, button("›", false));
-                point(diagnostic, "tasks_next_page", &next);
-                if next.clicked() {
-                    state.task_page += 1;
-                }
-                if ui.available_width() < 330.0 {
-                    ui.label(
-                        RichText::new(format!("{} / {pages}", state.task_page + 1))
-                            .color(theme::TEXT),
-                    );
-                } else {
-                    let mut visible = vec![0, pages - 1, state.task_page];
-                    if state.task_page > 0 {
-                        visible.push(state.task_page - 1);
+    summary: &str,
+    key: &str,
+) -> egui::Rect {
+    let footer = ui.push_id(key, |ui| {
+        ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = 6.0;
+            ui.add_sized(
+                [120.0, 32.0],
+                egui::Label::new(RichText::new(summary).size(13.0).color(theme::TEXT_DIM)),
+            );
+            ui.allocate_ui_with_layout(
+                vec2(ui.available_width(), 32.0),
+                egui::Layout::right_to_left(egui::Align::Center),
+                |ui| {
+                    let button = |text: &str, active: bool| {
+                        egui::Button::new(RichText::new(text).size(13.0).color(theme::TEXT))
+                            .fill(if active {
+                                theme::ACCENT_STRONG
+                            } else {
+                                theme::PANEL_BG
+                            })
+                            .stroke(Stroke::new(1.0, theme::CARD_BG))
+                            .corner_radius(6.0)
+                            .min_size(vec2(32.0, 32.0))
+                    };
+                    let next = ui.add_enabled(*current_page + 1 < pages, button("›", false));
+                    point(diagnostic, &format!("{key}_next_page"), &next);
+                    if next.clicked() {
+                        *current_page += 1;
                     }
-                    if state.task_page + 1 < pages {
-                        visible.push(state.task_page + 1);
-                    }
-                    if state.task_page == 0 && pages > 2 {
-                        visible.push(2);
-                    }
-                    visible.sort_unstable();
-                    visible.dedup();
-                    let mut last = None;
-                    for page in visible.into_iter().rev() {
-                        if last.is_some_and(|last| last > page + 1) {
-                            ui.label(RichText::new("…").color(theme::TEXT_DIM));
+                    if ui.available_width() < 330.0 {
+                        ui.label(
+                            RichText::new(format!("{} / {pages}", *current_page + 1))
+                                .color(theme::TEXT),
+                        );
+                    } else {
+                        let mut visible = vec![0, pages - 1, *current_page];
+                        if *current_page > 0 {
+                            visible.push(*current_page - 1);
                         }
-                        let r = ui.add(button(&(page + 1).to_string(), page == state.task_page));
-                        point(diagnostic, &format!("tasks_page_{}", page + 1), &r);
-                        if r.clicked() {
-                            state.task_page = page;
+                        if *current_page + 1 < pages {
+                            visible.push(*current_page + 1);
                         }
-                        last = Some(page);
+                        if *current_page == 0 && pages > 2 {
+                            visible.push(2);
+                        }
+                        visible.sort_unstable();
+                        visible.dedup();
+                        let mut last = None;
+                        for page in visible.into_iter().rev() {
+                            if last.is_some_and(|last| last > page + 1) {
+                                ui.label(RichText::new("…").color(theme::TEXT_DIM));
+                            }
+                            let r = ui.add(button(&(page + 1).to_string(), page == *current_page));
+                            point(diagnostic, &format!("{key}_page_{}", page + 1), &r);
+                            if r.clicked() {
+                                *current_page = page;
+                            }
+                            last = Some(page);
+                        }
                     }
-                }
-                let previous = ui.add_enabled(state.task_page > 0, button("‹", false));
-                point(diagnostic, "tasks_previous_page", &previous);
-                if previous.clicked() {
-                    state.task_page -= 1;
-                }
-            },
-        );
+                    let previous = ui.add_enabled(*current_page > 0, button("‹", false));
+                    point(diagnostic, &format!("{key}_previous_page"), &previous);
+                    if previous.clicked() {
+                        *current_page -= 1;
+                    }
+                },
+            );
+        })
     });
-    let r = footer.response.rect;
-    diagnostic["task_footer_rect"] = json!([r.left(), r.top(), r.right(), r.bottom()]);
+    footer.inner.response.rect
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn render(state: &mut State) -> Value {
+        let ctx = egui::Context::default();
+        let mut diagnostic = json!({});
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    vec2(1000.0, 2400.0),
+                )),
+                ..Default::default()
+            },
+            |ui| {
+                show(ui, state, &mut diagnostic, &mut None, &mut None);
+            },
+        );
+        output.textures_delta.clear();
+        diagnostic
+    }
+
+    fn regression_jobs() -> Vec<Value> {
+        (0..308)
+            .map(|i| {
+                let parking = i < 294;
+                let mut task = job(
+                    &format!("task-{i}"),
+                    "completed",
+                    "world",
+                    if parking { "parking" } else { "ordinary" },
+                );
+                task["created_at"] = json!(if parking { 2 } else { 1 });
+                task["suite_index"] = json!(i);
+                task
+            })
+            .collect()
+    }
+
+    #[test]
+    fn large_suite_does_not_hide_other_suites_when_expanded_or_collapsed() {
+        let mut state = State::default();
+        state.jobs = regression_jobs();
+        state.task_page = 30; // Clamp an existing page from the old flat pagination.
+        let diagnostic = render(&mut state);
+        assert_eq!(diagnostic["task_counts"]["completed"], 308);
+        assert_eq!(diagnostic["task_pagination"]["total"], 308);
+        assert_eq!(diagnostic["task_pagination"]["group_total"], 2);
+        assert_eq!(diagnostic["task_pagination"]["pages"], 1);
+        assert_eq!(diagnostic["task_suites"].as_array().unwrap().len(), 2);
+        assert_eq!(diagnostic["task_rows"].as_object().unwrap().len(), 20);
+        assert!(!diagnostic["task_rows"]["task-294"].is_null());
+
+        state.collapsed_suites.insert("suite:parking".into());
+        let diagnostic = render(&mut state);
+        assert_eq!(diagnostic["task_suites"].as_array().unwrap().len(), 2);
+        assert_eq!(diagnostic["task_rows"].as_object().unwrap().len(), 10);
+        assert!(!diagnostic["task_rows"]["task-294"].is_null());
+        assert!(diagnostic["task_rows"]["task-0"].is_null());
+        assert_eq!(diagnostic["task_pagination"]["pages"], 1);
+    }
+
+    #[test]
+    fn suite_pages_are_independent_and_clamped_after_filtering() {
+        let mut state = State::default();
+        state.jobs = regression_jobs();
+        state.suite_pages.insert("suite:parking".into(), 29);
+        state.suite_pages.insert("suite:ordinary".into(), 1);
+        let diagnostic = render(&mut state);
+        assert_eq!(diagnostic["task_rows"].as_object().unwrap().len(), 8);
+        assert!(!diagnostic["task_rows"]["task-290"].is_null());
+        assert!(!diagnostic["task_rows"]["task-304"].is_null());
+        assert_eq!(diagnostic["suite_pagination"]["suite:parking"]["pages"], 30);
+        assert_eq!(diagnostic["suite_pagination"]["suite:ordinary"]["pages"], 2);
+        state.collapsed_suites.insert("suite:parking".into());
+        assert_eq!(
+            render(&mut state)["task_rows"].as_object().unwrap().len(),
+            4
+        );
+        state.collapsed_suites.clear();
+        assert_eq!(
+            render(&mut state)["task_rows"].as_object().unwrap().len(),
+            8
+        );
+
+        state.filter = "task-307".into();
+        let diagnostic = render(&mut state);
+        assert_eq!(diagnostic["task_pagination"]["total"], 1);
+        assert_eq!(diagnostic["task_rows"].as_object().unwrap().len(), 1);
+        assert_eq!(state.suite_pages["suite:ordinary"], 0);
+        assert!(!diagnostic["task_rows"]["task-307"].is_null());
+    }
+
+    #[test]
+    fn independent_tasks_still_paginate_without_losing_tasks() {
+        let mut state = State::default();
+        state.jobs = (0..23)
+            .map(|i| {
+                let mut task = job(&format!("task-{i}"), "completed", "world", "");
+                task.as_object_mut().unwrap().remove("suite_id");
+                task
+            })
+            .collect();
+        let mut seen = std::collections::HashSet::new();
+        for (page, count) in [10, 10, 3].into_iter().enumerate() {
+            state.task_page = page;
+            let diagnostic = render(&mut state);
+            assert_eq!(diagnostic["task_pagination"]["pages"], 3);
+            let rows = diagnostic["task_rows"].as_object().unwrap();
+            assert_eq!(rows.len(), count);
+            seen.extend(rows.keys().cloned());
+        }
+        assert_eq!(seen.len(), 23);
+    }
+
     fn job(id: &str, stage: &str, kind: &str, suite: &str) -> Value {
         json!({"id":id,"stage":stage,"config":{"kind":kind,"source":format!("/{id}.worldsim.scenario.json")},"suite_id":suite,"suite_name":"会车专项"})
     }
@@ -1368,7 +1503,7 @@ mod tests {
         assert!(suites(&state).is_empty());
     }
     #[test]
-    fn suite_identity_fifo_and_pagination_do_not_drop_jobs() {
+    fn suite_identity_and_fifo_do_not_drop_jobs() {
         let mut state = State::default();
         state.jobs = (0..23)
             .map(|i| {
@@ -1387,13 +1522,6 @@ mod tests {
             .flat_map(|group| group.indices.iter().copied())
             .collect();
         assert_eq!(indices.len(), 23);
-        assert_eq!(
-            indices
-                .chunks(PAGE_SIZE)
-                .map(|page| page.len())
-                .collect::<Vec<_>>(),
-            [10, 10, 3]
-        );
         assert!(
             groups
                 .iter()

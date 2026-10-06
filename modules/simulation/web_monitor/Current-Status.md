@@ -6,6 +6,18 @@
 
 ## 当前任务
 
+- 2026-10-06：统一修复仿真菜单悬停：来源/状态筛选及共用资源选项移除固定背景，复用主题可选择按钮，覆盖地图、场景/场景集、车辆、仿真模型；任务/场景集操作菜单同样获得悬停反馈，选中项保留标记。
+  20 项相关 Rust 测试、Clippy、发布构建及正式配置/任务/真实 308 条任务分页浏览器回归通过；截图验证高亮、移出恢复、选择值保留，回放菜单和窄屏操作正常；所有提交和任务修改请求均由测试拦截，308 条已完成任务逐项保留。
+  证据：`data/simulation/regression-20261006/menu-hover/MENU_HOVER_RESULTS.md`；容器 `/tmp/logsim-menu-hover-deployed-config/`、`/tmp/logsim-menu-hover-deployed-tasks/`、`/tmp/logsim-menu-hover-deployed-pagination/`。
+
+- 2026-10-06：修复回放菜单两次运行的悬停反馈：移除菜单项固定背景，改用可选择按钮，复用 `dark_menu_frame` 与现有 `CARD_BG_HOVER` 主题高亮，移出后恢复背景。
+  20 项相关 Rust 测试、Clippy、发布构建及正式浏览器回归通过；截图像素验证两个菜单项分别高亮且互不影响，真实任务 `6ce9e11e81894175` 的第二次录包正常播放，三个调试查询均有数据，308 条任务记录逐项保留。
+  证据：`data/simulation/regression-20261006/replay-hover/REPLAY_HOVER_RESULTS.md`；容器 `/tmp/logsim-replay-hover-deployed-live/`、`/tmp/logsim-replay-hover-deployed-fixtures/`。
+
+- 2026-10-06：修复任务列表分组分页：列表按场景集/独立任务分页，场景集内部每页 10 条、页码独立保存；收起场景集不会让其他组被隐藏任务占位挤到后面的页面，筛选或任务数量变化时重置/约束页码。
+  20 项仿真 UI Rust 测试、Clippy、发布构建及正式 9090 浏览器回归通过；真实泊车 294 条和普通 14 条覆盖折叠、两组末页、筛选重置，308 条已完成任务逐项保留，正式 JS/WASM 与构建资源一致。
+  证据：`data/simulation/regression-20261006/task-pagination/TASK_PAGINATION_RESULTS.md`；容器 `/tmp/logsim-task-pagination-deployed-live/`、`/tmp/logsim-task-pagination-deployed-fixtures/`。
+
 - 2026-10-02：web_monitor 品牌更新为 `sim scope`；导航栏图标及浏览器 favicon / touch icon 使用用户提供的 `sim_scope.png` 原图，页面标题与 manifest 名称同步更新。
   图标作为源码资源嵌入，HTTP 路由、Cargo 包清单和外部资源 ZIP 清单保持一致；旧 favicon / touch icon URL 也返回新图。
   Wasm 与服务端 Clippy、6 项服务端测试、发布构建通过；9090 已更新，HTML/图标/JS/WASM SHA256 与最终资源一致，914 条任务逐项保留。

@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <string>
 
 namespace apollo {
@@ -20,6 +21,13 @@ enum class SimEventType {
   SIM_END = 4,
 };
 
+struct BagReferenceChannel {
+  std::string source_topic;
+  std::string target_topic;
+  std::string message_type;
+  std::string proto_desc;
+};
+
 struct SimEvent {
   uint64_t sim_time_ns = 0;
   SimEventType type = SimEventType::FILE_MESSAGE;
@@ -27,6 +35,7 @@ struct SimEvent {
   std::string channel;
   std::string payload;
   std::string module_name;
+  std::shared_ptr<const BagReferenceChannel> bag_reference;
   // Stable source order for equal timestamp/channel messages. Never use pointer
   // addresses or arrival order from OS threads as a scheduling key.
   uint64_t sequence = 0;

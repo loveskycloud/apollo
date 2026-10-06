@@ -203,6 +203,58 @@ TEST(EmulatorControllerTest, TimersStopWhenSourceEndShrinks) {
   EXPECT_TRUE(controller.error().empty());
 }
 
+TEST(EmulatorControllerTest, SuppressedPoseIsArchivedWithoutLiveInjection) {
+  auto source = std::make_shared<FakeMessageSource>();
+  SimEvent event;
+  event.sim_time_ns = 100;
+  event.channel = "/apollo/localization/pose";
+  event.payload = "original-pose";
+  auto reference = std::make_shared<BagReferenceChannel>();
+  reference->target_topic = "/bag/apollo/localization/pose";
+  event.bag_reference = reference;
+  source->Enqueue(event);
+  FakeMessageConsumer consumer;
+  EmulatorController controller;
+  EmulatorController::Options options;
+  options.source = source;
+  options.consumer = &consumer;
+  options.channel_policy.add_suppress_channels(event.channel);
+  int archived = 0;
+  options.record_bag_reference = [&](const SimEvent& original) {
+    EXPECT_EQ(cyber::Clock::Now().ToNanosecond(), 100u);
+    EXPECT_EQ(original.payload, "original-pose");
+    EXPECT_EQ(original.bag_reference->target_topic, "/bag/apollo/localization/pose");
+    ++archived;
+    return true;
+  };
+  cyber::Clock::SetMode(cyber::proto::MODE_MOCK);
+  ASSERT_TRUE(controller.Init(options));
+  ASSERT_TRUE(controller.PublishNext());
+  EXPECT_FALSE(controller.PublishNext());
+  EXPECT_EQ(archived, 1);
+  EXPECT_EQ(consumer.publish_count(), 0);
+  EXPECT_TRUE(controller.error().empty());
+}
+
+TEST(EmulatorControllerTest, ReferenceFailureStopsBeforeAlgorithmInjection) {
+  auto source = std::make_shared<FakeMessageSource>();
+  SimEvent event;
+  event.sim_time_ns = 100;
+  event.channel = "input";
+  event.bag_reference = std::make_shared<BagReferenceChannel>();
+  source->Enqueue(event);
+  FakeMessageConsumer consumer;
+  EmulatorController controller;
+  EmulatorController::Options options;
+  options.source = source;
+  options.consumer = &consumer;
+  options.record_bag_reference = [](const SimEvent&) { return false; };
+  ASSERT_TRUE(controller.Init(options));
+  EXPECT_FALSE(controller.PublishNext());
+  EXPECT_EQ(consumer.publish_count(), 0);
+  EXPECT_NE(controller.error().find("bag reference recording failed"), std::string::npos);
+}
+
 }  // namespace
 }  // namespace simulation
 }  // namespace apollo

@@ -1,3 +1,0 @@
--r test_api/requirements.txt
--r nv12image/requirements.txt
-pytest-benchmark
