@@ -93,6 +93,22 @@ AD_LAYOUT_DIR=/apollo_workspace/modules/simulation/web_monitor/layouts \
 # Or: web_monitor_main --recording=/path/to/data.rrd --native
 ```
 
+## Binary runtime package
+
+`gen_binary.py --type all` packages the compiled launcher, forked `bin/rerun`,
+and `modules/simulation/web_monitor/layouts/*.rbl`. Extract and source the package
+setup, then call `web_monitor_main`. The launcher finds the Viewer and layouts
+relative to its executable, including from another working directory.
+Missing dependencies are reported before printing a browser URL.
+`WEB_MONITOR_RERUN` and `--layout_dir` remain explicit overrides.
+
+Launcher regression (use the compiled packaged executable):
+
+```bash
+WEB_MONITOR_TEST_BINARY=/path/to/binary/bin/web_monitor_main \
+  python3 modules/simulation/web_monitor/scripts/test_launcher.py -v
+```
+
 ## Browser graphics requirement
 
 The web viewer renders through WebGL 2 or WebGPU. Use a current Chrome/Edge browser with hardware acceleration enabled (`chrome://settings/system`), then fully restart it after changing the setting.
@@ -103,3 +119,21 @@ If the page reports that WebGL 2 is unavailable, do not retry the same GPU-disab
 Playback needs both ports from the **same browser host**: HTTP UI `:9090` and gRPC proxy `:9876`. A `Failed to fetch rerun+http://HOST:9876/proxy` error means the page loaded but the browser could not call the proxy (CORS, firewall, or only 9090 published). Restart `web_monitor_main` after a viewer rebuild so LAN CORS is enabled; open `http://HOST:9090/` (not a mix of localhost and LAN IP).
 
 In the left rail: **Layout** → **Planning** / **Perception** / **Control**.
+
+## 二进制包中的仿真任务服务
+
+解压包后重新 `source <binary>/setup.bash`，该环境将 `WEB_MONITOR_SIM_SERVICE`
+设置为当前包内的 `modules/simulation/simulator/task_service.py`，并指定包内
+`SIMULATOR_BINARY` 和工作区。旧包漏收服务和辅助 Python 模块，仅设置环境变量
+无法补齐文件，需要重新生成或使用修复后的包。
+任务目录默认位于包内 `data/simulation/jobs`，可通过 `SIM_TASK_ROOT` 指定可写目录。
+仿真使用当前分发的插件、运行库、配置和生成的 Python schemas；地图、场景、车辆
+仍需通过 `--include` 打包或选择允许目录内的实际输入。
+
+结果转换和 Topic Debug 使用包内隔离的固定版本 Python 运行依赖，不需要在目标容器
+联网安装；任务分析继续使用 Apollo 镜像原有 Python 环境。更新包后应退出旧 Web Monitor，
+重新 source 新包环境再启动，已有服务不会自动继承新环境。
+
+v6 的 CPU/all 正式包已通过干净容器完整 WORLD PNC、ML 无障碍及静态避障任务、
+两次重复比较、算法状态、结果转换/解码/回放窗口；验收命令、原始证据及边界见
+[完整流程验收](../tools/package/test-artifacts/web-monitor-simulation-20261007/README.md)。

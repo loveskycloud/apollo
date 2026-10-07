@@ -1,0 +1,96 @@
+{
+  "simulation": {
+    "description": "CPU 仿真运行集合：Cyber、Simulator、PNC、定位、地图及其插件",
+    "config": "cpu",
+    "library_overrides": {
+      "libssl.so.3": "/opt/apollo/pkgs/openssl/lib64/libssl.so.3",
+      "libcrypto.so.3": "/opt/apollo/pkgs/openssl/lib64/libcrypto.so.3"
+    },
+    "image_libraries": ["libssl.so.3", "libcrypto.so.3"],
+    "system_library_roots": ["/usr/lib", "/lib"],
+    "system_library_baseline": "apollo_image_libraries.json",
+    "patterns": [
+      "//cyber/mainboard/...", "//cyber/tools/...",
+      "//modules/simulation/simulator:simulator_main", "//modules/simulation/simulator:logsim_main",
+      "//modules/simulation/web_monitor:web_monitor_main",
+      "//modules/simulation/ml_planning:libml_planning.so",
+      "//modules/simulation/fake_prediction:libfake_prediction_component.so",
+      "//modules/planning/planning_component:libplanning_component.so",
+      "//modules/planning/planners/...", "//modules/planning/scenarios/...",
+      "//modules/planning/tasks/...", "//modules/planning/traffic_rules/...",
+      "//modules/planning/pnc_map/...",
+      "//modules/control/control_component:libcontrol_component.so",
+      "//modules/control/control_component/submodules/...", "//modules/control/controllers/...",
+      "//modules/prediction:libprediction_component.so", "//modules/prediction/evaluator/model_manager/model/...",
+      "//modules/routing:librouting_component.so",
+      "//modules/localization/rtk:librtk_localization_component.so",
+      "//modules/map:librelative_map_component.so",
+      "//modules/map/tools:sim_map_generator", "//modules/map/tools:bin_map_generator",
+      "//modules/transform:libstatic_transform_component.so"
+    ],
+    "exclude_regex": "_torch_gpu/",
+    "runtime_dependencies": {
+      "//modules/simulation/web_monitor:web_monitor_main": [
+        "//modules/simulation/web_monitor:rerun_cli",
+        "//modules/simulation/web_monitor:layout_files",
+        "//modules/simulation/simulator:task_service_runtime",
+        "//modules/simulation/tools/apollo_record_tools:apollo_record_tool",
+        "//modules/simulation/tools/apollo_record_tools:web_monitor_runtime"
+      ],
+      "//modules/simulation/simulator:simulator_main": [
+        "//modules/simulation/simulator:task_service_runtime",
+        "//modules/simulation/tools/apollo_record_tools:apollo_record_tool"
+      ]
+    },
+    "python_runtimes": {
+      "//modules/simulation/web_monitor:web_monitor_main": {
+        "requirements": "modules/simulation/tools/apollo_record_tools/requirements-web-monitor-runtime.txt",
+        "path": "lib/python/record_tools"
+      }
+    },
+    "resources": [
+      "cyber", "modules/common", "modules/planning", "modules/control",
+      "modules/prediction", "modules/routing", "modules/localization",
+      "modules/map", "modules/transform", "modules/simulation/simulator",
+      "modules/simulation/ml_planning", "modules/simulation/fake_prediction",
+      "modules/simulation/web_monitor"
+    ]
+  },
+  "all": {
+    "description": "全部生产 C++ 程序、组件、插件和 Python 运行目标（排除测试和 SDK 安装规则）",
+    "config": "gpu",
+    "library_overrides": {
+      "libssl.so.3": "/opt/apollo/pkgs/openssl/lib64/libssl.so.3",
+      "libcrypto.so.3": "/opt/apollo/pkgs/openssl/lib64/libcrypto.so.3"
+    },
+    "image_libraries": ["libssl.so.3", "libcrypto.so.3"],
+    "system_library_roots": ["/usr/lib", "/lib"],
+    "system_library_baseline": "apollo_image_libraries.json",
+    "x86_bazel_args": [
+      "--per_file_copt=modules/perception/common/algorithm/i_lib/.*@-msse4.1",
+      "--per_file_copt=modules/drivers/camera/.*@-mavx2"
+    ],
+    "x86_cpu_requirements": ["sse4_1", "avx2"],
+    "patterns": ["//cyber/...", "//modules/..."],
+    "runtime_dependencies": {
+      "//modules/simulation/web_monitor:web_monitor_main": [
+        "//modules/simulation/web_monitor:rerun_cli",
+        "//modules/simulation/web_monitor:layout_files",
+        "//modules/simulation/simulator:task_service_runtime",
+        "//modules/simulation/tools/apollo_record_tools:apollo_record_tool",
+        "//modules/simulation/tools/apollo_record_tools:web_monitor_runtime"
+      ],
+      "//modules/simulation/simulator:simulator_main": [
+        "//modules/simulation/simulator:task_service_runtime",
+        "//modules/simulation/tools/apollo_record_tools:apollo_record_tool"
+      ]
+    },
+    "python_runtimes": {
+      "//modules/simulation/web_monitor:web_monitor_main": {
+        "requirements": "modules/simulation/tools/apollo_record_tools/requirements-web-monitor-runtime.txt",
+        "path": "lib/python/record_tools"
+      }
+    },
+    "resources": ["cyber", "modules"]
+  }
+}

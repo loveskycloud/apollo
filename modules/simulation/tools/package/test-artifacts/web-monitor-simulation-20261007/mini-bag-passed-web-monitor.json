@@ -1,0 +1,60 @@
+{
+  "result": "PASS",
+  "rerun_version": "\u001b[2m2026-10-07T07:10:12.518992Z\u001b[0m \u001b[33m WARN\u001b[0m \u001b[2mre_analytics\u001b[0m\u001b[2m:\u001b[0m failed to load analytics config file: Couldn't compute config location\n\u001b[2m2026-10-07T07:10:12.519031Z\u001b[0m \u001b[31mERROR\u001b[0m \u001b[2mre_analytics\u001b[0m\u001b[2m:\u001b[0m Failed to initialize analytics: Couldn't compute config location\nrerun-cli 0.37.1 (native_viewer web_viewer) [rustc 1.96.0 (ac68faa20 2026-05-25), LLVM 22.1.2] x86_64-unknown-linux-gnu\nVideo features: av1 ffmpeg",
+  "cwd": "/tmp",
+  "http_port": 9090,
+  "grpc_port": 9876,
+  "assets": {
+    "/": {
+      "bytes": 21408,
+      "sha256": "d03e4a3664cf09df7f6a9f45b0a3f8303615ab47285186323ae95020c594a26d"
+    },
+    "/re_viewer.js": {
+      "bytes": 236342,
+      "content_type": "text/javascript",
+      "sha256": "d3f4632f612e2aa84bdb5c8d8c11ebe3c9a0c24eee54d8e22e0a64c13f8c28ea"
+    },
+    "/re_viewer_bg.wasm": {
+      "bytes": 56064021,
+      "content_type": "application/wasm",
+      "sha256": "7c1d725e8c7526ecfa9eb09fee5ec8ce7ebafde685c609a2881fb8bbbc4e72b5"
+    },
+    "/favicon.ico": {
+      "bytes": 433554,
+      "content_type": "image/png",
+      "sha256": "d16b12a3a96a13d03b149ecea4933a944d0e528ab8417d66ea2e94adc48f57e1"
+    }
+  },
+  "simulation_api": {
+    "result": "PASS",
+    "catalog": "PASS",
+    "list": "PASS",
+    "enqueue": "PASS",
+    "kind": "bag",
+    "task_id": "1ac706798f9c4523",
+    "stage": "completed",
+    "analysis_process": "PASS",
+    "topic_message_counts": {
+      "/bag/apollo/raw_routing_response": 1,
+      "/bag/apollo/planning/command": 1,
+      "/apollo/planning/command": 1,
+      "/bag/apollo/raw_routing_request": 1,
+      "/apollo/raw_routing_response": 1,
+      "/apollo/raw_routing_request": 1,
+      "/bag/apollo/canbus/chassis": 301,
+      "/apollo/canbus/chassis": 301,
+      "/bag/apollo/localization/pose": 301,
+      "/apollo/localization/pose": 301,
+      "/bag/apollo/planning": 31,
+      "/bag/apollo/planning/command_status": 31,
+      "/bag/apollo/prediction": 31,
+      "/bag/apollo/perception/obstacles": 31,
+      "/apollo/planning": 31,
+      "/apollo/planning/command_status": 31,
+      "/apollo/prediction": 31,
+      "/apollo/perception/obstacles": 31,
+      "/bag/apollo/control": 301,
+      "/apollo/control": 301
+    }
+  }
+}

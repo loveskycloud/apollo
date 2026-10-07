@@ -1,0 +1,27 @@
+{
+  "entry": "modules/simulation/apps/gen_binary.py",
+  "working_directory": "/tmp",
+  "environment_setup": "/apollo_workspace/modules/simulation/setup.bash",
+  "command": "gen_binary.py --type cli-smoke --profiles-file /tmp/simulation-cli-smoke-opees9kh/profiles.json --output /tmp/simulation-cli-smoke-opees9kh/binary.tar.gz --jobs 2",
+  "profile": {
+    "config": "cpu",
+    "patterns": [
+      "//cyber/tools/cyber_recorder:cyber_recorder"
+    ],
+    "resources": [
+      "cyber"
+    ]
+  },
+  "targets": [
+    "//cyber/tools/cyber_recorder:cyber_recorder"
+  ],
+  "elf_files": 104,
+  "archive_bytes": 31399300,
+  "archive_sha256": "1a09f2834128f1eafafb2d9a31819341446d05e0b3fb91e81b25b053cb370b28",
+  "build_pack_relocation_check": "PASS",
+  "extracted_runtime_command": "source <package>/setup.bash; cyber_recorder info --help",
+  "extracted_runtime_result": "PASS",
+  "packaging_unit_tests": 14,
+  "cli_integration_tests": 3,
+  "runtime_environment": "Apollo development container; this test verifies the migrated CLI flow."
+}

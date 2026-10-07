@@ -108,6 +108,8 @@ def _workspace_root():
 
 
 ROOT = _workspace_root()
+DISTRIBUTION = Path(os.environ.get("APOLLO_DISTRIBUTION_HOME", "/opt/apollo/neo"))
+PACKAGED_RUNTIME = (DISTRIBUTION / "manifest.json").is_file()
 # Simulation package root (…/modules/simulation), not the workspace.
 SIM_PKG = _simulation_package_root()
 CODE_ROOT = SIM_PKG
@@ -145,7 +147,27 @@ MODULES = {
 STAGES = ["queued", "data_preparation", "map_update", "profile_update", "model_update",
           "simulation_start", "simulation_running", "simulation_end", "result_analysis", "completed"]
 TERMINAL = {"completed", "failed", "cancelled", "interrupted"}
-APOLLO_MODULES = Path("/apollo/modules")
+APOLLO_MODULES = DISTRIBUTION / "modules" if PACKAGED_RUNTIME else Path("/apollo/modules")
+
+
+def simulator_environment(runtime):
+    """Use this distribution's libraries/plugins with a private task config tree."""
+    runtime = Path(runtime)
+    library_root = DISTRIBUTION / "lib"
+    env = os.environ.copy()
+    env.update(PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION="python", OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1",
+        APOLLO_DISTRIBUTION_HOME=str(DISTRIBUTION),
+        APOLLO_PLUGIN_INDEX_PATH=str(DISTRIBUTION / "share/cyber_plugin_index"),
+        APOLLO_PLUGIN_DESCRIPTION_PATH=str(DISTRIBUTION), APOLLO_PLUGIN_LIB_PATH=str(library_root),
+        APOLLO_LIB_PATH=str(library_root), APOLLO_DAG_PATH=str(runtime),
+        APOLLO_RUNTIME_PATH=str(runtime), APOLLO_ENV_WORKROOT=str(runtime),
+        APOLLO_FLAG_PATH=str(runtime), APOLLO_CONF_PATH=str(runtime),
+        APOLLO_MODEL_PATH=str(runtime / "modules/perception/data/models"))
+    # Packaged setup already selects the coherent runtime and Apollo image SDK.
+    # Adding the installed SDK's lib would mix two Cyber builds in one process.
+    if not PACKAGED_RUNTIME:
+        env["LD_LIBRARY_PATH"] = str(library_root) + ":" + env.get("LD_LIBRARY_PATH", "")
+    return env
 
 
 def _prediction_selected(modules):
@@ -177,7 +199,8 @@ def preflight_plugins(runtime, modules):
     if "PLANNING" not in modules:
         return
     available = set()
-    for path in Path("/opt/apollo/neo/share/modules/planning").rglob("plugins.xml"):
+    plugin_root = DISTRIBUTION / ("modules/planning" if PACKAGED_RUNTIME else "share/modules/planning")
+    for path in plugin_root.rglob("plugins.xml"):
         root = ET.parse(path).getroot()
         for entry in root.iter("class"):
             available.add(entry.attrib["type"].rsplit("::", 1)[-1])
@@ -212,7 +235,7 @@ def preflight_world(path):
             "请在 scene_editor 中打开项目，选择「项目 → 导出 WorldSim 场景…」，"
             "然后选择导出的 *.worldsim.scenario.json 运行仿真。"
             "不要仅删除 kind 字段：主车、路径和触发器也需要转换。")
-    sys.path.insert(0, "/opt/apollo/neo/python")
+    sys.path.insert(0, str(Path(os.environ.get("APOLLO_DISTRIBUTION_HOME", "/opt/apollo/neo")) / "python"))
     from google.protobuf.json_format import Parse
     # The installed schemas must use the same canonical path as the native
     # runtime. Loading the legacy simulation.* schema first poisons the default
@@ -959,8 +982,9 @@ class TaskService:
         # Seed from the canonical container flagfile, not /apollo_workspace.
         runtime_vehicle = snapshot(vehicle, runtime / "modules/common/data/vehicle_param.pb.txt")
         global_flags = runtime / "modules/common/data/global_flagfile.txt"
-        flag_source = profile / "modules/common/data/global_flagfile.txt" if profile else APOLLO_GLOBAL_FLAGS
-        snapshot(flag_source if flag_source.is_file() else APOLLO_GLOBAL_FLAGS, global_flags)
+        default_flags = ROOT / "modules/common/data/global_flagfile.txt" if PACKAGED_RUNTIME else APOLLO_GLOBAL_FLAGS
+        flag_source = profile / "modules/common/data/global_flagfile.txt" if profile else default_flags
+        snapshot(flag_source if flag_source.is_file() else default_flags, global_flags)
         update_global_flagfile(global_flags, map_dir, runtime_vehicle)
         manifests[str(global_flags.relative_to(job_dir))] = digest(global_flags)
         if vehicle_geometry(runtime_vehicle) != vehicle_geometry(vehicle):
@@ -976,7 +1000,7 @@ class TaskService:
         if "ML_PLANNING" in config["modules"]:
             snapshot(SIM_PKG / "ml_planning/dag/ml_planning.dag", runtime / MODULES["ML_PLANNING"][0])
             sys.path.insert(0, str(SIM_PKG / "ml_planning"))
-            sys.path.insert(0, "/opt/apollo/neo/python")
+            sys.path.insert(0, str(Path(os.environ.get("APOLLO_DISTRIBUTION_HOME", "/opt/apollo/neo")) / "python"))
             from model_selection import read_model_selection
             ml_root = runtime / "modules/simulation/ml_planning"
             frozen_config = snapshot(SIM_PKG / "ml_planning/conf/ml_planning.pb.txt",
@@ -1010,14 +1034,17 @@ class TaskService:
                        for m in config["modules"]}
         preflight_module_dags(module_dags)
         preflight_plugins(runtime, config["modules"])
-        binary = Path(os.environ.get("SIMULATOR_BINARY", "/opt/apollo/neo/bin/simulator_main")).resolve(strict=True)
+        binary = Path(os.environ.get("SIMULATOR_BINARY", str(DISTRIBUTION / "bin/simulator_main"))).resolve(strict=True)
         if not os.access(binary, os.X_OK):
             raise ValueError("Simulator binary is not executable")
         manifests["simulator_binary"] = digest(binary)
-        runtime_libraries = sorted(Path("/opt/apollo/neo/lib/simulation").rglob("*.so"))
-        runtime_libraries += sorted(Path("/opt/apollo/neo/lib/modules/simulation").rglob("*.so"))
+        library_root = DISTRIBUTION / "lib"
+        runtime_libraries = sorted((library_root / "simulation").rglob("*.so"))
+        runtime_libraries += sorted((library_root / "modules/simulation").rglob("*.so"))
+        if PACKAGED_RUNTIME:
+            runtime_libraries += sorted((library_root / "runtime").glob("*.so*"))
         for module in ["common", "map"] + [_module_dir_name(m) for m in config["modules"]]:
-            runtime_libraries += sorted((Path("/opt/apollo/neo/lib/modules") / module).rglob("*.so"))
+            runtime_libraries += sorted((library_root / "modules" / module).rglob("*.so"))
         library_hashes = {str(p): digest(p) for p in runtime_libraries}
         model_hashes = {str(p.resolve()): digest(p) for p in modules_dir.rglob("*")
                         if p.is_file() and p.suffix.lower() in (".pt", ".onnx", ".bin", ".params", ".model", ".pb", ".weights")}
@@ -1066,15 +1093,7 @@ class TaskService:
             lines += ["}"]
             (run_dir / "task.pb.txt").write_text("\n".join(lines) + "\n")
             self.update(job_id, stage="simulation_start", run=run + 1, progress=0, simulation={})
-            env = os.environ.copy()
-            env.update(PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION="python", OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1",
-                APOLLO_DISTRIBUTION_HOME="/opt/apollo/neo", APOLLO_PLUGIN_INDEX_PATH="/opt/apollo/neo/share/cyber_plugin_index",
-                APOLLO_PLUGIN_DESCRIPTION_PATH="/opt/apollo/neo", APOLLO_PLUGIN_LIB_PATH="/opt/apollo/neo/lib",
-                APOLLO_LIB_PATH="/opt/apollo/neo/lib", APOLLO_DAG_PATH=str(runtime),
-                APOLLO_RUNTIME_PATH=str(runtime), APOLLO_ENV_WORKROOT=str(runtime),
-                APOLLO_FLAG_PATH=str(runtime), APOLLO_CONF_PATH=str(runtime),
-                APOLLO_MODEL_PATH=str(runtime / "modules/perception/data/models"),
-                LD_LIBRARY_PATH="/opt/apollo/neo/lib:" + env.get("LD_LIBRARY_PATH", ""))
+            env = simulator_environment(runtime)
             env.pop("SIM_OUTPUT_RECORD", None)
             env["SIM_PARENT_PID"] = str(os.getpid())
             (run_dir / "log").mkdir()

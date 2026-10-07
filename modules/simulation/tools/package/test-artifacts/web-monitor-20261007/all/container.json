@@ -1,0 +1,64 @@
+{
+  "name": "apollo-binary-web-monitor-20261007",
+  "image_id": "sha256:7c33b27bf30bccf5c13f4d1058c72437930681b646ee0b7bfece979f482a2530",
+  "mounts": [],
+  "network_mode": "none",
+  "gpu_device_requests": [
+    {
+      "Driver": "",
+      "Count": -1,
+      "DeviceIDs": null,
+      "Capabilities": [
+        [
+          "gpu"
+        ]
+      ],
+      "Options": {}
+    }
+  ],
+  "changes_outside_tmp": [
+    "C /usr",
+    "C /usr/lib",
+    "C /usr/lib/x86_64-linux-gnu",
+    "C /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1",
+    "A /usr/lib/x86_64-linux-gnu/libnvidia-ptxjitcompiler.so.580.178.04",
+    "C /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so.1",
+    "A /usr/lib/x86_64-linux-gnu/libnvidia-opencl.so.580.178.04",
+    "C /usr/lib/x86_64-linux-gnu/libnvidia-opencl.so.1",
+    "A /usr/lib/x86_64-linux-gnu/libcuda.so.580.178.04",
+    "C /usr/lib/x86_64-linux-gnu/libnvidia-ptxjitcompiler.so.1",
+    "A /usr/lib/x86_64-linux-gnu/libnvidia-pkcs11.so.580.178.04",
+    "A /usr/lib/x86_64-linux-gnu/libcudadebugger.so.580.178.04",
+    "A /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so.580.178.04",
+    "C /usr/lib/x86_64-linux-gnu/libcuda.so.1",
+    "A /usr/lib/x86_64-linux-gnu/libnvidia-gpucomp.so.580.178.04",
+    "A /usr/lib/x86_64-linux-gnu/libnvidia-nvvm.so.580.178.04",
+    "A /usr/lib/x86_64-linux-gnu/libnvidia-allocator.so.580.178.04",
+    "A /usr/lib/x86_64-linux-gnu/libnvidia-pkcs11-openssl3.so.580.178.04",
+    "C /usr/lib/x86_64-linux-gnu/libnvidia-nvvm.so.4",
+    "C /usr/lib/x86_64-linux-gnu/libcudadebugger.so.1",
+    "C /usr/lib/x86_64-linux-gnu/libnvidia-allocator.so.1",
+    "A /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.580.178.04",
+    "C /usr/lib/firmware",
+    "C /usr/lib/firmware/nvidia",
+    "A /usr/lib/firmware/nvidia/580.178.04",
+    "A /usr/lib/firmware/nvidia/580.178.04/gsp_ga10x.bin",
+    "A /usr/lib/firmware/nvidia/580.178.04/gsp_tu10x.bin",
+    "C /var",
+    "C /var/cache",
+    "C /var/cache/ldconfig",
+    "C /var/cache/ldconfig/aux-cache",
+    "C /etc",
+    "C /etc/ld.so.cache",
+    "C /run",
+    "A /run/nvidia-persistenced",
+    "A /run/nvidia-persistenced/socket"
+  ],
+  "clean_base_checks": {
+    "uid": 1000,
+    "workspace_entries": [],
+    "base_neo_library_entries": [
+      "3rd-boost"
+    ]
+  }
+}

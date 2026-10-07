@@ -34,7 +34,7 @@ if __name__ == "__main__":
     ensure_runtime()
 
 os.environ.setdefault("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python")
-sys.path.insert(0, "/opt/apollo/neo/python")
+sys.path.insert(0, str(Path(os.environ.get("APOLLO_DISTRIBUTION_HOME", "/opt/apollo/neo")) / "python"))
 
 import numpy as np
 from google.protobuf.descriptor_pb2 import FileDescriptorSet
@@ -164,7 +164,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("-o", "--output", required=True, help="Output .mcap path")
     p.add_argument(
         "--tool",
-        default=str(Path(__file__).resolve().parent / "bin" / "apollo_record_tool"),
+        default=os.environ.get("WEB_MONITOR_RECORD_TOOL", str(Path(__file__).resolve().parent / "bin" / "apollo_record_tool")),
     )
     p.add_argument("--begin-ns", type=int, default=0)
     p.add_argument("--duration-ms", type=int, default=0)

@@ -2,6 +2,7 @@
 import hashlib
 import json
 import math
+import shlex
 from collections import deque
 from pathlib import Path
 
@@ -164,11 +165,95 @@ def evaluate_motion(poses, goal, expectation):
     return result
 
 
-def evaluate_record(record, scene, expectation):
+def pnc_destination_parameters(runtime, vehicle_path):
+    """Read the frozen standard-PNC stop contract, not the planner's outcome."""
+    from google.protobuf import text_format
+    from modules.common_msgs.config_msgs.vehicle_config_pb2 import VehicleConfig
+    from modules.planning.traffic_rules.destination.proto.destination_pb2 import DestinationConfig
+    runtime = Path(runtime)
+    vehicle = text_format.Parse(Path(vehicle_path).read_text(), VehicleConfig()).vehicle_param
+    rule_path = runtime / 'modules/planning/traffic_rules/destination/conf/default_conf.pb.txt'
+    rule = text_format.Parse(rule_path.read_text(), DestinationConfig())
+    # Default in planning_base/gflags/planning_gflags.cc. Flagfiles override it
+    # in their actual include order, just as the component's gflags parser does.
+    wall_length = .1
+    visiting = set()
+
+    def flags(path):
+        nonlocal wall_length
+        path = Path(path).resolve(strict=True)
+        if path in visiting:
+            raise ValueError('Recursive PNC flagfile: '+str(path))
+        visiting.add(path)
+        for line in path.read_text().splitlines():
+            words = shlex.split(line, comments=True)
+            if not words:
+                continue
+            key, sep, value = words[0].partition('=')
+            if not sep and len(words) == 2:
+                value = words[1]
+            if key == '--flagfile':
+                included = Path(value)
+                flags(included if included.is_absolute() else runtime / included)
+            elif key == '--virtual_stop_wall_length':
+                wall_length = float(value)
+        visiting.remove(path)
+
+    flags(runtime / 'modules/planning/planning_component/conf/planning.conf')
+    result = {'front_edge_to_center': vehicle.front_edge_to_center,
+              'stop_distance': rule.stop_distance, 'virtual_stop_wall_length': wall_length}
+    if (not vehicle.HasField('front_edge_to_center') or
+            any(not math.isfinite(v) or v < 0 for v in result.values()) or
+            result['front_edge_to_center'] <= 0):
+        raise ValueError('Invalid frozen PNC destination geometry: '+str(result))
+    return result
+
+
+def pnc_destination_goal(lane, lane_s, parameters):
+    """Convert Apollo's destination fence to an independent rear-axle target.
+
+    Destination::MakeDecisions places the wall center before routing_end; the
+    lane overload of Frame::CreateStopObstacle includes half the wall length;
+    BuildStopDecision subtracts stop_distance again. Stop points refer to the
+    vehicle front, whereas localization and the ML goal refer to the rear axle.
+    """
+    from shapely.geometry import LineString
+    line = LineString([(p.x, p.y) for segment in lane.central_curve.segment
+                       for p in segment.line_segment.point])
+    if not math.isfinite(lane_s) or not 0 <= lane_s <= line.length+1e-5:
+        raise ValueError('PNC routing destination is outside its map lane')
+    wall_s = max(0, lane_s-parameters['virtual_stop_wall_length']-parameters['stop_distance'])
+    stop_s = wall_s-parameters['virtual_stop_wall_length']/2-parameters['stop_distance']
+    if stop_s < 0:
+        raise ValueError('PNC destination has no room for the configured stop margin')
+    stop = line.interpolate(stop_s)
+    a, b = line.interpolate(max(0, stop_s-.001)), line.interpolate(min(line.length, stop_s+.001))
+    heading = math.atan2(b.y-a.y, b.x-a.x)
+    front = parameters['front_edge_to_center']
+    return {'x': stop.x-front*math.cos(heading), 'y': stop.y-front*math.sin(heading)}, {
+        'x': stop.x, 'y': stop.y}
+
+
+def evaluate_record(record, scene, expectation, pnc=None, map_dir=None):
     from bag_diff import messages
     from modules.common_msgs.localization_msgs.localization_pb2 import LocalizationEstimate
+    from modules.common_msgs.planning_msgs.planning_pb2 import ADCTrajectory
+    from modules.common_msgs.planning_msgs.decision_pb2 import STOP_REASON_DESTINATION
+    from modules.common_msgs.routing_msgs.routing_pb2 import RoutingResponse
     tail = deque()
+    routing = None
+    mission_complete = False
+    destination_stops = []
     for channel, stamp, payload in messages(record):
+        if pnc is not None and channel == '/apollo/raw_routing_response':
+            routing = RoutingResponse.FromString(payload)
+        if pnc is not None and channel == '/apollo/planning':
+            plan = ADCTrajectory.FromString(payload)
+            mission_complete = plan.decision.main_decision.HasField('mission_complete')
+            for obj in plan.decision.object_decision.decision:
+                for decision in obj.object_decision:
+                    if decision.HasField('stop') and decision.stop.reason_code == STOP_REASON_DESTINATION:
+                        destination_stops.append((decision.stop.stop_point.x, decision.stop.stop_point.y))
         if channel != '/apollo/localization/pose':
             continue
         seconds = stamp/1e9
@@ -185,4 +270,27 @@ def evaluate_record(record, scene, expectation):
         target=expectation['parking'].get('hold_goal',expectation['parking']['goal'])
         return evaluate_motion(poses,{'x':target[0],'y':target[1]},expectation)
     route = next(r for r in ego['routes'] if r['id'] == ego['activeRouteId'])
-    return evaluate_motion(poses, route['waypoints'][-1]['position'], expectation)
+    goal = route['waypoints'][-1]['position']
+    if pnc is None or expectation['expectation'] == 'safe_stop':
+        return evaluate_motion(poses, goal, expectation)
+    if routing is None or not routing.routing_request.waypoint:
+        raise ValueError('PNC destination evaluation requires the recorded routing response')
+    end = routing.routing_request.waypoint[-1]
+    if not end.HasField('s') or math.hypot(end.pose.x-goal['x'], end.pose.y-goal['y']) > .4:
+        raise ValueError('PNC routing destination does not match the requested scene goal')
+    from quality_metrics import read_map
+    lane = next((lane for lane in read_map(map_dir).lane if lane.id.id == end.id), None)
+    if lane is None:
+        raise ValueError('PNC destination lane missing from frozen map: '+end.id)
+    expected_goal, front_stop = pnc_destination_goal(lane, end.s, pnc)
+    result = evaluate_motion(poses, expected_goal, expectation)
+    declared_stop_matches = bool(destination_stops) and math.dist(destination_stops[-1],
+                                        (front_stop['x'], front_stop['y'])) <= .1
+    if not mission_complete or not declared_stop_matches:
+        result['status'] = 'FAIL'
+    result.update(goal_reference='PNC configured destination stop / rear axle',
+                  requested_goal_distance_m=math.hypot(poses[-1][1]-goal['x'], poses[-1][2]-goal['y']) if poses else None,
+                  expected_goal=expected_goal, expected_front_stop=front_stop, stop_parameters=pnc,
+                  mission_complete=mission_complete, declared_destination_stop_matches=declared_stop_matches,
+                  reason='Within 0.4 m of configured PNC stop, speed below 0.05 m/s, destination decision and mission completion required')
+    return result

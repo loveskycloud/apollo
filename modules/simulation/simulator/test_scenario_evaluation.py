@@ -3,10 +3,91 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from scenario_evaluation import evaluation_path, evaluate_motion, load_evaluation
+from scenario_evaluation import (evaluation_path, evaluate_motion, load_evaluation,
+                                 pnc_destination_goal, pnc_destination_parameters)
 
 
 class ScenarioEvaluationTests(unittest.TestCase):
+    def test_standard_pnc_stop_uses_front_geometry_and_configured_margin(self):
+        from types import SimpleNamespace as Obj
+        lane = Obj(central_curve=Obj(segment=[Obj(line_segment=Obj(point=[
+            Obj(x=0., y=0.), Obj(x=20., y=0.)]))]))
+        parameters = dict(front_edge_to_center=.62, stop_distance=.2, virtual_stop_wall_length=.1)
+        goal, stop = pnc_destination_goal(lane, 20., parameters)
+        self.assertAlmostEqual(stop['x'], 19.45)
+        self.assertAlmostEqual(goal['x'], 18.83)
+        expectation = {'expectation': 'reach_goal'}
+        # Arrival precision stays 0.4 m; an arbitrary early stop still fails.
+        self.assertEqual(evaluate_motion(self.poses(x=18.53), goal, expectation)['status'], 'PASS')
+        self.assertEqual(evaluate_motion(self.poses(x=18.33), goal, expectation)['status'], 'FAIL')
+        self.assertEqual(evaluate_motion(self.poses(x=18.53, speed=.1), goal, expectation)['status'], 'FAIL')
+        # ML continues to use the requested rear-axle goal without PNC offsets.
+        self.assertEqual(evaluate_motion(self.poses(x=18.53), {'x':20,'y':0}, expectation)['status'], 'FAIL')
+        with self.assertRaisesRegex(ValueError, 'outside'):
+            pnc_destination_goal(lane, 21., parameters)
+        with self.assertRaisesRegex(ValueError, 'no room'):
+            pnc_destination_goal(lane, .1, parameters)
+
+    def test_pnc_stop_parameters_use_frozen_nested_flagfiles(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = {
+                'modules/planning/planning_component/conf/planning.conf':
+                    '--flagfile=global.flags\n--virtual_stop_wall_length=.3\n',
+                'global.flags': '--virtual_stop_wall_length=.2\n',
+                'modules/planning/traffic_rules/destination/conf/default_conf.pb.txt': 'stop_distance: .25\n',
+                'vehicle.pb.txt': 'vehicle_param { front_edge_to_center: .62 }\n',
+            }
+            for relative, content in paths.items():
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content)
+            result = pnc_destination_parameters(root, root/'vehicle.pb.txt')
+            self.assertEqual(result, dict(front_edge_to_center=.62, stop_distance=.25, virtual_stop_wall_length=.3))
+            (root/'global.flags').write_text('--flagfile=global.flags\n')
+            with self.assertRaisesRegex(ValueError, 'Recursive'):
+                pnc_destination_parameters(root, root/'vehicle.pb.txt')
+
+    def test_pnc_arrival_requires_matching_destination_decision_and_completion(self):
+        from unittest.mock import patch
+        from types import SimpleNamespace as Obj
+        from scenario_evaluation import evaluate_record
+        from modules.common_msgs.routing_msgs.routing_pb2 import RoutingResponse
+        from modules.common_msgs.planning_msgs.planning_pb2 import ADCTrajectory
+        from modules.common_msgs.planning_msgs.decision_pb2 import STOP_REASON_DESTINATION
+        from modules.common_msgs.localization_msgs.localization_pb2 import LocalizationEstimate
+        routing = RoutingResponse()
+        end = routing.routing_request.waypoint.add(id='lane', s=20)
+        end.pose.x, end.pose.y = 20, 0
+        plan = ADCTrajectory()
+        plan.decision.main_decision.mission_complete.SetInParent()
+        stop = plan.decision.object_decision.decision.add(id='DEST').object_decision.add().stop
+        stop.reason_code = STOP_REASON_DESTINATION
+        stop.stop_point.x, stop.stop_point.y = 19.45, 0
+        pose = LocalizationEstimate()
+        pose.pose.position.x, pose.pose.position.y = 18.53, 0
+        pose.pose.linear_velocity.x, pose.pose.linear_velocity.y = 0, 0
+        lane = Obj(id=Obj(id='lane'), central_curve=Obj(segment=[Obj(line_segment=Obj(point=[
+            Obj(x=0., y=0.), Obj(x=20., y=0.)]))]))
+        scene = {'ego': {'activeRouteId': 'route', 'routes': [
+            {'id': 'route', 'waypoints': [{'position': {'x':20,'y':0}}]}]}}
+        pnc = dict(front_edge_to_center=.62, stop_distance=.2, virtual_stop_wall_length=.1)
+        def check():
+            records = [(topic, 1_000_000_000, message.SerializeToString()) for topic, message in [
+                ('/apollo/raw_routing_response', routing), ('/apollo/planning', plan),
+                ('/apollo/localization/pose', pose)]]
+            with patch('bag_diff.messages', return_value=iter(records)), patch('quality_metrics.read_map', return_value=Obj(lane=[lane])):
+                return evaluate_record('record', scene, {'expectation':'reach_goal'}, pnc=pnc, map_dir='map')
+        self.assertEqual(check()['status'], 'PASS')
+        plan.decision.main_decision.ClearField('mission_complete')
+        self.assertEqual(check()['status'], 'FAIL')
+        plan.decision.main_decision.mission_complete.SetInParent()
+        stop.stop_point.x = 5
+        self.assertEqual(check()['status'], 'FAIL')
+        stop.stop_point.x = 19.45
+        pose.pose.position.x = 18.1
+        self.assertEqual(check()['status'], 'FAIL')
+
     def contract(self):
         return {'expectation': 'safe_stop', 'blocked_by': ['barrier'],
                 'stop_path': [{'x': x, 'y': 0} for x in (2, 2.2, 2.4, 2.6)]}

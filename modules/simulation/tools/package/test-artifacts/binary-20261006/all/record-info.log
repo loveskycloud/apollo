@@ -1,0 +1,21 @@
+record_file:    /tmp/final all package/binary/data/binary-verification/task-d17io05f/output.record
+version:        1.0
+duration:       3.000000 Seconds
+begin_time:     1970-01-01-08:00:01
+end_time:       1970-01-01-08:00:04
+size:           2265729 Bytes (2.160768 MB)
+is_complete:    true
+message_number: 1030
+channel_number: 10
+I1006 22:31:05.868027 70589 third_party/var/bvar/variable.cpp:792] Write all bvar to dumps/bvar.cyber_recorder.data every 10 seconds.
+channel_info:   
+                /apollo/raw_routing_response                             1 messages: apollo.routing.RoutingResponse
+                /apollo/planning/command                                 1 messages: apollo.planning.PlanningCommand
+                /apollo/raw_routing_request                              1 messages: apollo.routing.RoutingRequest
+                /apollo/canbus/chassis                                 301 messages: apollo.canbus.Chassis
+                /apollo/localization/pose                              301 messages: apollo.localization.LocalizationEstimate
+                /apollo/planning                                        31 messages: apollo.planning.ADCTrajectory
+                /apollo/planning/command_status                         31 messages: apollo.external_command.CommandStatus
+                /apollo/prediction                                      31 messages: apollo.prediction.PredictionObstacles
+                /apollo/perception/obstacles                            31 messages: apollo.perception.PerceptionObstacles
+                /apollo/control                                        301 messages: apollo.control.ControlCommand

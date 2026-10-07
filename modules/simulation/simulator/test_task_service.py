@@ -4,11 +4,42 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from task_service import ROOT, SIM_PKG, MODULES, TaskService, validate, preflight_plugins, preflight_world, preflight_module_dags, _inherit_scenario_environment, resolve, catalog
+from task_service import ROOT, SIM_PKG, MODULES, TaskService, validate, preflight_plugins, preflight_world, preflight_module_dags, _inherit_scenario_environment, resolve, catalog, simulator_environment
 from bag_diff import compare, algorithm_payload
 
 
 class QueueTests(unittest.TestCase):
+    def test_packaged_task_uses_distribution_libraries_and_private_configuration(self):
+        with tempfile.TemporaryDirectory() as directory:
+            distribution = Path(directory) / "binary"
+            runtime = Path(directory) / "job/.runtime"
+            original = {"LD_LIBRARY_PATH": str(distribution / "lib/runtime"), "PATH": "/usr/bin"}
+            with patch("task_service.DISTRIBUTION", distribution), patch("task_service.PACKAGED_RUNTIME", True), patch.dict("os.environ", original, clear=True):
+                env = simulator_environment(runtime)
+            self.assertEqual(env["APOLLO_DISTRIBUTION_HOME"], str(distribution))
+            self.assertEqual(env["APOLLO_PLUGIN_INDEX_PATH"], str(distribution / "share/cyber_plugin_index"))
+            self.assertEqual(env["APOLLO_PLUGIN_LIB_PATH"], str(distribution / "lib"))
+            self.assertEqual(env["APOLLO_CONF_PATH"], str(runtime))
+            self.assertEqual(env["APOLLO_MODEL_PATH"], str(runtime / "modules/perception/data/models"))
+            self.assertEqual(env["LD_LIBRARY_PATH"], original["LD_LIBRARY_PATH"])
+
+    def test_packaged_preflight_reads_its_own_plugins_and_rejects_missing_plugin(self):
+        with tempfile.TemporaryDirectory() as directory:
+            distribution = Path(directory) / "binary"
+            description = distribution / "modules/planning/tasks/example/plugins.xml"
+            description.parent.mkdir(parents=True)
+            description.write_text('<library><class type="apollo::planning::PackageOnlyPlugin"/></library>')
+            runtime = Path(directory) / "job/.runtime"
+            conf = runtime / "modules/planning/planning_component/conf"
+            conf.mkdir(parents=True)
+            (conf / "public_road_planner_config.pb.txt").write_text('type: "PackageOnlyPlugin"')
+            (conf / "traffic_rule_config.pb.txt").write_text('')
+            with patch("task_service.DISTRIBUTION", distribution), patch("task_service.PACKAGED_RUNTIME", True):
+                preflight_plugins(runtime, ["PLANNING"])
+                (conf / "traffic_rule_config.pb.txt").write_text('type: "MissingPlugin"')
+                with self.assertRaisesRegex(ValueError, "MissingPlugin"):
+                    preflight_plugins(runtime, ["PLANNING"])
+
     def test_sensor_modules_are_bag_modules_and_world_rejects_them(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

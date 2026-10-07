@@ -4,11 +4,13 @@ import argparse
 import json
 import math
 import resource
+import os
 import sys
 import time
 from pathlib import Path
 from planning_continuity import PlanningContinuity
 from quality_metrics import evaluate as evaluate_quality
+from scenario_evaluation import pnc_destination_parameters
 from task_service import (MODULES, analyze_trace, atomic_json, collision_summary,
                           compare, evaluate_record, load_evaluation, messages)
 
@@ -28,7 +30,7 @@ def analyze(request):
     first_pose = last_pose = None
     last_pose_payload = None
     continuity = PlanningContinuity()
-    sys.path.insert(0, "/opt/apollo/neo/python")
+    sys.path.insert(0, str(Path(os.environ.get("APOLLO_DISTRIBUTION_HOME", "/opt/apollo/neo")) / "python"))
     from modules.common_msgs.planning_msgs.planning_pb2 import ADCTrajectory
     from modules.common_msgs.control_msgs.control_cmd_pb2 import ControlCommand
     from modules.common_msgs.localization_msgs.localization_pb2 import LocalizationEstimate
@@ -97,10 +99,14 @@ def analyze(request):
             "status": "PASS" if all(c["status"] == "PASS" for c in checks) else "FAIL",
             "runs": checks}
         expectation = load_evaluation(source)
-        outcomes = [evaluate_record(output, json.loads(source.read_text()), expectation) for output in outputs]
+        pnc = (pnc_destination_parameters(job_dir / '.runtime', job_dir / 'vehicle/vehicle_param.pb.txt')
+               if 'PLANNING' in config['modules'] and not parking else None)
+        outcomes = [evaluate_record(output, json.loads(source.read_text()), expectation,
+                                   pnc=pnc, map_dir=job_dir / 'map') for output in outputs]
         # Parking's routing endpoint is only the approach lane. The visible
         # goal distance must refer to the audited parking pose instead.
-        if parking:
+        if parking or pnc is not None:
+            analysis['requested_goal_distance_m'] = analysis.get('goal_distance_m')
             analysis['goal_distance_m'] = outcomes[0]['goal_distance_m']
         analysis["scenario_expectation"] = {
             "expectation": expectation["expectation"], "reason": expectation["reason"],

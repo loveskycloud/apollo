@@ -1,0 +1,50 @@
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I1006 22:30:51.727918 70444 environment_tools.cc:50] []Simulation environment verified: map_dir=/tmp/final all package/binary/data/map_data/1haolou_202608241047qh vehicle_config_path=/tmp/final all package/binary/data/binary-verification/task-d17io05f/runtime/modules/common/data/vehicle_param.pb.txt half_vehicle_width=0.25
+I1006 22:30:51.727998 70444 ego_car.cc:164] []EgoCar VehicleConfigHelper initialized
+I1006 22:30:51.728048 70444 hdmap.cc:24] [map]Loading HDMap: /tmp/final all package/binary/data/map_data/1haolou_202608241047qh/base_map.bin ...
+I1006 22:30:51.728781 70444 hdmap_util.cc:77] [map]Load HDMap success: /tmp/final all package/binary/data/map_data/1haolou_202608241047qh/base_map.bin
+I1006 22:30:51.728790 70444 hdmap.cc:24] [map]Loading HDMap: /tmp/final all package/binary/data/map_data/1haolou_202608241047qh/sim_map.bin ...
+I1006 22:30:51.729187 70444 hdmap_util.cc:77] [map]Load HDMap success: /tmp/final all package/binary/data/map_data/1haolou_202608241047qh/sim_map.bin
+I1006 22:30:51.729187 70444 ego_car.cc:174] []EgoCar HDMap reloaded
+I1006 22:30:51.729189 70444 ego_car.cc:91] []EgoCar environment ready scenario_id=binary-clean-smoke map_dir=/tmp/final all package/binary/data/map_data/1haolou_202608241047qh vehicle=/tmp/final all package/binary/data/binary-verification/task-d17io05f/runtime/modules/common/data/vehicle_param.pb.txt
+I1006 22:30:51.729323 70444 sim_initializer.cc:118] []SetupCyber: CYBER_PATH=/tmp/final all package/binary/data/binary-verification/task-d17io05f/cyber_runtime conf=/tmp/final all package/binary/data/binary-verification/task-d17io05f/cyber_runtime/conf/cyber.pb.conf
+I1006 22:30:51.730387 70463 third_party/var/bvar/variable.cpp:792] Write all bvar to dumps/bvar.simulator_main.data every 10 seconds.
+[W TensorShape.cpp:2227] Warning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (function operator())
+module_list size=4
+  - PREDICTION class=PredictionComponent name=prediction
+  - PLANNING class=PlanningComponent name=planning
+  - CONTROL class=ControlComponent name=control
+  - ROUTING class=RoutingComponent name=routing
+E1006 22:31:04.959019 70444 a_star_strategy.cc:323] [routing]Failed to find goal lane with id: Lane_9
+E1006 22:31:04.959022 70444 navigator.cc:190] [routing]Failed to search route with waypoint from Lane_9_reverse to Lane_9
+E1006 22:31:04.959028 70444 navigator.cc:82] [routing]Failed to find route with request!
+E1006 22:31:04.959043 70444 a_star_strategy.cc:323] [routing]Failed to find goal lane with id: Lane_9_reverse
+E1006 22:31:04.959045 70444 navigator.cc:190] [routing]Failed to search route with waypoint from Lane_9_reverse to Lane_9_reverse
+E1006 22:31:04.959048 70444 navigator.cc:82] [routing]Failed to find route with request!
+E1006 22:31:04.971750 70444 file.h:271] [planning]conf file [modules/planning/scenarios/lane_follow/conf/lane_follow_stage/lane_change_path.pb.txt] is not found in APOLLO_CONF_PATH
+E1006 22:31:04.982190 70444 file.h:271] [planning]conf file [modules/planning/scenarios/lane_follow/conf/lane_follow_stage/lane_follow_path.pb.txt] is not found in APOLLO_CONF_PATH
+E1006 22:31:04.992642 70444 file.h:271] [planning]conf file [modules/planning/scenarios/lane_follow/conf/lane_follow_stage/lane_borrow_path.pb.txt] is not found in APOLLO_CONF_PATH
+E1006 22:31:05.002823 70444 file.h:271] [planning]conf file [modules/planning/scenarios/lane_follow/conf/lane_follow_stage/fallback_path.pb.txt] is not found in APOLLO_CONF_PATH
+E1006 22:31:05.012951 70444 file.h:271] [planning]conf file [modules/planning/scenarios/lane_follow/conf/lane_follow_stage/path_decider.pb.txt] is not found in APOLLO_CONF_PATH
+E1006 22:31:05.023175 70444 file.h:271] [planning]conf file [modules/planning/scenarios/lane_follow/conf/lane_follow_stage/rule_based_stop_decider.pb.txt] is not found in APOLLO_CONF_PATH
+E1006 22:31:05.034338 70444 file.h:271] [planning]conf file [modules/planning/scenarios/lane_follow/conf/lane_follow_stage/speed_bounds_priori_decider.pb.txt] is not found in APOLLO_CONF_PATH
+E1006 22:31:05.045650 70444 file.h:271] [planning]conf file [modules/planning/scenarios/lane_follow/conf/lane_follow_stage/speed_heuristic_optimizer.pb.txt] is not found in APOLLO_CONF_PATH
+E1006 22:31:05.056176 70444 file.h:271] [planning]conf file [modules/planning/scenarios/lane_follow/conf/lane_follow_stage/speed_decider.pb.txt] is not found in APOLLO_CONF_PATH
+E1006 22:31:05.056237 70444 file.h:271] [planning]conf file [modules/planning/scenarios/lane_follow/conf/lane_follow_stage/speed_bounds_final_decider.pb.txt] is not found in APOLLO_CONF_PATH
+E1006 22:31:05.066525 70444 file.h:271] [planning]conf file [modules/planning/scenarios/lane_follow/conf/lane_follow_stage/piecewise_jerk_speed.pb.txt] is not found in APOLLO_CONF_PATH
+E1006 22:31:05.080627 70444 control_component.cc:192] [control]Control input data failed: planning has no trajectory point. planning_seq_num:0
+E1006 22:31:05.080637 70444 control_component.cc:439] [control]Failed to produce control command:planning has no trajectory point. planning_seq_num:0
+E1006 22:31:05.080839 70444 control_component.cc:439] [control]Failed to produce control command:planning has no trajectory point. planning_seq_num:0
+E1006 22:31:05.080853 70444 control_component.cc:439] [control]Failed to produce control command:planning has no trajectory point. planning_seq_num:0
+E1006 22:31:05.080861 70444 control_component.cc:439] [control]Failed to produce control command:planning has no trajectory point. planning_seq_num:0
+E1006 22:31:05.080869 70444 control_component.cc:439] [control]Failed to produce control command:planning has no trajectory point. planning_seq_num:0
+E1006 22:31:05.080876 70444 control_component.cc:439] [control]Failed to produce control command:planning has no trajectory point. planning_seq_num:0
+E1006 22:31:05.080883 70444 control_component.cc:439] [control]Failed to produce control command:planning has no trajectory point. planning_seq_num:0
+E1006 22:31:05.080889 70444 control_component.cc:439] [control]Failed to produce control command:planning has no trajectory point. planning_seq_num:0
+E1006 22:31:05.080896 70444 control_component.cc:439] [control]Failed to produce control command:planning has no trajectory point. planning_seq_num:0
+E1006 22:31:05.080904 70444 control_component.cc:439] [control]Failed to produce control command:planning has no trajectory point. planning_seq_num:0
+E1006 22:31:05.083343 70444 trajectory_stitcher.cc:142] [planning]gear change from n to d, replan to avoid large station error
+E1006 22:31:05.086678 70444 latency_recorder.cc:45] [simulator_main]latency begin_time: 1970-01-01 08:00:01.100000000 >= end_time: 1970-01-01 08:00:01.100000000, 1000 times
+E1006 22:31:05.095136 70444 trajectory_stitcher.cc:177] [planning]parking brake off, ego move, replan to avoid large station error
+sim bag: /tmp/final all package/binary/data/binary-verification/task-d17io05f/output.record messages=1030
+simulator_main finished, exit=0

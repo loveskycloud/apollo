@@ -3,6 +3,15 @@ load("//tools:apollo_package.bzl", "apollo_cc_library", "apollo_cc_binary", "apo
 
 package(default_visibility = ["//visibility:public"])
 
+filegroup(
+    name = "task_service_helpers",
+    srcs = [
+        "tools/bag_diff.py",
+        "tools/perception_pipeline.py",
+        "tools/simulation_manifest.py",
+    ],
+)
+
 apollo_cc_library(
     name = "apollo_simulation_logsim",
     srcs = ["record_file_source.cc"],

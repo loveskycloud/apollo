@@ -25,6 +25,10 @@
 
 ## Done
 
+- [x] 二进制包完整 WorldSim：任务服务/生成 schema/录包 decoder/转换 wheel 显式打包；mock 时间拼接、末端投影、OSQP 迭代及标准 PNC 停车语义修复。CPU/all 干净容器共 12 次 PNC/ML/静态避障运行、严格比较、算法状态与回放均通过，交付 v6；原失败证据保留，详见 package/test-artifacts/web-monitor-simulation-20261007。
+
+- [x] 二进制包收集 forked Viewer 和源布局；原启动器按自身位置解析、直接 exec；移动路径/缺依赖回归及干净容器 HTTP/gRPC、JS/WASM、PNC 验收通过。
+
 - [x] scene_editor 地图迁移：任务快照自动加载、Source 手动选图、共享定位原点、静态路面/边界/中心线、三布局图层开关与双时钟浏览器验收
 - [x] 俯视交互平面锁定、主车位置/heading 持续跟随、后上方追车与车头朝上俯视、自由/跟随切换及舒适缩放范围；正式 9090 原始 bag 浏览器与 pose 数值回归
 - [x] 底盘反馈仪表盘（3D 底中可收起）、Top / Ego 相机快捷键按钮与共享窗口预加载；Dreamview 取值链核对及浏览器回归

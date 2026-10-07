@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "observations": 403,
+      "actor_max_abs_error": 9.325873406851315e-15,
+      "passed": true,
+      "instance": "run-1"
+    },
+    {
+      "observations": 403,
+      "actor_max_abs_error": 9.325873406851315e-15,
+      "passed": true,
+      "instance": "run-2"
+    }
+  ],
+  "tolerance": 1e-08
+}

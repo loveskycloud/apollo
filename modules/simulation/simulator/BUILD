@@ -3,6 +3,37 @@ load("//tools:apollo_package.bzl", "apollo_cc_library", "apollo_cc_binary", "apo
 
 package(default_visibility = ["//visibility:public"])
 
+filegroup(
+    name = "task_service_runtime",
+    srcs = [
+        "configuration_tools.py",
+        "driving_quality.py",
+        "parking_interaction_metrics.py",
+        "parking_metrics.py",
+        "parking_scorecard.py",
+        "parking_trigger_metrics.py",
+        "planning_continuity.py",
+        "quality_metrics.py",
+        "result_analysis.py",
+        "scenario_evaluation.py",
+        "task_service.py",
+        "//modules/simulation/logsim:task_service_helpers",
+        "//modules/simulation/ml_planning:model_selector",
+        "//modules/simulation/ml_planning/proto:ml_planning_config_proto_py_pb2",
+        "//modules/simulation/worldsim/proto:scenario_proto_py_pb2",
+        "//cyber/proto:dag_conf_proto_py_pb2",
+        "//cyber/proto:proto_desc_proto_py_pb2",
+        "//modules/common_msgs/config_msgs:vehicle_config_proto_py_pb2",
+        "//modules/common_msgs/control_msgs:control_cmd_proto_py_pb2",
+        "//modules/common_msgs/localization_msgs:localization_proto_py_pb2",
+        "//modules/common_msgs/map_msgs:map_proto_py_pb2",
+        "//modules/common_msgs/perception_msgs:perception_obstacle_proto_py_pb2",
+        "//modules/common_msgs/planning_msgs:planning_proto_py_pb2",
+        "//modules/common_msgs/routing_msgs:routing_proto_py_pb2",
+        "//modules/planning/traffic_rules/destination/proto:destination_proto_py_pb2",
+    ],
+)
+
 apollo_cc_library(
     name = "apollo_simulation_event",
     hdrs = [
@@ -119,6 +150,10 @@ apollo_cc_library(
 apollo_cc_binary(
     name = "simulator_main",
     srcs = ["simulator_main.cpp"],
+    data = [
+        ":task_service_runtime",
+        "//modules/simulation/tools/apollo_record_tools:apollo_record_tool",
+    ],
     deps = [
         ":apollo_simulation_core",
         "//modules/simulation/logsim:apollo_simulation_logsim",

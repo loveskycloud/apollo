@@ -1,6 +1,7 @@
 """Freeze a configured Perception launch into one simulation DAG and topic contract."""
 
 import copy
+import os
 from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
@@ -11,7 +12,7 @@ DEFAULT_LAUNCH = "modules/perception/launch/perception_lidar.launch"
 def prepare_perception_pipeline(runtime, launch, target, manifest):
     from google.protobuf import text_format
     import sys
-    sys.path.insert(0, "/opt/apollo/neo/python")
+    sys.path.insert(0, str(Path(os.environ.get("APOLLO_DISTRIBUTION_HOME", "/opt/apollo/neo")) / "python"))
     from cyber.proto.dag_conf_pb2 import DagConfig
 
     runtime, launch, target = Path(runtime), Path(launch), Path(target)
@@ -69,4 +70,3 @@ def prepare_perception_pipeline(runtime, launch, target, manifest):
     entry["outputs"] = [topic for source in dict.fromkeys(outputs)
                         for topic in (source, "/bag" + source)]
     return selected
-

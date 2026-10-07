@@ -1,0 +1,1503 @@
+{
+  "date": "2026-10-07",
+  "delivery_revision": "v6",
+  "profile": "simulation",
+  "manifest_format": 4,
+  "archive_bytes": 746375160,
+  "archive_sha256": "965211954c50f0bf66c66c40d8a7b7a756bceb4960c13bc4f5bcc238761d73dc",
+  "targets": 147,
+  "runtime_libraries": 399,
+  "container": {
+    "name": "apollo-binary-cpu-worldsim-20261007",
+    "image": "sha256:7c33b27bf30bccf5c13f4d1058c72437930681b646ee0b7bfece979f482a2530",
+    "mounts": [],
+    "network_mode": "none",
+    "gpu_requests": null,
+    "verification_uid": 1000
+  },
+  "stock_python": "2.1.3 2.0.6 3.19.6",
+  "python_runtimes": {
+    "//modules/simulation/web_monitor:web_monitor_main": {
+      "requirements": "modules/simulation/tools/apollo_record_tools/requirements-web-monitor-runtime.txt",
+      "path": "lib/python/record_tools"
+    }
+  },
+  "verification": {
+    "profile": "simulation",
+    "elf_files": 687,
+    "layout": "PASS",
+    "empty_runtime_directories": 0,
+    "checksum_files": 3556,
+    "setup": "PASS",
+    "dependencies": "PASS",
+    "image_libraries_checked": 94,
+    "image_libraries": {
+      "sha256_matches": [
+        "libtinyxml2.so.9",
+        "libncurses.so.6",
+        "libtinfo.so.6",
+        "libuuid.so.1",
+        "libssl.so.3",
+        "libcrypto.so.3",
+        "libsqlite3.so.0",
+        "libtiff.so.5",
+        "libcurl.so.4",
+        "libwebp.so.7",
+        "libzstd.so.1",
+        "libjbig.so.0",
+        "libjpeg.so.8",
+        "libdeflate.so.0",
+        "libz.so.1",
+        "libnghttp2.so.14",
+        "libidn2.so.0",
+        "librtmp.so.1",
+        "libssh.so.4",
+        "libpsl.so.5",
+        "libgssapi_krb5.so.2",
+        "libldap-2.5.so.0",
+        "liblber-2.5.so.0",
+        "libbrotlidec.so.1",
+        "libunistring.so.2",
+        "libgnutls.so.30",
+        "libhogweed.so.6",
+        "libnettle.so.8",
+        "libgmp.so.10",
+        "libkrb5.so.3",
+        "libk5crypto.so.3",
+        "libcom_err.so.2",
+        "libkrb5support.so.0",
+        "libsasl2.so.2",
+        "libbrotlicommon.so.1",
+        "libp11-kit.so.0",
+        "libtasn1.so.6",
+        "libkeyutils.so.1",
+        "libffi.so.8",
+        "libunwind.so.8",
+        "libpython3.10.so.1.0",
+        "libexpat.so.1",
+        "libpng16.so.16",
+        "libpangocairo-1.0.so.0",
+        "libX11.so.6",
+        "libXfixes.so.3",
+        "libpangoft2-1.0.so.0",
+        "libpango-1.0.so.0",
+        "libfontconfig.so.1",
+        "libXrender.so.1",
+        "libXext.so.6",
+        "libpixman-1.so.0",
+        "libxcb-shm.so.0",
+        "libxcb.so.1",
+        "libxcb-render.so.0",
+        "libpcre.so.3",
+        "libharfbuzz.so.0",
+        "libmount.so.1",
+        "libselinux.so.1",
+        "libfribidi.so.0",
+        "libthai.so.0",
+        "libXau.so.6",
+        "libXdmcp.so.6",
+        "libgraphite2.so.3",
+        "libblkid.so.1",
+        "libpcre2-8.so.0",
+        "libdatrie.so.1",
+        "libbsd.so.0",
+        "libmd.so.0",
+        "liblapack.so.3",
+        "libblas.so.3",
+        "libdmumps_seq-5.4.so",
+        "libopenblas.so.0",
+        "libmumps_common_seq-5.4.so",
+        "libmpiseq_seq-5.4.so",
+        "libpord_seq-5.4.so",
+        "libesmumps-6.1.so",
+        "libscotch-6.1.so",
+        "libscotcherr-6.1.so",
+        "libbz2.so.1.0"
+      ],
+      "abi_compatible": [
+        "libstdc++.so.6",
+        "libgcc_s.so.1",
+        "liblzma.so.5",
+        "libatomic.so.1",
+        "libcairo.so.2",
+        "libgobject-2.0.so.0",
+        "libglib-2.0.so.0",
+        "libgomp.so.1",
+        "libgmodule-2.0.so.0",
+        "libgio-2.0.so.0",
+        "libfreetype.so.6",
+        "libgfortran.so.5",
+        "libquadmath.so.0",
+        "libudev.so.1"
+      ]
+    },
+    "cyber_recorder": "PASS",
+    "extraction_directory": "/tmp/final-v6/binary",
+    "simulation": "PASS",
+    "simulation_duration_s": 3,
+    "record_bytes": 2273657,
+    "record_info": "record_file:    /tmp/final-v6/binary/data/binary-verification/task-m0gil87u/output.record\nversion:        1.0\nduration:       3.000000 Seconds\nbegin_time:     1970-01-01-08:00:01\nend_time:       1970-01-01-08:00:04\nsize:           2273657 Bytes (2.168328 MB)\nis_complete:    true\nmessage_number: 1030\nchannel_number: 10\nI1007 16:00:44.844796 11379 third_party/var/bvar/variable.cpp:792] Write all bvar to dumps/bvar.cyber_recorder.data every 10 seconds.\nchannel_info:   \n                /apollo/raw_routing_response                             1 messages: apollo.routing.RoutingResponse\n                /apollo/planning/command                                 1 messages: apollo.planning.PlanningCommand\n                /apollo/raw_routing_request                              1 messages: apollo.routing.RoutingRequest\n                /apollo/canbus/chassis                                 301 messages: apollo.canbus.Chassis\n                /apollo/localization/pose                              301 messages: apollo.localization.LocalizationEstimate\n                /apollo/planning                                        31 messages: apollo.planning.ADCTrajectory\n                /apollo/planning/command_status                         31 messages: apollo.external_command.CommandStatus\n                /apollo/prediction                                      31 messages: apollo.prediction.PredictionObstacles\n                /apollo/perception/obstacles                            31 messages: apollo.perception.PerceptionObstacles\n                /apollo/control                                        301 messages: apollo.control.ControlCommand\n",
+    "web_monitor": {
+      "result": "PASS",
+      "rerun_version": "\u001b[2m2026-10-07T08:00:45.855973Z\u001b[0m \u001b[33m WARN\u001b[0m \u001b[2mre_analytics\u001b[0m\u001b[2m:\u001b[0m failed to load analytics config file: Couldn't compute config location\n\u001b[2m2026-10-07T08:00:45.856049Z\u001b[0m \u001b[31mERROR\u001b[0m \u001b[2mre_analytics\u001b[0m\u001b[2m:\u001b[0m Failed to initialize analytics: Couldn't compute config location\nrerun-cli 0.37.1 (native_viewer web_viewer) [rustc 1.96.0 (ac68faa20 2026-05-25), LLVM 22.1.2] x86_64-unknown-linux-gnu\nVideo features: av1 ffmpeg",
+      "cwd": "/tmp",
+      "http_port": 9090,
+      "grpc_port": 9876,
+      "assets": {
+        "/": {
+          "bytes": 21408,
+          "sha256": "d03e4a3664cf09df7f6a9f45b0a3f8303615ab47285186323ae95020c594a26d"
+        },
+        "/re_viewer.js": {
+          "bytes": 236342,
+          "content_type": "text/javascript",
+          "sha256": "d3f4632f612e2aa84bdb5c8d8c11ebe3c9a0c24eee54d8e22e0a64c13f8c28ea"
+        },
+        "/re_viewer_bg.wasm": {
+          "bytes": 56064021,
+          "content_type": "application/wasm",
+          "sha256": "7c1d725e8c7526ecfa9eb09fee5ec8ce7ebafde685c609a2881fb8bbbc4e72b5"
+        },
+        "/favicon.ico": {
+          "bytes": 433554,
+          "content_type": "image/png",
+          "sha256": "d16b12a3a96a13d03b149ecea4933a944d0e528ab8417d66ea2e94adc48f57e1"
+        }
+      },
+      "simulation_api": {
+        "result": "PASS",
+        "catalog": "PASS",
+        "list": "PASS",
+        "tasks": {
+          "pnc": {
+            "result": "PASS",
+            "task_id": "2cdd907234cc44e0",
+            "stage": "completed",
+            "determinism": "PASS",
+            "goal_distance_m": 0.3048279885332992,
+            "topic_message_counts": {
+              "/apollo/raw_routing_response": 1,
+              "/apollo/planning/command": 1,
+              "/apollo/raw_routing_request": 1,
+              "/apollo/canbus/chassis": 3531,
+              "/apollo/localization/pose": 3531,
+              "/apollo/planning": 354,
+              "/apollo/planning/command_status": 354,
+              "/apollo/prediction": 354,
+              "/apollo/perception/obstacles": 354,
+              "/apollo/control": 3531
+            },
+            "replay": {
+              "result": "PASS",
+              "conversion": "PASS",
+              "topic_decode": "PASS",
+              "playback_window": "PASS",
+              "mcap_bytes": 11614322,
+              "evidence": "/tmp/final-v6/binary/data/binary-verification/replay-pnc.json"
+            }
+          },
+          "ml": {
+            "result": "PASS",
+            "task_id": "0bff47700172422e",
+            "stage": "completed",
+            "determinism": "PASS",
+            "goal_distance_m": 0.23575723133401386,
+            "topic_message_counts": {
+              "/apollo/raw_routing_response": 1,
+              "/apollo/planning/command_status": 389,
+              "/apollo/planning/command": 1,
+              "/apollo/raw_routing_request": 1,
+              "/apollo/canbus/chassis": 3872,
+              "/apollo/localization/pose": 3872,
+              "/apollo/planning": 388,
+              "/apollo/perception/obstacles": 388
+            },
+            "replay": {
+              "result": "PASS",
+              "conversion": "PASS",
+              "topic_decode": "PASS",
+              "playback_window": "PASS",
+              "mcap_bytes": 1737861,
+              "evidence": "/tmp/final-v6/binary/data/binary-verification/replay-ml.json"
+            }
+          },
+          "ml-obstacle": {
+            "result": "PASS",
+            "task_id": "5ac0f2ef4b7a4fbc",
+            "stage": "completed",
+            "determinism": "PASS",
+            "goal_distance_m": 0.23828877906553095,
+            "topic_message_counts": {
+              "/apollo/raw_routing_response": 1,
+              "/apollo/planning/command_status": 404,
+              "/apollo/planning/command": 1,
+              "/apollo/raw_routing_request": 1,
+              "/apollo/canbus/chassis": 4022,
+              "/apollo/localization/pose": 4022,
+              "/apollo/planning": 403,
+              "/apollo/perception/obstacles": 403
+            },
+            "replay": {
+              "result": "PASS",
+              "conversion": "PASS",
+              "topic_decode": "PASS",
+              "playback_window": "PASS",
+              "mcap_bytes": 2711925,
+              "evidence": "/tmp/final-v6/binary/data/binary-verification/replay-ml-obstacle.json"
+            }
+          }
+        }
+      }
+    }
+  },
+  "tasks": {
+    "pnc": {
+      "id": "2cdd907234cc44e0",
+      "result": "PASS",
+      "stage": "completed",
+      "execution": {
+        "status": "PASS",
+        "failure_class": null,
+        "behavior_evaluation": "SEE_ANALYSIS"
+      },
+      "analysis": {
+        "collision": {
+          "status": "PASS",
+          "collision_count": 0,
+          "runs": [
+            {
+              "status": "PASS",
+              "method": "world_ground_truth_obb_sat",
+              "checked_frames": 3531,
+              "collision_count": 0,
+              "step_ms": 10,
+              "complete": true,
+              "contacts": [],
+              "run": 1
+            },
+            {
+              "step_ms": 10,
+              "contacts": [],
+              "collision_count": 0,
+              "method": "world_ground_truth_obb_sat",
+              "complete": true,
+              "status": "PASS",
+              "checked_frames": 3531,
+              "run": 2
+            }
+          ]
+        },
+        "topic_message_counts": {
+          "/apollo/raw_routing_response": 1,
+          "/apollo/planning/command": 1,
+          "/apollo/raw_routing_request": 1,
+          "/apollo/canbus/chassis": 3531,
+          "/apollo/localization/pose": 3531,
+          "/apollo/planning": 354,
+          "/apollo/planning/command_status": 354,
+          "/apollo/prediction": 354,
+          "/apollo/perception/obstacles": 354,
+          "/apollo/control": 3531
+        },
+        "missing_module_outputs": [],
+        "effective_configuration": {
+          "configuration_scope": "task",
+          "profile": "/tmp/final-v6/binary/profiles/ranger_mini_v3",
+          "map_dir": "/tmp/final-v6/binary/data/map_data/1haolou_202608241047qh",
+          "vehicle_config_path": "/tmp/final-v6/binary/profiles/ranger_mini_v3/modules/common/data/vehicle_param.pb.txt",
+          "vehicle_width": 0.5,
+          "half_vehicle_width": 0.25,
+          "runtime_global_flagfile": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/2cdd907234cc44e0/.runtime/modules/common/data/global_flagfile.txt",
+          "runtime_map_dir": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/2cdd907234cc44e0/map",
+          "runtime_vehicle_config_path": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/2cdd907234cc44e0/.runtime/modules/common/data/vehicle_param.pb.txt",
+          "task_vehicle_config_path": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/2cdd907234cc44e0/vehicle/vehicle_param.pb.txt"
+        },
+        "algorithm_status_counts": {
+          "/apollo/planning:0": 354,
+          "/apollo/control:1002": 10,
+          "/apollo/control:0": 3521
+        },
+        "valid_planning_frames": 354,
+        "estop_frames": 0,
+        "ego_displacement_m": 30.525503433621374,
+        "determinism": "PASS",
+        "comparisons": [
+          {
+            "result": "PASS",
+            "comparison": "exact message order + timestamp + protobuf values (profiling excluded, maps canonicalized)",
+            "excluded_wall_fields": [
+              "planning.latency_stats.total_time_ms",
+              "planning.latency_stats.init_frame_time_ms",
+              "planning.latency_stats.task_stats[].time_ms",
+              "control.latency_stats.total_time_ms",
+              "control.latency_stats.controller_time_ms",
+              "control.latency_stats.total_time_exceeded"
+            ],
+            "raw_result": "FAIL",
+            "raw_different_messages": 354,
+            "left_count": 12012,
+            "right_count": 12012,
+            "different_messages": 0,
+            "left_sha256": "aef884201bd4d7769e06d1cbb45678b06bde7bbd6f273e4303bf1c38ae67475a",
+            "right_sha256": "a3086dd23b234c199da7bc504b69ac321cc4abbf53b2766eddf6291c7d77b900",
+            "diffs": [],
+            "diffs_truncated": false
+          }
+        ],
+        "manifest": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/2cdd907234cc44e0/manifest.json",
+        "scope": "Exact ordered messages, nanosecond timestamps and protobuf values; only listed wall profiling fields excluded and map ordering canonicalized; raw differences retained. Same runtime environment.",
+        "goal_distance_m": 0.3048279885332992,
+        "planning_continuity": {
+          "status": "PASS",
+          "runs": [
+            {
+              "status": "PASS",
+              "frames": 354,
+              "empty_frames": 0,
+              "invalid_frames": 0,
+              "publication_gaps": 0,
+              "boundary_missing": false,
+              "expected_period_s": 0.1,
+              "first_failures": [],
+              "omitted_failure_details": 0
+            },
+            {
+              "status": "PASS",
+              "frames": 354,
+              "empty_frames": 0,
+              "invalid_frames": 0,
+              "publication_gaps": 0,
+              "boundary_missing": false,
+              "expected_period_s": 0.1,
+              "first_failures": [],
+              "omitted_failure_details": 0
+            }
+          ]
+        },
+        "requested_goal_distance_m": 1.4745676419180815,
+        "scenario_expectation": {
+          "expectation": "reach_goal",
+          "reason": "Legacy scene: reach the route destination",
+          "status": "PASS",
+          "runs": [
+            {
+              "expectation": "reach_goal",
+              "goal_distance_m": 0.3048279885332992,
+              "status": "PASS",
+              "reason": "Within 0.4 m of configured PNC stop, speed below 0.05 m/s, destination decision and mission completion required",
+              "goal_reference": "PNC configured destination stop / rear axle",
+              "requested_goal_distance_m": 1.4745676419180815,
+              "expected_goal": {
+                "x": 9967.821867914092,
+                "y": 9000006.383037198
+              },
+              "expected_front_stop": {
+                "x": 9967.202248044126,
+                "y": 9000006.404744726
+              },
+              "stop_parameters": {
+                "front_edge_to_center": 0.62,
+                "stop_distance": 0.2,
+                "virtual_stop_wall_length": 0.1
+              },
+              "mission_complete": true,
+              "declared_destination_stop_matches": true
+            },
+            {
+              "expectation": "reach_goal",
+              "goal_distance_m": 0.3048279885332992,
+              "status": "PASS",
+              "reason": "Within 0.4 m of configured PNC stop, speed below 0.05 m/s, destination decision and mission completion required",
+              "goal_reference": "PNC configured destination stop / rear axle",
+              "requested_goal_distance_m": 1.4745676419180815,
+              "expected_goal": {
+                "x": 9967.821867914092,
+                "y": 9000006.383037198
+              },
+              "expected_front_stop": {
+                "x": 9967.202248044126,
+                "y": 9000006.404744726
+              },
+              "stop_parameters": {
+                "front_edge_to_center": 0.62,
+                "stop_distance": 0.2,
+                "virtual_stop_wall_length": 0.1
+              },
+              "mission_complete": true,
+              "declared_destination_stop_matches": true
+            }
+          ]
+        },
+        "quality_metrics": {
+          "version": "closed-loop-v1",
+          "status": "PASS",
+          "runs": [
+            {
+              "version": "closed-loop-v1",
+              "status": "PASS",
+              "scope": "Recorded executed poses; geometry/TTC sampled at 100 ms; perfect_planning is not Control validation",
+              "motion": {
+                "status": "MEASURED",
+                "elapsed_s": 35.3,
+                "distance_travelled_m": 30.525527300414186,
+                "sample_period_s": 0.10000000000000009,
+                "longitudinal_acceleration_mps2": {
+                  "p95": 0.17087109735529601,
+                  "max": 1.0936827065252543
+                },
+                "lateral_acceleration_mps2": {
+                  "p95": 0.0008184357700174304,
+                  "max": 0.0016336584699075875
+                },
+                "jerk_mps3": {
+                  "p95": 0.054963326411278116,
+                  "max": 9.877545711615674
+                },
+                "yaw_rate_radps": {
+                  "p95": 0.0007042151339877775,
+                  "max": 0.0013575006148780777
+                },
+                "max_speed_mps": 1.2774221901004323,
+                "final_speed_mps": 0.0,
+                "longest_stop_s": 0.19999999999999996,
+                "stops_over_10s": 0,
+                "reverse_distance_m": 0.0
+              },
+              "route_progress": {
+                "status": "NOT_EVALUATED"
+              },
+              "passing_return": {
+                "status": "NOT_EVALUATED",
+                "early_return_frames": 0,
+                "minimum_rear_clearance_m": null,
+                "required_rear_clearance_m": 0.35,
+                "scope": "Same-heading vehicle passes with lateral return; not applicable to every static nudge"
+              },
+              "kinematics": {
+                "status": "PASS",
+                "violating_intervals": 0,
+                "maximum_measured_curvature_per_m": 0.0011963930094270867,
+                "maximum_vehicle_curvature_per_m": 1.863376803081589
+              },
+              "road": {
+                "status": "PASS",
+                "outside_frames": 0,
+                "sample_count": 354,
+                "first_outside_s": null,
+                "minimum_boundary_distance_m": 0.5709566492370761
+              },
+              "interaction": {
+                "status": "NOT_EVALUATED",
+                "minimum_body_gap_m": null,
+                "min_ttc_3s": null,
+                "gap_below_025m_pair_frames": 0,
+                "ttc_below_1s_pair_frames": 0,
+                "near_obstacle_pair_frames": 0,
+                "oncoming_pair_frames": 0,
+                "oncoming_min_gap_m": null,
+                "observed_recovery_delay_s": [],
+                "unrecovered_after_clear_s": null,
+                "clear_definition": "All observed actors at least 1.5 m from ego body; diagnostic, not right-of-way proof"
+              },
+              "policy": {
+                "status": "NOT_EVALUATED",
+                "safety_intervention_fraction": null
+              },
+              "runtime": {
+                "status": "MEASURED",
+                "startup_planning_latency_ms": 185.408353805542,
+                "planning_latency_ms_p95": 4.064667224884033,
+                "planning_latency_ms_p99": 4.634566307067869,
+                "over_100ms_frames": 1
+              }
+            },
+            {
+              "version": "closed-loop-v1",
+              "status": "PASS",
+              "scope": "Recorded executed poses; geometry/TTC sampled at 100 ms; perfect_planning is not Control validation",
+              "motion": {
+                "status": "MEASURED",
+                "elapsed_s": 35.3,
+                "distance_travelled_m": 30.525527300414186,
+                "sample_period_s": 0.10000000000000009,
+                "longitudinal_acceleration_mps2": {
+                  "p95": 0.17087109735529601,
+                  "max": 1.0936827065252543
+                },
+                "lateral_acceleration_mps2": {
+                  "p95": 0.0008184357700174304,
+                  "max": 0.0016336584699075875
+                },
+                "jerk_mps3": {
+                  "p95": 0.054963326411278116,
+                  "max": 9.877545711615674
+                },
+                "yaw_rate_radps": {
+                  "p95": 0.0007042151339877775,
+                  "max": 0.0013575006148780777
+                },
+                "max_speed_mps": 1.2774221901004323,
+                "final_speed_mps": 0.0,
+                "longest_stop_s": 0.19999999999999996,
+                "stops_over_10s": 0,
+                "reverse_distance_m": 0.0
+              },
+              "route_progress": {
+                "status": "NOT_EVALUATED"
+              },
+              "passing_return": {
+                "status": "NOT_EVALUATED",
+                "early_return_frames": 0,
+                "minimum_rear_clearance_m": null,
+                "required_rear_clearance_m": 0.35,
+                "scope": "Same-heading vehicle passes with lateral return; not applicable to every static nudge"
+              },
+              "kinematics": {
+                "status": "PASS",
+                "violating_intervals": 0,
+                "maximum_measured_curvature_per_m": 0.0011963930094270867,
+                "maximum_vehicle_curvature_per_m": 1.863376803081589
+              },
+              "road": {
+                "status": "PASS",
+                "outside_frames": 0,
+                "sample_count": 354,
+                "first_outside_s": null,
+                "minimum_boundary_distance_m": 0.5709566492370761
+              },
+              "interaction": {
+                "status": "NOT_EVALUATED",
+                "minimum_body_gap_m": null,
+                "min_ttc_3s": null,
+                "gap_below_025m_pair_frames": 0,
+                "ttc_below_1s_pair_frames": 0,
+                "near_obstacle_pair_frames": 0,
+                "oncoming_pair_frames": 0,
+                "oncoming_min_gap_m": null,
+                "observed_recovery_delay_s": [],
+                "unrecovered_after_clear_s": null,
+                "clear_definition": "All observed actors at least 1.5 m from ego body; diagnostic, not right-of-way proof"
+              },
+              "policy": {
+                "status": "NOT_EVALUATED",
+                "safety_intervention_fraction": null
+              },
+              "runtime": {
+                "status": "MEASURED",
+                "startup_planning_latency_ms": 187.53361701965332,
+                "planning_latency_ms_p95": 4.083001613616943,
+                "planning_latency_ms_p99": 5.610606670379636,
+                "over_100ms_frames": 1
+              }
+            }
+          ]
+        },
+        "analysis_resources": {
+          "wall_s": 22.145466639994993,
+          "cpu_s": 21.783847557999998,
+          "peak_rss_kib": 53372
+        }
+      },
+      "replay": {
+        "result": "PASS",
+        "conversion": "PASS",
+        "topic_decode": "PASS",
+        "playback_window": "PASS",
+        "mcap_bytes": 11614322,
+        "evidence": "/tmp/final-v6/binary/data/binary-verification/replay-pnc.json"
+      },
+      "policy_parity": null,
+      "algorithm_health": {
+        "result": "PASS",
+        "runs": [
+          {
+            "record": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/2cdd907234cc44e0/run-1/simulation.record",
+            "planning_ok": 354,
+            "control_ok": 3521,
+            "control_initial_wait": [
+              {
+                "stamp_ns": 1000000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1010000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1020000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1030000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1040000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1050000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1060000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1070000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1080000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1090000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              }
+            ],
+            "control_errors_after_initial_wait": 0
+          },
+          {
+            "record": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/2cdd907234cc44e0/run-2/simulation.record",
+            "planning_ok": 354,
+            "control_ok": 3521,
+            "control_initial_wait": [
+              {
+                "stamp_ns": 1000000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1010000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1020000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1030000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1040000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1050000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1060000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1070000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1080000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              },
+              {
+                "stamp_ns": 1090000000,
+                "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+              }
+            ],
+            "control_errors_after_initial_wait": 0
+          }
+        ]
+      }
+    },
+    "ml": {
+      "id": "0bff47700172422e",
+      "result": "PASS",
+      "stage": "completed",
+      "execution": {
+        "status": "PASS",
+        "failure_class": null,
+        "behavior_evaluation": "SEE_ANALYSIS"
+      },
+      "analysis": {
+        "collision": {
+          "status": "PASS",
+          "collision_count": 0,
+          "runs": [
+            {
+              "method": "world_ground_truth_obb_sat",
+              "complete": true,
+              "step_ms": 10,
+              "collision_count": 0,
+              "contacts": [],
+              "checked_frames": 3872,
+              "status": "PASS",
+              "run": 1
+            },
+            {
+              "status": "PASS",
+              "checked_frames": 3872,
+              "collision_count": 0,
+              "method": "world_ground_truth_obb_sat",
+              "contacts": [],
+              "step_ms": 10,
+              "complete": true,
+              "run": 2
+            }
+          ]
+        },
+        "topic_message_counts": {
+          "/apollo/raw_routing_response": 1,
+          "/apollo/planning/command_status": 389,
+          "/apollo/planning/command": 1,
+          "/apollo/raw_routing_request": 1,
+          "/apollo/canbus/chassis": 3872,
+          "/apollo/localization/pose": 3872,
+          "/apollo/planning": 388,
+          "/apollo/perception/obstacles": 388
+        },
+        "missing_module_outputs": [],
+        "effective_configuration": {
+          "configuration_scope": "task",
+          "profile": "/tmp/final-v6/binary/profiles/ranger_mini_v3",
+          "map_dir": "/tmp/final-v6/binary/data/map_data/1haolou_202608241047qh",
+          "vehicle_config_path": "/tmp/final-v6/binary/profiles/ranger_mini_v3/modules/common/data/vehicle_param.pb.txt",
+          "vehicle_width": 0.5,
+          "half_vehicle_width": 0.25,
+          "runtime_global_flagfile": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/0bff47700172422e/.runtime/modules/common/data/global_flagfile.txt",
+          "runtime_map_dir": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/0bff47700172422e/map",
+          "runtime_vehicle_config_path": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/0bff47700172422e/.runtime/modules/common/data/vehicle_param.pb.txt",
+          "task_vehicle_config_path": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/0bff47700172422e/vehicle/vehicle_param.pb.txt",
+          "ml_planning_model": {
+            "version": "v5",
+            "weights": "/tmp/final-v6/binary/modules/simulation/ml_planning/models/v5/unified.weights",
+            "sha256": "3fc32f3eaf825a0554e097b1432f341faf40454560f3ae404bacb2bb0c9ae1ab",
+            "frozen_weights": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/0bff47700172422e/.runtime/modules/simulation/ml_planning/models/v5/unified.weights"
+          }
+        },
+        "algorithm_status_counts": {
+          "/apollo/planning:0": 388
+        },
+        "valid_planning_frames": 388,
+        "estop_frames": 0,
+        "ego_displacement_m": 31.764242768651428,
+        "determinism": "PASS",
+        "comparisons": [
+          {
+            "result": "PASS",
+            "comparison": "exact message order + timestamp + protobuf values (profiling excluded, maps canonicalized)",
+            "excluded_wall_fields": [
+              "planning.latency_stats.total_time_ms",
+              "planning.latency_stats.init_frame_time_ms",
+              "planning.latency_stats.task_stats[].time_ms",
+              "control.latency_stats.total_time_ms",
+              "control.latency_stats.controller_time_ms",
+              "control.latency_stats.total_time_exceeded"
+            ],
+            "raw_result": "FAIL",
+            "raw_different_messages": 388,
+            "left_count": 8912,
+            "right_count": 8912,
+            "different_messages": 0,
+            "left_sha256": "87a679eb3d6d61f919965d6b5aac381e8afdc858d863e41544db6cc04f2e7b5f",
+            "right_sha256": "121eeaa0e348f12c4e84acd719da8187958f8c9655d5a9636f8e1216abd09552",
+            "diffs": [],
+            "diffs_truncated": false
+          }
+        ],
+        "manifest": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/0bff47700172422e/manifest.json",
+        "scope": "Exact ordered messages, nanosecond timestamps and protobuf values; only listed wall profiling fields excluded and map ordering canonicalized; raw differences retained. Same runtime environment.",
+        "goal_distance_m": 0.23575723133401386,
+        "driving_quality": {
+          "status": "PASS",
+          "runs": [
+            {
+              "status": "PASS",
+              "clear_straight_samples": 309,
+              "max_clear_straight_offset_m": 0.0,
+              "max_lateral_reversals_10s": 0,
+              "limits": {
+                "clear_straight_offset_m": 0.15,
+                "lateral_reversals_10s": 2
+              },
+              "oncoming_anticipation_s": 9.0,
+              "scope": "Straight-road centering and repeated lateral reversals; does not certify all driving behavior"
+            },
+            {
+              "status": "PASS",
+              "clear_straight_samples": 309,
+              "max_clear_straight_offset_m": 0.0,
+              "max_lateral_reversals_10s": 0,
+              "limits": {
+                "clear_straight_offset_m": 0.15,
+                "lateral_reversals_10s": 2
+              },
+              "oncoming_anticipation_s": 9.0,
+              "scope": "Straight-road centering and repeated lateral reversals; does not certify all driving behavior"
+            }
+          ]
+        },
+        "planning_continuity": {
+          "status": "PASS",
+          "runs": [
+            {
+              "status": "PASS",
+              "frames": 388,
+              "empty_frames": 0,
+              "invalid_frames": 0,
+              "publication_gaps": 0,
+              "boundary_missing": false,
+              "expected_period_s": 0.1,
+              "first_failures": [],
+              "omitted_failure_details": 0
+            },
+            {
+              "status": "PASS",
+              "frames": 388,
+              "empty_frames": 0,
+              "invalid_frames": 0,
+              "publication_gaps": 0,
+              "boundary_missing": false,
+              "expected_period_s": 0.1,
+              "first_failures": [],
+              "omitted_failure_details": 0
+            }
+          ]
+        },
+        "scenario_expectation": {
+          "expectation": "reach_goal",
+          "reason": "Legacy scene: reach the route destination",
+          "status": "PASS",
+          "runs": [
+            {
+              "expectation": "reach_goal",
+              "goal_distance_m": 0.23575723133401386,
+              "status": "PASS",
+              "reason": "Route destination must be reached within 0.4 m and speed below 0.05 m/s"
+            },
+            {
+              "expectation": "reach_goal",
+              "goal_distance_m": 0.23575723133401386,
+              "status": "PASS",
+              "reason": "Route destination must be reached within 0.4 m and speed below 0.05 m/s"
+            }
+          ]
+        },
+        "quality_metrics": {
+          "version": "closed-loop-v1",
+          "status": "PASS",
+          "runs": [
+            {
+              "version": "closed-loop-v1",
+              "status": "PASS",
+              "scope": "Recorded executed poses; geometry/TTC sampled at 100 ms; perfect_planning is not Control validation",
+              "motion": {
+                "status": "MEASURED",
+                "elapsed_s": 38.71,
+                "distance_travelled_m": 31.764242768651435,
+                "sample_period_s": 0.10000000000000009,
+                "longitudinal_acceleration_mps2": {
+                  "p95": 0.18634767116492054,
+                  "max": 4.838715044609314
+                },
+                "lateral_acceleration_mps2": {
+                  "p95": 4.782096195114652e-07,
+                  "max": 5.325172230852938e-07
+                },
+                "jerk_mps3": {
+                  "p95": 0.15015561625588086,
+                  "max": 87.61109210582724
+                },
+                "yaw_rate_radps": {
+                  "p95": 4.813046958762657e-07,
+                  "max": 5.358415755551979e-07
+                },
+                "max_speed_mps": 0.9963188099215252,
+                "final_speed_mps": 0.0,
+                "longest_stop_s": 0.0,
+                "stops_over_10s": 0,
+                "reverse_distance_m": 0.0
+              },
+              "route_progress": {
+                "status": "MEASURED",
+                "remaining_m": 0.236231438206751,
+                "fraction": 0.9926177675560319
+              },
+              "passing_return": {
+                "status": "NOT_EVALUATED",
+                "early_return_frames": 0,
+                "minimum_rear_clearance_m": null,
+                "required_rear_clearance_m": 0.35,
+                "scope": "Same-heading vehicle passes with lateral return; not applicable to every static nudge"
+              },
+              "kinematics": {
+                "status": "PASS",
+                "violating_intervals": 0,
+                "maximum_measured_curvature_per_m": 8.997050041852663e-07,
+                "maximum_vehicle_curvature_per_m": 1.863376803081589
+              },
+              "road": {
+                "status": "PASS",
+                "outside_frames": 0,
+                "sample_count": 389,
+                "first_outside_s": null,
+                "minimum_boundary_distance_m": 0.5846540046590832
+              },
+              "interaction": {
+                "status": "NOT_EVALUATED",
+                "minimum_body_gap_m": null,
+                "min_ttc_3s": null,
+                "gap_below_025m_pair_frames": 0,
+                "ttc_below_1s_pair_frames": 0,
+                "near_obstacle_pair_frames": 0,
+                "oncoming_pair_frames": 0,
+                "oncoming_min_gap_m": null,
+                "observed_recovery_delay_s": [],
+                "unrecovered_after_clear_s": null,
+                "clear_definition": "All observed actors at least 1.5 m from ego body; diagnostic, not right-of-way proof"
+              },
+              "policy": {
+                "status": "MEASURED",
+                "safety_intervention_fraction": 0.0
+              },
+              "runtime": {
+                "status": "MEASURED",
+                "startup_planning_latency_ms": 1.21562,
+                "planning_latency_ms_p95": 1.3021937,
+                "planning_latency_ms_p99": 1.36482128,
+                "over_100ms_frames": 0
+              }
+            },
+            {
+              "version": "closed-loop-v1",
+              "status": "PASS",
+              "scope": "Recorded executed poses; geometry/TTC sampled at 100 ms; perfect_planning is not Control validation",
+              "motion": {
+                "status": "MEASURED",
+                "elapsed_s": 38.71,
+                "distance_travelled_m": 31.764242768651435,
+                "sample_period_s": 0.10000000000000009,
+                "longitudinal_acceleration_mps2": {
+                  "p95": 0.18634767116492054,
+                  "max": 4.838715044609314
+                },
+                "lateral_acceleration_mps2": {
+                  "p95": 4.782096195114652e-07,
+                  "max": 5.325172230852938e-07
+                },
+                "jerk_mps3": {
+                  "p95": 0.15015561625588086,
+                  "max": 87.61109210582724
+                },
+                "yaw_rate_radps": {
+                  "p95": 4.813046958762657e-07,
+                  "max": 5.358415755551979e-07
+                },
+                "max_speed_mps": 0.9963188099215252,
+                "final_speed_mps": 0.0,
+                "longest_stop_s": 0.0,
+                "stops_over_10s": 0,
+                "reverse_distance_m": 0.0
+              },
+              "route_progress": {
+                "status": "MEASURED",
+                "remaining_m": 0.236231438206751,
+                "fraction": 0.9926177675560319
+              },
+              "passing_return": {
+                "status": "NOT_EVALUATED",
+                "early_return_frames": 0,
+                "minimum_rear_clearance_m": null,
+                "required_rear_clearance_m": 0.35,
+                "scope": "Same-heading vehicle passes with lateral return; not applicable to every static nudge"
+              },
+              "kinematics": {
+                "status": "PASS",
+                "violating_intervals": 0,
+                "maximum_measured_curvature_per_m": 8.997050041852663e-07,
+                "maximum_vehicle_curvature_per_m": 1.863376803081589
+              },
+              "road": {
+                "status": "PASS",
+                "outside_frames": 0,
+                "sample_count": 389,
+                "first_outside_s": null,
+                "minimum_boundary_distance_m": 0.5846540046590832
+              },
+              "interaction": {
+                "status": "NOT_EVALUATED",
+                "minimum_body_gap_m": null,
+                "min_ttc_3s": null,
+                "gap_below_025m_pair_frames": 0,
+                "ttc_below_1s_pair_frames": 0,
+                "near_obstacle_pair_frames": 0,
+                "oncoming_pair_frames": 0,
+                "oncoming_min_gap_m": null,
+                "observed_recovery_delay_s": [],
+                "unrecovered_after_clear_s": null,
+                "clear_definition": "All observed actors at least 1.5 m from ego body; diagnostic, not right-of-way proof"
+              },
+              "policy": {
+                "status": "MEASURED",
+                "safety_intervention_fraction": 0.0
+              },
+              "runtime": {
+                "status": "MEASURED",
+                "startup_planning_latency_ms": 1.208904,
+                "planning_latency_ms_p95": 1.2847894499999999,
+                "planning_latency_ms_p99": 1.29099995,
+                "over_100ms_frames": 0
+              }
+            }
+          ]
+        },
+        "analysis_resources": {
+          "wall_s": 3.5322279279935174,
+          "cpu_s": 3.3093177189999996,
+          "peak_rss_kib": 52396
+        }
+      },
+      "replay": {
+        "result": "PASS",
+        "conversion": "PASS",
+        "topic_decode": "PASS",
+        "playback_window": "PASS",
+        "mcap_bytes": 1737861,
+        "evidence": "/tmp/final-v6/binary/data/binary-verification/replay-ml.json"
+      },
+      "policy_parity": {
+        "passed": true,
+        "results": [
+          {
+            "observations": 388,
+            "actor_max_abs_error": 5.995204332975845e-15,
+            "passed": true,
+            "instance": "run-1"
+          },
+          {
+            "observations": 388,
+            "actor_max_abs_error": 5.995204332975845e-15,
+            "passed": true,
+            "instance": "run-2"
+          }
+        ],
+        "tolerance": 1e-08
+      },
+      "algorithm_health": {
+        "result": "PASS",
+        "runs": [
+          {
+            "record": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/0bff47700172422e/run-1/simulation.record",
+            "planning_ok": 388,
+            "control_ok": 0,
+            "control_initial_wait": [],
+            "control_errors_after_initial_wait": 0
+          },
+          {
+            "record": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/0bff47700172422e/run-2/simulation.record",
+            "planning_ok": 388,
+            "control_ok": 0,
+            "control_initial_wait": [],
+            "control_errors_after_initial_wait": 0
+          }
+        ]
+      }
+    },
+    "ml-obstacle": {
+      "id": "5ac0f2ef4b7a4fbc",
+      "result": "PASS",
+      "stage": "completed",
+      "execution": {
+        "status": "PASS",
+        "failure_class": null,
+        "behavior_evaluation": "SEE_ANALYSIS"
+      },
+      "analysis": {
+        "collision": {
+          "status": "PASS",
+          "collision_count": 0,
+          "runs": [
+            {
+              "contacts": [],
+              "complete": true,
+              "status": "PASS",
+              "checked_frames": 4022,
+              "step_ms": 10,
+              "method": "world_ground_truth_obb_sat",
+              "collision_count": 0,
+              "run": 1
+            },
+            {
+              "contacts": [],
+              "complete": true,
+              "checked_frames": 4022,
+              "method": "world_ground_truth_obb_sat",
+              "status": "PASS",
+              "collision_count": 0,
+              "step_ms": 10,
+              "run": 2
+            }
+          ]
+        },
+        "topic_message_counts": {
+          "/apollo/raw_routing_response": 1,
+          "/apollo/planning/command_status": 404,
+          "/apollo/planning/command": 1,
+          "/apollo/raw_routing_request": 1,
+          "/apollo/canbus/chassis": 4022,
+          "/apollo/localization/pose": 4022,
+          "/apollo/planning": 403,
+          "/apollo/perception/obstacles": 403
+        },
+        "missing_module_outputs": [],
+        "effective_configuration": {
+          "configuration_scope": "task",
+          "profile": "/tmp/final-v6/binary/profiles/ranger_mini_v3",
+          "map_dir": "/tmp/final-v6/binary/data/map_data/1haolou_202608241047qh",
+          "vehicle_config_path": "/tmp/final-v6/binary/profiles/ranger_mini_v3/modules/common/data/vehicle_param.pb.txt",
+          "vehicle_width": 0.5,
+          "half_vehicle_width": 0.25,
+          "runtime_global_flagfile": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/5ac0f2ef4b7a4fbc/.runtime/modules/common/data/global_flagfile.txt",
+          "runtime_map_dir": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/5ac0f2ef4b7a4fbc/map",
+          "runtime_vehicle_config_path": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/5ac0f2ef4b7a4fbc/.runtime/modules/common/data/vehicle_param.pb.txt",
+          "task_vehicle_config_path": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/5ac0f2ef4b7a4fbc/vehicle/vehicle_param.pb.txt",
+          "ml_planning_model": {
+            "version": "v5",
+            "weights": "/tmp/final-v6/binary/modules/simulation/ml_planning/models/v5/unified.weights",
+            "sha256": "3fc32f3eaf825a0554e097b1432f341faf40454560f3ae404bacb2bb0c9ae1ab",
+            "frozen_weights": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/5ac0f2ef4b7a4fbc/.runtime/modules/simulation/ml_planning/models/v5/unified.weights"
+          }
+        },
+        "algorithm_status_counts": {
+          "/apollo/planning:0": 403
+        },
+        "valid_planning_frames": 403,
+        "estop_frames": 0,
+        "ego_displacement_m": 24.7617112209345,
+        "determinism": "PASS",
+        "comparisons": [
+          {
+            "result": "PASS",
+            "comparison": "exact message order + timestamp + protobuf values (profiling excluded, maps canonicalized)",
+            "excluded_wall_fields": [
+              "planning.latency_stats.total_time_ms",
+              "planning.latency_stats.init_frame_time_ms",
+              "planning.latency_stats.task_stats[].time_ms",
+              "control.latency_stats.total_time_ms",
+              "control.latency_stats.controller_time_ms",
+              "control.latency_stats.total_time_exceeded"
+            ],
+            "raw_result": "FAIL",
+            "raw_different_messages": 403,
+            "left_count": 9257,
+            "right_count": 9257,
+            "different_messages": 0,
+            "left_sha256": "5f35bb575e704b0c5b87653c9ec2ce09d55026540fed41b254640dab59aaa1aa",
+            "right_sha256": "170ab4e40f7952198c5da37f4ab09028e91cdf52b9bbb4e4e0c55640c5ae8a05",
+            "diffs": [],
+            "diffs_truncated": false
+          }
+        ],
+        "manifest": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/5ac0f2ef4b7a4fbc/manifest.json",
+        "scope": "Exact ordered messages, nanosecond timestamps and protobuf values; only listed wall profiling fields excluded and map ordering canonicalized; raw differences retained. Same runtime environment.",
+        "goal_distance_m": 0.23828877906553095,
+        "driving_quality": {
+          "status": "PASS",
+          "runs": [
+            {
+              "status": "PASS",
+              "clear_straight_samples": 180,
+              "max_clear_straight_offset_m": 0.00238773031775487,
+              "max_lateral_reversals_10s": 1,
+              "limits": {
+                "clear_straight_offset_m": 0.15,
+                "lateral_reversals_10s": 2
+              },
+              "oncoming_anticipation_s": 9.0,
+              "scope": "Straight-road centering and repeated lateral reversals; does not certify all driving behavior"
+            },
+            {
+              "status": "PASS",
+              "clear_straight_samples": 180,
+              "max_clear_straight_offset_m": 0.00238773031775487,
+              "max_lateral_reversals_10s": 1,
+              "limits": {
+                "clear_straight_offset_m": 0.15,
+                "lateral_reversals_10s": 2
+              },
+              "oncoming_anticipation_s": 9.0,
+              "scope": "Straight-road centering and repeated lateral reversals; does not certify all driving behavior"
+            }
+          ]
+        },
+        "planning_continuity": {
+          "status": "PASS",
+          "runs": [
+            {
+              "status": "PASS",
+              "frames": 403,
+              "empty_frames": 0,
+              "invalid_frames": 0,
+              "publication_gaps": 0,
+              "boundary_missing": false,
+              "expected_period_s": 0.1,
+              "first_failures": [],
+              "omitted_failure_details": 0
+            },
+            {
+              "status": "PASS",
+              "frames": 403,
+              "empty_frames": 0,
+              "invalid_frames": 0,
+              "publication_gaps": 0,
+              "boundary_missing": false,
+              "expected_period_s": 0.1,
+              "first_failures": [],
+              "omitted_failure_details": 0
+            }
+          ]
+        },
+        "scenario_expectation": {
+          "expectation": "reach_goal",
+          "reason": "Legacy scene: reach the route destination",
+          "status": "PASS",
+          "runs": [
+            {
+              "expectation": "reach_goal",
+              "goal_distance_m": 0.23828877906553095,
+              "status": "PASS",
+              "reason": "Route destination must be reached within 0.4 m and speed below 0.05 m/s"
+            },
+            {
+              "expectation": "reach_goal",
+              "goal_distance_m": 0.23828877906553095,
+              "status": "PASS",
+              "reason": "Route destination must be reached within 0.4 m and speed below 0.05 m/s"
+            }
+          ]
+        },
+        "quality_metrics": {
+          "version": "closed-loop-v1",
+          "status": "PASS",
+          "runs": [
+            {
+              "version": "closed-loop-v1",
+              "status": "PASS",
+              "scope": "Recorded executed poses; geometry/TTC sampled at 100 ms; perfect_planning is not Control validation",
+              "motion": {
+                "status": "MEASURED",
+                "elapsed_s": 40.21,
+                "distance_travelled_m": 24.85656398960675,
+                "sample_period_s": 0.10000000000000053,
+                "longitudinal_acceleration_mps2": {
+                  "p95": 0.4997307082381472,
+                  "max": 4.942218775366837
+                },
+                "lateral_acceleration_mps2": {
+                  "p95": 0.05773700664490223,
+                  "max": 0.10971100492458216
+                },
+                "jerk_mps3": {
+                  "p95": 0.3669206257275457,
+                  "max": 89.48543835275018
+                },
+                "yaw_rate_radps": {
+                  "p95": 0.1604023720195889,
+                  "max": 0.2408999386306572
+                },
+                "max_speed_mps": 0.9961809909794181,
+                "final_speed_mps": 0.0,
+                "longest_stop_s": 0.0,
+                "stops_over_10s": 0,
+                "reverse_distance_m": 0.0
+              },
+              "route_progress": {
+                "status": "MEASURED",
+                "remaining_m": 0.238773136463589,
+                "fraction": 0.9904490745414689
+              },
+              "passing_return": {
+                "status": "NOT_EVALUATED",
+                "early_return_frames": 0,
+                "minimum_rear_clearance_m": null,
+                "required_rear_clearance_m": 0.35,
+                "scope": "Same-heading vehicle passes with lateral return; not applicable to every static nudge"
+              },
+              "kinematics": {
+                "status": "PASS",
+                "violating_intervals": 0,
+                "maximum_measured_curvature_per_m": 1.0506169245112162,
+                "maximum_vehicle_curvature_per_m": 1.863376803081589
+              },
+              "road": {
+                "status": "PASS",
+                "outside_frames": 0,
+                "sample_count": 404,
+                "first_outside_s": null,
+                "minimum_boundary_distance_m": 0.048593246978021636
+              },
+              "interaction": {
+                "status": "MEASURED",
+                "minimum_body_gap_m": 0.051271762751451476,
+                "min_ttc_3s": 0.7000000000000001,
+                "gap_below_025m_pair_frames": 79,
+                "ttc_below_1s_pair_frames": 4,
+                "near_obstacle_pair_frames": 124,
+                "oncoming_pair_frames": 0,
+                "oncoming_min_gap_m": null,
+                "observed_recovery_delay_s": [
+                  0.0
+                ],
+                "unrecovered_after_clear_s": null,
+                "clear_definition": "All observed actors at least 1.5 m from ego body; diagnostic, not right-of-way proof"
+              },
+              "policy": {
+                "status": "MEASURED",
+                "safety_intervention_fraction": 0.2531017369727047
+              },
+              "runtime": {
+                "status": "MEASURED",
+                "startup_planning_latency_ms": 1.18853,
+                "planning_latency_ms_p95": 89.94801879999999,
+                "planning_latency_ms_p99": 98.66103184,
+                "over_100ms_frames": 1
+              }
+            },
+            {
+              "version": "closed-loop-v1",
+              "status": "PASS",
+              "scope": "Recorded executed poses; geometry/TTC sampled at 100 ms; perfect_planning is not Control validation",
+              "motion": {
+                "status": "MEASURED",
+                "elapsed_s": 40.21,
+                "distance_travelled_m": 24.85656398960675,
+                "sample_period_s": 0.10000000000000053,
+                "longitudinal_acceleration_mps2": {
+                  "p95": 0.4997307082381472,
+                  "max": 4.942218775366837
+                },
+                "lateral_acceleration_mps2": {
+                  "p95": 0.05773700664490223,
+                  "max": 0.10971100492458216
+                },
+                "jerk_mps3": {
+                  "p95": 0.3669206257275457,
+                  "max": 89.48543835275018
+                },
+                "yaw_rate_radps": {
+                  "p95": 0.1604023720195889,
+                  "max": 0.2408999386306572
+                },
+                "max_speed_mps": 0.9961809909794181,
+                "final_speed_mps": 0.0,
+                "longest_stop_s": 0.0,
+                "stops_over_10s": 0,
+                "reverse_distance_m": 0.0
+              },
+              "route_progress": {
+                "status": "MEASURED",
+                "remaining_m": 0.238773136463589,
+                "fraction": 0.9904490745414689
+              },
+              "passing_return": {
+                "status": "NOT_EVALUATED",
+                "early_return_frames": 0,
+                "minimum_rear_clearance_m": null,
+                "required_rear_clearance_m": 0.35,
+                "scope": "Same-heading vehicle passes with lateral return; not applicable to every static nudge"
+              },
+              "kinematics": {
+                "status": "PASS",
+                "violating_intervals": 0,
+                "maximum_measured_curvature_per_m": 1.0506169245112162,
+                "maximum_vehicle_curvature_per_m": 1.863376803081589
+              },
+              "road": {
+                "status": "PASS",
+                "outside_frames": 0,
+                "sample_count": 404,
+                "first_outside_s": null,
+                "minimum_boundary_distance_m": 0.048593246978021636
+              },
+              "interaction": {
+                "status": "MEASURED",
+                "minimum_body_gap_m": 0.051271762751451476,
+                "min_ttc_3s": 0.7000000000000001,
+                "gap_below_025m_pair_frames": 79,
+                "ttc_below_1s_pair_frames": 4,
+                "near_obstacle_pair_frames": 124,
+                "oncoming_pair_frames": 0,
+                "oncoming_min_gap_m": null,
+                "observed_recovery_delay_s": [
+                  0.0
+                ],
+                "unrecovered_after_clear_s": null,
+                "clear_definition": "All observed actors at least 1.5 m from ego body; diagnostic, not right-of-way proof"
+              },
+              "policy": {
+                "status": "MEASURED",
+                "safety_intervention_fraction": 0.2531017369727047
+              },
+              "runtime": {
+                "status": "MEASURED",
+                "startup_planning_latency_ms": 1.176277,
+                "planning_latency_ms_p95": 90.18720139999999,
+                "planning_latency_ms_p99": 98.57578926000001,
+                "over_100ms_frames": 1
+              }
+            }
+          ]
+        },
+        "analysis_resources": {
+          "wall_s": 3.9247688129980816,
+          "cpu_s": 3.6640005139999996,
+          "peak_rss_kib": 53228
+        }
+      },
+      "replay": {
+        "result": "PASS",
+        "conversion": "PASS",
+        "topic_decode": "PASS",
+        "playback_window": "PASS",
+        "mcap_bytes": 2711925,
+        "evidence": "/tmp/final-v6/binary/data/binary-verification/replay-ml-obstacle.json"
+      },
+      "policy_parity": {
+        "passed": true,
+        "results": [
+          {
+            "observations": 403,
+            "actor_max_abs_error": 9.325873406851315e-15,
+            "passed": true,
+            "instance": "run-1"
+          },
+          {
+            "observations": 403,
+            "actor_max_abs_error": 9.325873406851315e-15,
+            "passed": true,
+            "instance": "run-2"
+          }
+        ],
+        "tolerance": 1e-08
+      },
+      "algorithm_health": {
+        "result": "PASS",
+        "runs": [
+          {
+            "record": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/5ac0f2ef4b7a4fbc/run-1/simulation.record",
+            "planning_ok": 403,
+            "control_ok": 0,
+            "control_initial_wait": [],
+            "control_errors_after_initial_wait": 0
+          },
+          {
+            "record": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/5ac0f2ef4b7a4fbc/run-2/simulation.record",
+            "planning_ok": 403,
+            "control_ok": 0,
+            "control_initial_wait": [],
+            "control_errors_after_initial_wait": 0
+          }
+        ]
+      }
+    }
+  }
+}

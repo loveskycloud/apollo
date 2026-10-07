@@ -1,0 +1,19 @@
+{
+  "result": "PASS",
+  "runs": [
+    {
+      "record": "/tmp/package-check/binary/data/binary-verification/web-monitor-jobs/dbd77fee914a4757/run-1/simulation.record",
+      "planning_ok": 403,
+      "control_ok": 0,
+      "control_initial_wait": [],
+      "control_errors_after_initial_wait": 0
+    },
+    {
+      "record": "/tmp/package-check/binary/data/binary-verification/web-monitor-jobs/dbd77fee914a4757/run-2/simulation.record",
+      "planning_ok": 403,
+      "control_ok": 0,
+      "control_initial_wait": [],
+      "control_errors_after_initial_wait": 0
+    }
+  ]
+}

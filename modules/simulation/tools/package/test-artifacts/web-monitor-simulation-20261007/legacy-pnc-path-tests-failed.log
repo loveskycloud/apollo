@@ -1,0 +1,90 @@
+
+$ bazel test --config=cpu --compilation_mode=opt --jobs=6 --color=no --curses=no --linkopt=-L/usr/local/lib --linkopt=-L/opt/apollo/neo/lib/3rd-absl --linkopt=-L/opt/apollo/neo/lib/3rd-ad-rss-lib --linkopt=-L/opt/apollo/neo/lib/3rd-adv-plat --linkopt=-L/opt/apollo/neo/lib/3rd-boost --linkopt=-L/opt/apollo/neo/lib/3rd-caddn-infer-op --linkopt=-L/opt/apollo/neo/lib/3rd-camera-library --linkopt=-L/opt/apollo/neo/lib/3rd-can-card-library --linkopt=-L/opt/apollo/neo/lib/3rd-centerpoint-infer-op --linkopt=-L/opt/apollo/neo/lib/3rd-civetweb --linkopt=-L/opt/apollo/neo/lib/3rd-fastdds-wrap --linkopt=-L/opt/apollo/neo/lib/3rd-ffmpeg --linkopt=-L/opt/apollo/neo/lib/3rd-fftw3 --linkopt=-L/opt/apollo/neo/lib/3rd-gflags --linkopt=-L/opt/apollo/neo/lib/3rd-glog --linkopt=-L/opt/apollo/neo/lib/3rd-ipopt --linkopt=-L/opt/apollo/neo/lib/3rd-libtorch-cpu --linkopt=-L/opt/apollo/neo/lib/3rd-libtorch-gpu --linkopt=-L/opt/apollo/neo/lib/3rd-localization-msf --linkopt=-L/opt/apollo/neo/lib/3rd-magma --linkopt=-L/opt/apollo/neo/lib/3rd-mkl --linkopt=-L/opt/apollo/neo/lib/3rd-opencv --linkopt=-L/opt/apollo/neo/lib/3rd-osqp --linkopt=-L/opt/apollo/neo/lib/3rd-paddleinference --linkopt=-L/opt/apollo/neo/lib/3rd-pcl --linkopt=-L/opt/apollo/neo/lib/3rd-portaudio --linkopt=-L/opt/apollo/neo/lib/3rd-proj --linkopt=-L/opt/apollo/neo/lib/3rd-protobuf --linkopt=-L/opt/apollo/neo/lib/3rd-tf2 --linkopt=-L/opt/apollo/neo/lib/3rd-vtk --linkopt=-L/usr/local/cuda/lib64 --linkopt=-L/usr/local/cuda-11.8/lib64 --host_linkopt=-L/usr/local/lib --host_linkopt=-L/opt/apollo/neo/lib/3rd-absl --host_linkopt=-L/opt/apollo/neo/lib/3rd-ad-rss-lib --host_linkopt=-L/opt/apollo/neo/lib/3rd-adv-plat --host_linkopt=-L/opt/apollo/neo/lib/3rd-boost --host_linkopt=-L/opt/apollo/neo/lib/3rd-caddn-infer-op --host_linkopt=-L/opt/apollo/neo/lib/3rd-camera-library --host_linkopt=-L/opt/apollo/neo/lib/3rd-can-card-library --host_linkopt=-L/opt/apollo/neo/lib/3rd-centerpoint-infer-op --host_linkopt=-L/opt/apollo/neo/lib/3rd-civetweb --host_linkopt=-L/opt/apollo/neo/lib/3rd-fastdds-wrap --host_linkopt=-L/opt/apollo/neo/lib/3rd-ffmpeg --host_linkopt=-L/opt/apollo/neo/lib/3rd-fftw3 --host_linkopt=-L/opt/apollo/neo/lib/3rd-gflags --host_linkopt=-L/opt/apollo/neo/lib/3rd-glog --host_linkopt=-L/opt/apollo/neo/lib/3rd-ipopt --host_linkopt=-L/opt/apollo/neo/lib/3rd-libtorch-cpu --host_linkopt=-L/opt/apollo/neo/lib/3rd-libtorch-gpu --host_linkopt=-L/opt/apollo/neo/lib/3rd-localization-msf --host_linkopt=-L/opt/apollo/neo/lib/3rd-magma --host_linkopt=-L/opt/apollo/neo/lib/3rd-mkl --host_linkopt=-L/opt/apollo/neo/lib/3rd-opencv --host_linkopt=-L/opt/apollo/neo/lib/3rd-osqp --host_linkopt=-L/opt/apollo/neo/lib/3rd-paddleinference --host_linkopt=-L/opt/apollo/neo/lib/3rd-pcl --host_linkopt=-L/opt/apollo/neo/lib/3rd-portaudio --host_linkopt=-L/opt/apollo/neo/lib/3rd-proj --host_linkopt=-L/opt/apollo/neo/lib/3rd-protobuf --host_linkopt=-L/opt/apollo/neo/lib/3rd-tf2 --host_linkopt=-L/opt/apollo/neo/lib/3rd-vtk --host_linkopt=-L/usr/local/cuda/lib64 --host_linkopt=-L/usr/local/cuda-11.8/lib64 //modules/map:pnc_path_test //modules/planning/planning_base:reference_line_get_sl_boundary_dest_test //modules/planning/planning_base:trajectory_stitcher_test --test_output=errors
+Another command (pid=2231707) is running. Waiting for it to complete on the server (server_pid=1675283)...
+(07:38:51) INFO: Current date is 2026-10-07
+(07:38:51) Loading: 
+(07:38:51) Loading: 0 packages loaded
+(07:38:51) Analyzing: 3 targets (1 packages loaded, 0 targets configured)
+(07:38:51) INFO: Analyzed 3 targets (1 packages loaded, 708 targets configured).
+(07:38:51) INFO: Found 3 test targets...
+(07:38:51) [0 / 4] [Prepa] BazelWorkspaceStatusAction stable-status.txt
+(07:38:52) [507 / 545] Compiling modules/map/pnc_map/path.cc; 0s local ... (2 actions, 1 running)
+(07:38:54) [582 / 593] Compiling modules/map/pnc_map/path.cc; 2s local ... (4 actions running)
+(07:38:55) [592 / 595] 2 / 3 tests; Compiling modules/map/pnc_map/path_test.cc; 2s local ... (2 actions running)
+(07:38:56) FAIL: //modules/map:pnc_path_test (see /apollo_workspace/.cache/bazel/679551712d2357b63e6e0ce858ebf90e/execroot/__main__/bazel-out/k8-opt/testlogs/modules/map/pnc_path_test/test_attempts/attempt_1.log)
+(07:38:56) FAIL: //modules/map:pnc_path_test (see /apollo_workspace/.cache/bazel/679551712d2357b63e6e0ce858ebf90e/execroot/__main__/bazel-out/k8-opt/testlogs/modules/map/pnc_path_test/test_attempts/attempt_2.log)
+(07:38:56) [595 / 596] 2 / 3 tests; Testing //modules/map:pnc_path_test; 0s local
+(07:38:56) FAIL: //modules/map:pnc_path_test (see /apollo_workspace/.cache/bazel/679551712d2357b63e6e0ce858ebf90e/execroot/__main__/bazel-out/k8-opt/testlogs/modules/map/pnc_path_test/test.log)
+
+FAILED: //modules/map:pnc_path_test (Summary)
+      /apollo_workspace/.cache/bazel/679551712d2357b63e6e0ce858ebf90e/execroot/__main__/bazel-out/k8-opt/testlogs/modules/map/pnc_path_test/test.log
+      /apollo_workspace/.cache/bazel/679551712d2357b63e6e0ce858ebf90e/execroot/__main__/bazel-out/k8-opt/testlogs/modules/map/pnc_path_test/test_attempts/attempt_1.log
+      /apollo_workspace/.cache/bazel/679551712d2357b63e6e0ce858ebf90e/execroot/__main__/bazel-out/k8-opt/testlogs/modules/map/pnc_path_test/test_attempts/attempt_2.log
+(07:38:56) INFO: From Testing //modules/map:pnc_path_test:
+==================== Test output for //modules/map:pnc_path_test:
+Running main() from gmock_main.cc
+[==========] Running 10 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 10 tests from TestSuite
+[ RUN      ] TestSuite.LaneSegment
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+E1007 07:38:56.432097 2257085 hdmap_common.cc:169] [map]lane_[id = id: "lane1"
+] has NO type.
+E1007 07:38:56.432365 2257085 hdmap_common.cc:169] [map]lane_[id = id: "lane2"
+] has NO type.
+[       OK ] TestSuite.LaneSegment (0 ms)
+[ RUN      ] TestSuite.hdmap_line_path
+E1007 07:38:56.432381 2257085 hdmap_common.cc:169] [map]lane_[id = id: "id"
+] has NO type.
+[       OK ] TestSuite.hdmap_line_path (0 ms)
+[ RUN      ] TestSuite.hdmap_curvy_path
+================================================================================
+==================== Test output for //modules/map:pnc_path_test:
+Running main() from gmock_main.cc
+[==========] Running 10 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 10 tests from TestSuite
+[ RUN      ] TestSuite.LaneSegment
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+E1007 07:38:56.722726 2257123 hdmap_common.cc:169] [map]lane_[id = id: "lane1"
+] has NO type.
+E1007 07:38:56.723004 2257123 hdmap_common.cc:169] [map]lane_[id = id: "lane2"
+] has NO type.
+[       OK ] TestSuite.LaneSegment (0 ms)
+[ RUN      ] TestSuite.hdmap_line_path
+E1007 07:38:56.723021 2257123 hdmap_common.cc:169] [map]lane_[id = id: "id"
+] has NO type.
+[       OK ] TestSuite.hdmap_line_path (0 ms)
+[ RUN      ] TestSuite.hdmap_curvy_path
+================================================================================
+==================== Test output for //modules/map:pnc_path_test:
+Running main() from gmock_main.cc
+[==========] Running 10 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 10 tests from TestSuite
+[ RUN      ] TestSuite.LaneSegment
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+E1007 07:38:56.935456 2257161 hdmap_common.cc:169] [map]lane_[id = id: "lane1"
+] has NO type.
+E1007 07:38:56.935720 2257161 hdmap_common.cc:169] [map]lane_[id = id: "lane2"
+] has NO type.
+[       OK ] TestSuite.LaneSegment (0 ms)
+[ RUN      ] TestSuite.hdmap_line_path
+E1007 07:38:56.935735 2257161 hdmap_common.cc:169] [map]lane_[id = id: "id"
+] has NO type.
+[       OK ] TestSuite.hdmap_line_path (0 ms)
+[ RUN      ] TestSuite.hdmap_curvy_path
+================================================================================
+(07:38:57) INFO: Elapsed time: 91.616s, Critical Path: 3.87s
+(07:38:57) INFO: 346 processes: 168 internal, 178 local.
+(07:38:57) INFO: Build completed, 1 test FAILED, 346 total actions
+//modules/planning/planning_base:reference_line_get_sl_boundary_dest_test PASSED in 0.4s
+//modules/planning/planning_base:trajectory_stitcher_test                PASSED in 0.4s
+//modules/map:pnc_path_test                                              FAILED in 3 out of 3 in 0.3s
+  Stats over 3 runs: max = 0.3s, min = 0.2s, avg = 0.2s, dev = 0.0s
+  /apollo_workspace/.cache/bazel/679551712d2357b63e6e0ce858ebf90e/execroot/__main__/bazel-out/k8-opt/testlogs/modules/map/pnc_path_test/test.log
+  /apollo_workspace/.cache/bazel/679551712d2357b63e6e0ce858ebf90e/execroot/__main__/bazel-out/k8-opt/testlogs/modules/map/pnc_path_test/test_attempts/attempt_1.log
+  /apollo_workspace/.cache/bazel/679551712d2357b63e6e0ce858ebf90e/execroot/__main__/bazel-out/k8-opt/testlogs/modules/map/pnc_path_test/test_attempts/attempt_2.log
+
+Executed 3 out of 3 tests: 2 tests pass and 1 fails locally.
+(07:38:57) INFO: Build completed, 1 test FAILED, 346 total actions

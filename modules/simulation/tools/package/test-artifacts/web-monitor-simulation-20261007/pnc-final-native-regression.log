@@ -1,0 +1,1389 @@
+
+$ bazel test --config=cpu --compilation_mode=opt --jobs=6 --color=no --curses=no --linkopt=-L/usr/local/lib --linkopt=-L/opt/apollo/neo/lib/3rd-absl --linkopt=-L/opt/apollo/neo/lib/3rd-ad-rss-lib --linkopt=-L/opt/apollo/neo/lib/3rd-adv-plat --linkopt=-L/opt/apollo/neo/lib/3rd-boost --linkopt=-L/opt/apollo/neo/lib/3rd-caddn-infer-op --linkopt=-L/opt/apollo/neo/lib/3rd-camera-library --linkopt=-L/opt/apollo/neo/lib/3rd-can-card-library --linkopt=-L/opt/apollo/neo/lib/3rd-centerpoint-infer-op --linkopt=-L/opt/apollo/neo/lib/3rd-civetweb --linkopt=-L/opt/apollo/neo/lib/3rd-fastdds-wrap --linkopt=-L/opt/apollo/neo/lib/3rd-ffmpeg --linkopt=-L/opt/apollo/neo/lib/3rd-fftw3 --linkopt=-L/opt/apollo/neo/lib/3rd-gflags --linkopt=-L/opt/apollo/neo/lib/3rd-glog --linkopt=-L/opt/apollo/neo/lib/3rd-ipopt --linkopt=-L/opt/apollo/neo/lib/3rd-libtorch-cpu --linkopt=-L/opt/apollo/neo/lib/3rd-libtorch-gpu --linkopt=-L/opt/apollo/neo/lib/3rd-localization-msf --linkopt=-L/opt/apollo/neo/lib/3rd-magma --linkopt=-L/opt/apollo/neo/lib/3rd-mkl --linkopt=-L/opt/apollo/neo/lib/3rd-opencv --linkopt=-L/opt/apollo/neo/lib/3rd-osqp --linkopt=-L/opt/apollo/neo/lib/3rd-paddleinference --linkopt=-L/opt/apollo/neo/lib/3rd-pcl --linkopt=-L/opt/apollo/neo/lib/3rd-portaudio --linkopt=-L/opt/apollo/neo/lib/3rd-proj --linkopt=-L/opt/apollo/neo/lib/3rd-protobuf --linkopt=-L/opt/apollo/neo/lib/3rd-tf2 --linkopt=-L/opt/apollo/neo/lib/3rd-vtk --linkopt=-L/usr/local/cuda/lib64 --linkopt=-L/usr/local/cuda-11.8/lib64 --host_linkopt=-L/usr/local/lib --host_linkopt=-L/opt/apollo/neo/lib/3rd-absl --host_linkopt=-L/opt/apollo/neo/lib/3rd-ad-rss-lib --host_linkopt=-L/opt/apollo/neo/lib/3rd-adv-plat --host_linkopt=-L/opt/apollo/neo/lib/3rd-boost --host_linkopt=-L/opt/apollo/neo/lib/3rd-caddn-infer-op --host_linkopt=-L/opt/apollo/neo/lib/3rd-camera-library --host_linkopt=-L/opt/apollo/neo/lib/3rd-can-card-library --host_linkopt=-L/opt/apollo/neo/lib/3rd-centerpoint-infer-op --host_linkopt=-L/opt/apollo/neo/lib/3rd-civetweb --host_linkopt=-L/opt/apollo/neo/lib/3rd-fastdds-wrap --host_linkopt=-L/opt/apollo/neo/lib/3rd-ffmpeg --host_linkopt=-L/opt/apollo/neo/lib/3rd-fftw3 --host_linkopt=-L/opt/apollo/neo/lib/3rd-gflags --host_linkopt=-L/opt/apollo/neo/lib/3rd-glog --host_linkopt=-L/opt/apollo/neo/lib/3rd-ipopt --host_linkopt=-L/opt/apollo/neo/lib/3rd-libtorch-cpu --host_linkopt=-L/opt/apollo/neo/lib/3rd-libtorch-gpu --host_linkopt=-L/opt/apollo/neo/lib/3rd-localization-msf --host_linkopt=-L/opt/apollo/neo/lib/3rd-magma --host_linkopt=-L/opt/apollo/neo/lib/3rd-mkl --host_linkopt=-L/opt/apollo/neo/lib/3rd-opencv --host_linkopt=-L/opt/apollo/neo/lib/3rd-osqp --host_linkopt=-L/opt/apollo/neo/lib/3rd-paddleinference --host_linkopt=-L/opt/apollo/neo/lib/3rd-pcl --host_linkopt=-L/opt/apollo/neo/lib/3rd-portaudio --host_linkopt=-L/opt/apollo/neo/lib/3rd-proj --host_linkopt=-L/opt/apollo/neo/lib/3rd-protobuf --host_linkopt=-L/opt/apollo/neo/lib/3rd-tf2 --host_linkopt=-L/opt/apollo/neo/lib/3rd-vtk --host_linkopt=-L/usr/local/cuda/lib64 --host_linkopt=-L/usr/local/cuda-11.8/lib64 //modules/planning/planning_base:osqp_clock_test //modules/map:path_projection_test //modules/planning/planning_base:reference_line_get_sl_boundary_dest_test //modules/planning/planning_base:trajectory_stitcher_test --test_output=errors
+(07:52:19) INFO: Current date is 2026-10-07
+(07:52:19) Loading: 
+(07:52:19) Loading: 0 packages loaded
+(07:52:19) Analyzing: 4 targets (0 packages loaded, 0 targets configured)
+(07:52:19) INFO: Analyzed 4 targets (0 packages loaded, 0 targets configured).
+(07:52:19) INFO: Found 4 test targets...
+(07:52:19) [0 / 3] [Prepa] BazelWorkspaceStatusAction stable-status.txt
+(07:52:20) [12 / 187] Compiling modules/planning/planning_base/common/history.cc; 0s local ... (6 actions, 5 running)
+(07:52:20) INFO: From Compiling modules/planning/planning_base/common/history.cc:
+modules/planning/planning_base/common/history.cc: In member function 'void apollo::planning::HistoryObjectDecision::Init(const string&, const std::vector<apollo::planning::ObjectDecisionType>&)':
+modules/planning/planning_base/common/history.cc:47:19: warning: loop variable 'decision_type' creates a copy from type 'const apollo::planning::ObjectDecisionType' [-Wrange-loop-construct]
+   47 |   for (const auto decision_type : object_decision) {
+      |                   ^~~~~~~~~~~~~
+modules/planning/planning_base/common/history.cc:47:19: note: use reference type to prevent copying
+   47 |   for (const auto decision_type : object_decision) {
+      |                   ^~~~~~~~~~~~~
+      |                   &
+(07:52:21) INFO: From Compiling modules/planning/planning_base/math/smoothing_spline/osqp_spline_1d_solver.cc:
+In file included from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/types.h:9,
+                 from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/osqp.h:9,
+                 from ./modules/planning/planning_base/math/smoothing_spline/osqp_spline_1d_solver.h:25,
+                 from modules/planning/planning_base/math/smoothing_spline/osqp_spline_1d_solver.cc:21:
+bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/constants.h:38:20: warning: 'LINSYS_SOLVER_NAME' defined but not used [-Wunused-variable]
+   38 | static const char *LINSYS_SOLVER_NAME[] = {
+      |                    ^~~~~~~~~~~~~~~~~~
+(07:52:21) [17 / 187] Compiling modules/planning/planning_base/reference_line/spiral_reference_line_smoother.cc; 1s local ... (5 actions, 4 running)
+(07:52:22) INFO: From Compiling modules/planning/planning_base/math/discretized_points_smoothing/fem_pos_deviation_sqp_osqp_interface.cc:
+modules/planning/planning_base/math/discretized_points_smoothing/fem_pos_deviation_sqp_osqp_interface.cc: In member function 'void apollo::planning::FemPosDeviationSqpOsqpInterface::CalculateOffset(std::vector<std::pair<double, double> >, std::vector<double>*)':
+modules/planning/planning_base/math/discretized_points_smoothing/fem_pos_deviation_sqp_osqp_interface.cc:346:25: warning: comparison of integer expressions of different signedness: 'std::vector<std::vector<apollo::common::math::Vec2d> >::size_type' {aka 'long unsigned int'} and 'int' [-Wsign-compare]
+  346 |       point_box_.size() == num_of_points_ - 1) {
+      |       ~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~
+In file included from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/types.h:9,
+                 from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/osqp.h:9,
+                 from ./modules/planning/planning_base/math/discretized_points_smoothing/fem_pos_deviation_sqp_osqp_interface.h:26,
+                 from modules/planning/planning_base/math/discretized_points_smoothing/fem_pos_deviation_sqp_osqp_interface.cc:21:
+bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/constants.h: At global scope:
+bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/constants.h:38:20: warning: 'LINSYS_SOLVER_NAME' defined but not used [-Wunused-variable]
+   38 | static const char *LINSYS_SOLVER_NAME[] = {
+      |                    ^~~~~~~~~~~~~~~~~~
+(07:52:22) [24 / 187] Compiling modules/planning/planning_base/reference_line/reference_line_provider.cc; 2s local ... (5 actions, 4 running)
+(07:52:23) INFO: From Compiling modules/planning/planning_base/math/smoothing_spline/osqp_spline_2d_solver.cc:
+In file included from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/types.h:9,
+                 from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/osqp.h:9,
+                 from ./modules/planning/planning_base/math/smoothing_spline/osqp_spline_2d_solver.h:27,
+                 from modules/planning/planning_base/math/smoothing_spline/osqp_spline_2d_solver.cc:21:
+bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/constants.h:38:20: warning: 'LINSYS_SOLVER_NAME' defined but not used [-Wunused-variable]
+   38 | static const char *LINSYS_SOLVER_NAME[] = {
+      |                    ^~~~~~~~~~~~~~~~~~
+(07:52:23) INFO: From Compiling modules/planning/planning_base/math/piecewise_jerk/piecewise_jerk_problem.cc:
+In file included from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/types.h:9,
+                 from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/osqp.h:9,
+                 from ./modules/planning/planning_base/math/piecewise_jerk/piecewise_jerk_problem.h:27,
+                 from modules/planning/planning_base/math/piecewise_jerk/piecewise_jerk_problem.cc:17:
+bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/constants.h:38:20: warning: 'LINSYS_SOLVER_NAME' defined but not used [-Wunused-variable]
+   38 | static const char *LINSYS_SOLVER_NAME[] = {
+      |                    ^~~~~~~~~~~~~~~~~~
+(07:52:23) INFO: From Compiling modules/planning/planning_base/math/piecewise_jerk/piecewise_jerk_speed_problem.cc:
+In file included from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/types.h:9,
+                 from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/osqp.h:9,
+                 from ./modules/planning/planning_base/math/piecewise_jerk/piecewise_jerk_problem.h:27,
+                 from ./modules/planning/planning_base/math/piecewise_jerk/piecewise_jerk_speed_problem.h:26,
+                 from modules/planning/planning_base/math/piecewise_jerk/piecewise_jerk_speed_problem.cc:17:
+bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/constants.h:38:20: warning: 'LINSYS_SOLVER_NAME' defined but not used [-Wunused-variable]
+   38 | static const char *LINSYS_SOLVER_NAME[] = {
+      |                    ^~~~~~~~~~~~~~~~~~
+(07:52:23) [31 / 187] Compiling modules/planning/planning_base/reference_line/reference_line_provider.cc; 3s local ... (6 actions, 5 running)
+(07:52:24) INFO: From Compiling modules/planning/planning_base/math/discretized_points_smoothing/fem_pos_deviation_smoother.cc:
+In file included from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/types.h:9,
+                 from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/osqp.h:9,
+                 from ./modules/planning/planning_base/math/discretized_points_smoothing/fem_pos_deviation_osqp_interface.h:26,
+                 from modules/planning/planning_base/math/discretized_points_smoothing/fem_pos_deviation_smoother.cc:28:
+bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/constants.h:38:20: warning: 'LINSYS_SOLVER_NAME' defined but not used [-Wunused-variable]
+   38 | static const char *LINSYS_SOLVER_NAME[] = {
+      |                    ^~~~~~~~~~~~~~~~~~
+(07:52:24) INFO: From Compiling modules/planning/planning_base/math/piecewise_jerk/piecewise_jerk_path_problem.cc:
+In file included from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/types.h:9,
+                 from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/osqp.h:9,
+                 from ./modules/planning/planning_base/math/piecewise_jerk/piecewise_jerk_problem.h:27,
+                 from ./modules/planning/planning_base/math/piecewise_jerk/piecewise_jerk_path_problem.h:27,
+                 from modules/planning/planning_base/math/piecewise_jerk/piecewise_jerk_path_problem.cc:17:
+bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/constants.h:38:20: warning: 'LINSYS_SOLVER_NAME' defined but not used [-Wunused-variable]
+   38 | static const char *LINSYS_SOLVER_NAME[] = {
+      |                    ^~~~~~~~~~~~~~~~~~
+(07:52:24) INFO: From Compiling modules/planning/planning_base/reference_line/qp_spline_reference_line_smoother.cc:
+In file included from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/types.h:9,
+                 from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/osqp.h:9,
+                 from ./modules/planning/planning_base/math/smoothing_spline/osqp_spline_2d_solver.h:27,
+                 from modules/planning/planning_base/reference_line/qp_spline_reference_line_smoother.cc:32:
+bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/constants.h:38:20: warning: 'LINSYS_SOLVER_NAME' defined but not used [-Wunused-variable]
+   38 | static const char *LINSYS_SOLVER_NAME[] = {
+      |                    ^~~~~~~~~~~~~~~~~~
+(07:52:24) [37 / 187] Compiling modules/planning/planning_base/reference_line/reference_line_provider.cc; 4s local ... (6 actions, 5 running)
+(07:52:25) [40 / 187] Compiling modules/planning/planning_base/reference_line/reference_line_provider.cc; 5s local ... (6 actions, 5 running)
+(07:52:26) INFO: From Compiling modules/planning/planning_base/reference_line/reference_line_provider.cc:
+In file included from ./cyber/transport/transport.h:29,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/node/node.h:25,
+                 from ./cyber/component/component_base.h:32,
+                 from ./cyber/component/component.h:29,
+                 from ./cyber/cyber.h:25,
+                 from ./modules/planning/planning_base/reference_line/reference_line_provider.h:37,
+                 from modules/planning/planning_base/reference_line/reference_line_provider.cc:22:
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+(07:52:26) INFO: From Compiling modules/planning/planning_base/common/open_space_info.cc:
+In file included from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/condition_variable.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/condition_variable.hpp:16,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/shared_mutex.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/shared_mutex.hpp:28,
+                 from ./modules/planning/planning_base/common/indexed_list.h:26,
+                 from ./modules/planning/planning_base/common/obstacle.h:37,
+                 from ./modules/planning/planning_base/common/open_space_info.h:39,
+                 from modules/planning/planning_base/common/open_space_info.cc:21:
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp: In member function 'void boost::thread_attributes::set_stack_size(std::size_t)':
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp:61:19: warning: comparison of integer expressions of different signedness: 'std::size_t' {aka 'long unsigned int'} and 'long int' [-Wsign-compare]
+   61 |           if (size<PTHREAD_STACK_MIN) size=PTHREAD_STACK_MIN;
+      |                   ^
+(07:52:26) [44 / 187] Compiling modules/planning/planning_base/learning_based/tuning/autotuning_raw_feature_generator.cc; 3s local ... (6 actions, 5 running)
+(07:52:27) INFO: From Compiling modules/planning/planning_base/common/obstacle.cc:
+In file included from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/condition_variable.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/condition_variable.hpp:16,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/shared_mutex.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/shared_mutex.hpp:28,
+                 from ./modules/planning/planning_base/common/indexed_list.h:26,
+                 from ./modules/planning/planning_base/common/obstacle.h:37,
+                 from modules/planning/planning_base/common/obstacle.cc:21:
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp: In member function 'void boost::thread_attributes::set_stack_size(std::size_t)':
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp:61:19: warning: comparison of integer expressions of different signedness: 'std::size_t' {aka 'long unsigned int'} and 'long int' [-Wsign-compare]
+   61 |           if (size<PTHREAD_STACK_MIN) size=PTHREAD_STACK_MIN;
+      |                   ^
+(07:52:27) INFO: From Compiling modules/planning/planning_base/learning_based/tuning/autotuning_raw_feature_generator.cc:
+In file included from ./cyber/transport/transport.h:29,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/node/node.h:25,
+                 from ./cyber/component/component_base.h:32,
+                 from ./cyber/component/component.h:29,
+                 from ./cyber/cyber.h:25,
+                 from ./modules/common/monitor_log/monitor_logger.h:29,
+                 from ./modules/common/monitor_log/monitor_log_buffer.h:31,
+                 from ./modules/planning/planning_base/common/frame.h:42,
+                 from ./modules/planning/planning_base/learning_based/tuning/autotuning_raw_feature_generator.h:25,
+                 from modules/planning/planning_base/learning_based/tuning/autotuning_raw_feature_generator.cc:17:
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/condition_variable.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/condition_variable.hpp:16,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/shared_mutex.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/shared_mutex.hpp:28,
+                 from ./modules/planning/planning_base/common/indexed_list.h:26,
+                 from ./modules/planning/planning_base/common/obstacle.h:37,
+                 from ./modules/planning/planning_base/common/ego_info.h:30,
+                 from ./modules/planning/planning_base/common/frame.h:44,
+                 from ./modules/planning/planning_base/learning_based/tuning/autotuning_raw_feature_generator.h:25,
+                 from modules/planning/planning_base/learning_based/tuning/autotuning_raw_feature_generator.cc:17:
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp: In member function 'void boost::thread_attributes::set_stack_size(std::size_t)':
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp:61:19: warning: comparison of integer expressions of different signedness: 'std::size_t' {aka 'long unsigned int'} and 'long int' [-Wsign-compare]
+   61 |           if (size<PTHREAD_STACK_MIN) size=PTHREAD_STACK_MIN;
+      |                   ^
+(07:52:27) INFO: From Compiling modules/planning/planning_base/common/path/path_data.cc:
+modules/planning/planning_base/common/path/path_data.cc: In member function 'bool apollo::planning::PathData::LeftTrimWithRefS(const apollo::common::FrenetFramePoint&)':
+modules/planning/planning_base/common/path/path_data.cc:245:39: warning: loop variable 'fp' creates a copy from type 'const apollo::common::FrenetFramePoint' [-Wrange-loop-construct]
+  245 |   for (const common::FrenetFramePoint fp : frenet_path_) {
+      |                                       ^~
+modules/planning/planning_base/common/path/path_data.cc:245:39: note: use reference type to prevent copying
+  245 |   for (const common::FrenetFramePoint fp : frenet_path_) {
+      |                                       ^~
+      |                                       &
+(07:52:28) [52 / 187] Compiling modules/planning/planning_base/common/message_process.cc; 4s local ... (5 actions, 4 running)
+(07:52:29) INFO: From Compiling modules/planning/planning_base/common/path_decision.cc:
+In file included from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/condition_variable.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/condition_variable.hpp:16,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/shared_mutex.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/shared_mutex.hpp:28,
+                 from ./modules/planning/planning_base/common/indexed_list.h:26,
+                 from ./modules/planning/planning_base/common/path_decision.h:28,
+                 from modules/planning/planning_base/common/path_decision.cc:21:
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp: In member function 'void boost::thread_attributes::set_stack_size(std::size_t)':
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp:61:19: warning: comparison of integer expressions of different signedness: 'std::size_t' {aka 'long unsigned int'} and 'long int' [-Wsign-compare]
+   61 |           if (size<PTHREAD_STACK_MIN) size=PTHREAD_STACK_MIN;
+      |                   ^
+(07:52:29) INFO: From Compiling modules/planning/planning_base/common/message_process.cc:
+In file included from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/condition_variable.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/condition_variable.hpp:16,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/shared_mutex.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/shared_mutex.hpp:28,
+                 from ./modules/planning/planning_base/common/indexed_list.h:26,
+                 from ./modules/planning/planning_base/common/obstacle.h:37,
+                 from ./modules/planning/planning_base/common/ego_info.h:30,
+                 from ./modules/planning/planning_base/common/dependency_injector.h:20,
+                 from ./modules/planning/planning_base/common/message_process.h:43,
+                 from modules/planning/planning_base/common/message_process.cc:17:
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp: In member function 'void boost::thread_attributes::set_stack_size(std::size_t)':
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp:61:19: warning: comparison of integer expressions of different signedness: 'std::size_t' {aka 'long unsigned int'} and 'long int' [-Wsign-compare]
+   61 |           if (size<PTHREAD_STACK_MIN) size=PTHREAD_STACK_MIN;
+      |                   ^
+In file included from ./cyber/transport/transport.h:29,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/node/node.h:25,
+                 from ./cyber/component/component_base.h:32,
+                 from ./cyber/component/component.h:29,
+                 from ./cyber/cyber.h:25,
+                 from ./modules/planning/planning_base/reference_line/reference_line_provider.h:37,
+                 from ./modules/planning/planning_base/common/ego_info.h:33,
+                 from ./modules/planning/planning_base/common/dependency_injector.h:20,
+                 from ./modules/planning/planning_base/common/message_process.h:43,
+                 from modules/planning/planning_base/common/message_process.cc:17:
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+(07:52:30) [58 / 187] Compiling modules/planning/planning_base/common/util/util.cc; 1s local ... (6 actions running)
+(07:52:30) INFO: From Compiling modules/planning/planning_base/common/util/util.cc:
+In file included from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/condition_variable.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/condition_variable.hpp:16,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/shared_mutex.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/shared_mutex.hpp:28,
+                 from ./modules/planning/planning_base/common/indexed_list.h:26,
+                 from ./modules/planning/planning_base/common/path_decision.h:28,
+                 from ./modules/planning/planning_base/common/reference_line_info.h:41,
+                 from ./modules/planning/planning_base/common/util/util.h:31,
+                 from modules/planning/planning_base/common/util/util.cc:17:
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp: In member function 'void boost::thread_attributes::set_stack_size(std::size_t)':
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp:61:19: warning: comparison of integer expressions of different signedness: 'std::size_t' {aka 'long unsigned int'} and 'long int' [-Wsign-compare]
+   61 |           if (size<PTHREAD_STACK_MIN) size=PTHREAD_STACK_MIN;
+      |                   ^
+(07:52:31) [70 / 187] Compiling modules/planning/planning_base/common/util/common.cc; 1s local ... (6 actions, 5 running)
+(07:52:34) [73 / 187] Compiling modules/planning/planning_base/common/util/common.cc; 3s local ... (6 actions, 5 running)
+(07:52:34) INFO: From Compiling modules/planning/planning_base/common/util/common.cc:
+In file included from ./cyber/transport/transport.h:29,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/node/node.h:25,
+                 from ./cyber/component/component_base.h:32,
+                 from ./cyber/component/component.h:29,
+                 from ./cyber/cyber.h:25,
+                 from ./modules/common/monitor_log/monitor_logger.h:29,
+                 from ./modules/common/monitor_log/monitor_log_buffer.h:31,
+                 from ./modules/planning/planning_base/common/frame.h:42,
+                 from ./modules/planning/planning_base/common/util/common.h:22,
+                 from modules/planning/planning_base/common/util/common.cc:17:
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/condition_variable.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/condition_variable.hpp:16,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/shared_mutex.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/shared_mutex.hpp:28,
+                 from ./modules/planning/planning_base/common/indexed_list.h:26,
+                 from ./modules/planning/planning_base/common/obstacle.h:37,
+                 from ./modules/planning/planning_base/common/ego_info.h:30,
+                 from ./modules/planning/planning_base/common/frame.h:44,
+                 from ./modules/planning/planning_base/common/util/common.h:22,
+                 from modules/planning/planning_base/common/util/common.cc:17:
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp: In member function 'void boost::thread_attributes::set_stack_size(std::size_t)':
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp:61:19: warning: comparison of integer expressions of different signedness: 'std::size_t' {aka 'long unsigned int'} and 'long int' [-Wsign-compare]
+   61 |           if (size<PTHREAD_STACK_MIN) size=PTHREAD_STACK_MIN;
+      |                   ^
+(07:52:35) INFO: From Compiling modules/planning/planning_base/common/speed_profile_generator.cc:
+In file included from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/condition_variable.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/condition_variable.hpp:16,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/shared_mutex.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/shared_mutex.hpp:28,
+                 from ./modules/planning/planning_base/common/indexed_list.h:26,
+                 from ./modules/planning/planning_base/common/obstacle.h:37,
+                 from ./modules/planning/planning_base/common/ego_info.h:30,
+                 from ./modules/planning/planning_base/common/speed_profile_generator.h:28,
+                 from modules/planning/planning_base/common/speed_profile_generator.cc:21:
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp: In member function 'void boost::thread_attributes::set_stack_size(std::size_t)':
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp:61:19: warning: comparison of integer expressions of different signedness: 'std::size_t' {aka 'long unsigned int'} and 'long int' [-Wsign-compare]
+   61 |           if (size<PTHREAD_STACK_MIN) size=PTHREAD_STACK_MIN;
+      |                   ^
+In file included from ./cyber/transport/transport.h:29,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/node/node.h:25,
+                 from ./cyber/component/component_base.h:32,
+                 from ./cyber/component/component.h:29,
+                 from ./cyber/cyber.h:25,
+                 from ./modules/planning/planning_base/reference_line/reference_line_provider.h:37,
+                 from ./modules/planning/planning_base/common/ego_info.h:33,
+                 from ./modules/planning/planning_base/common/speed_profile_generator.h:28,
+                 from modules/planning/planning_base/common/speed_profile_generator.cc:21:
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/types.h:9,
+                 from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/osqp.h:9,
+                 from ./modules/planning/planning_base/math/piecewise_jerk/piecewise_jerk_problem.h:27,
+                 from ./modules/planning/planning_base/math/piecewise_jerk/piecewise_jerk_speed_problem.h:26,
+                 from modules/planning/planning_base/common/speed_profile_generator.cc:29:
+bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/constants.h: At global scope:
+bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/constants.h:38:20: warning: 'LINSYS_SOLVER_NAME' defined but not used [-Wunused-variable]
+   38 | static const char *LINSYS_SOLVER_NAME[] = {
+      |                    ^~~~~~~~~~~~~~~~~~
+(07:52:35) INFO: From Compiling modules/planning/planning_base/common/smoothers/smoother.cc:
+In file included from ./cyber/transport/transport.h:29,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/node/node.h:25,
+                 from ./cyber/component/component_base.h:32,
+                 from ./cyber/component/component.h:29,
+                 from ./cyber/cyber.h:25,
+                 from ./modules/common/monitor_log/monitor_logger.h:29,
+                 from ./modules/common/monitor_log/monitor_log_buffer.h:31,
+                 from ./modules/planning/planning_base/common/frame.h:42,
+                 from ./modules/planning/planning_base/common/smoothers/smoother.h:27,
+                 from modules/planning/planning_base/common/smoothers/smoother.cc:21:
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/condition_variable.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/condition_variable.hpp:16,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/shared_mutex.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/shared_mutex.hpp:28,
+                 from ./modules/planning/planning_base/common/indexed_list.h:26,
+                 from ./modules/planning/planning_base/common/obstacle.h:37,
+                 from ./modules/planning/planning_base/common/ego_info.h:30,
+                 from ./modules/planning/planning_base/common/frame.h:44,
+                 from ./modules/planning/planning_base/common/smoothers/smoother.h:27,
+                 from modules/planning/planning_base/common/smoothers/smoother.cc:21:
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp: In member function 'void boost::thread_attributes::set_stack_size(std::size_t)':
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp:61:19: warning: comparison of integer expressions of different signedness: 'std::size_t' {aka 'long unsigned int'} and 'long int' [-Wsign-compare]
+   61 |           if (size<PTHREAD_STACK_MIN) size=PTHREAD_STACK_MIN;
+      |                   ^
+(07:52:36) [84 / 187] Compiling modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc; 4s local ... (5 actions, 4 running)
+(07:52:36) INFO: From Compiling modules/planning/planning_base/math/discretized_points_smoothing/fem_pos_deviation_osqp_interface.cc:
+In file included from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/types.h:9,
+                 from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/osqp.h:9,
+                 from ./modules/planning/planning_base/math/discretized_points_smoothing/fem_pos_deviation_osqp_interface.h:26,
+                 from modules/planning/planning_base/math/discretized_points_smoothing/fem_pos_deviation_osqp_interface.cc:21:
+bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/constants.h:38:20: warning: 'LINSYS_SOLVER_NAME' defined but not used [-Wunused-variable]
+   38 | static const char *LINSYS_SOLVER_NAME[] = {
+      |                    ^~~~~~~~~~~~~~~~~~
+(07:52:37) INFO: From Compiling modules/planning/planning_base/common/reference_line_info.cc:
+In file included from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/condition_variable.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/condition_variable.hpp:16,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/shared_mutex.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/shared_mutex.hpp:28,
+                 from ./modules/planning/planning_base/common/indexed_list.h:26,
+                 from ./modules/planning/planning_base/common/path_decision.h:28,
+                 from ./modules/planning/planning_base/common/reference_line_info.h:41,
+                 from modules/planning/planning_base/common/reference_line_info.cc:21:
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp: In member function 'void boost::thread_attributes::set_stack_size(std::size_t)':
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp:61:19: warning: comparison of integer expressions of different signedness: 'std::size_t' {aka 'long unsigned int'} and 'long int' [-Wsign-compare]
+   61 |           if (size<PTHREAD_STACK_MIN) size=PTHREAD_STACK_MIN;
+      |                   ^
+modules/planning/planning_base/common/reference_line_info.cc: In member function 'double apollo::planning::ReferenceLineInfo::SDistanceToRefEnd() const':
+modules/planning/planning_base/common/reference_line_info.cc:859:59: warning: 'this' pointer is null [-Wnonnull]
+  859 |     if (!ref_end_ptr && !ref_end_ptr->LongitudinalDecision().has_stop() &&
+      |                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+In file included from ./modules/planning/planning_base/common/path_decision.h:29,
+                 from ./modules/planning/planning_base/common/reference_line_info.h:41,
+                 from modules/planning/planning_base/common/reference_line_info.cc:21:
+./modules/planning/planning_base/common/obstacle.h:140:29: note: in a call to non-static member function 'const apollo::planning::ObjectDecisionType& apollo::planning::Obstacle::LongitudinalDecision() const'
+  140 |   const ObjectDecisionType& LongitudinalDecision() const;
+      |                             ^~~~~~~~~~~~~~~~~~~~
+modules/planning/planning_base/common/reference_line_info.cc:863:44: warning: 'this' pointer is null [-Wnonnull]
+  863 |           ref_end_ptr->PerceptionSLBoundary().start_s() +
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+In file included from ./modules/planning/planning_base/common/path_decision.h:29,
+                 from ./modules/planning/planning_base/common/reference_line_info.h:41,
+                 from modules/planning/planning_base/common/reference_line_info.cc:21:
+./modules/planning/planning_base/common/obstacle.h:146:21: note: in a call to non-static member function 'const apollo::planning::SLBoundary& apollo::planning::Obstacle::PerceptionSLBoundary() const'
+  146 |   const SLBoundary& PerceptionSLBoundary() const;
+      |                     ^~~~~~~~~~~~~~~~~~~~
+modules/planning/planning_base/common/reference_line_info.cc:864:44: warning: 'this' pointer is null [-Wnonnull]
+  864 |           ref_end_ptr->LongitudinalDecision().stop().distance_s();
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+In file included from ./modules/planning/planning_base/common/path_decision.h:29,
+                 from ./modules/planning/planning_base/common/reference_line_info.h:41,
+                 from modules/planning/planning_base/common/reference_line_info.cc:21:
+./modules/planning/planning_base/common/obstacle.h:140:29: note: in a call to non-static member function 'const apollo::planning::ObjectDecisionType& apollo::planning::Obstacle::LongitudinalDecision() const'
+  140 |   const ObjectDecisionType& LongitudinalDecision() const;
+      |                             ^~~~~~~~~~~~~~~~~~~~
+(07:52:38) INFO: From Compiling modules/planning/planning_base/reference_line/reference_line.cc:
+modules/planning/planning_base/reference_line/reference_line.cc: In member function 'bool apollo::planning::ReferenceLine::GetSLBoundary(const std::vector<apollo::common::math::Vec2d>&, apollo::planning::SLBoundary*, double) const':
+modules/planning/planning_base/reference_line/reference_line.cc:764:23: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<apollo::common::math::Vec2d>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  764 |     for (int i = 0; i < obs_corners.size(); ++i) {
+      |                     ~~^~~~~~~~~~~~~~~~~~~~
+(07:52:39) [94 / 205] Compiling modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc; 7s local ... (6 actions, 5 running)
+(07:52:39) INFO: From Compiling modules/planning/planning_base/common/obstacle_blocking_analyzer.cc:
+In file included from ./cyber/transport/transport.h:29,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/node/node.h:25,
+                 from ./cyber/component/component_base.h:32,
+                 from ./cyber/component/component.h:29,
+                 from ./cyber/cyber.h:25,
+                 from ./modules/common/monitor_log/monitor_logger.h:29,
+                 from ./modules/common/monitor_log/monitor_log_buffer.h:31,
+                 from ./modules/planning/planning_base/common/frame.h:42,
+                 from ./modules/planning/planning_base/common/obstacle_blocking_analyzer.h:24,
+                 from modules/planning/planning_base/common/obstacle_blocking_analyzer.cc:17:
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/condition_variable.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/condition_variable.hpp:16,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/shared_mutex.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/shared_mutex.hpp:28,
+                 from ./modules/planning/planning_base/common/indexed_list.h:26,
+                 from ./modules/planning/planning_base/common/obstacle.h:37,
+                 from ./modules/planning/planning_base/common/ego_info.h:30,
+                 from ./modules/planning/planning_base/common/frame.h:44,
+                 from ./modules/planning/planning_base/common/obstacle_blocking_analyzer.h:24,
+                 from modules/planning/planning_base/common/obstacle_blocking_analyzer.cc:17:
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp: In member function 'void boost::thread_attributes::set_stack_size(std::size_t)':
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp:61:19: warning: comparison of integer expressions of different signedness: 'std::size_t' {aka 'long unsigned int'} and 'long int' [-Wsign-compare]
+   61 |           if (size<PTHREAD_STACK_MIN) size=PTHREAD_STACK_MIN;
+      |                   ^
+modules/planning/planning_base/common/obstacle_blocking_analyzer.cc: In function 'double apollo::planning::DistanceBlockingObstacleToJunction(const apollo::planning::ReferenceLineInfo&, const string&)':
+modules/planning/planning_base/common/obstacle_blocking_analyzer.cc:343:15: warning: unused variable 'first_encountered_overlaps' [-Wunused-variable]
+  343 |   const auto& first_encountered_overlaps =
+      |               ^~~~~~~~~~~~~~~~~~~~~~~~~~
+(07:52:40) INFO: From Compiling modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:506: warning: "LOG" redefined
+  506 | #define LOG(severity) COMPACT_GOOGLE_LOG_ ## severity.stream()
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:92: note: this is the location of the previous definition
+   92 | #define LOG(n)                                 \
+      | 
+In file included from bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:513,
+                 from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/vlog_is_on.h:82: warning: "VLOG_IS_ON" redefined
+   82 | #define VLOG_IS_ON(verboselevel)                                \
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:106: note: this is the location of the previous definition
+  106 | #define VLOG_IS_ON(verboselevel) (CAFFE2_LOG_THRESHOLD <= -(verboselevel))
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:570: warning: "LOG_IF" redefined
+  570 | #define LOG_IF(severity, condition) \
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:99: note: this is the location of the previous definition
+   99 | #define LOG_IF(n, condition)                                  \
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:586: warning: "CHECK" redefined
+  586 | #define CHECK(condition)  \
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:122: note: this is the location of the previous definition
+  122 | #define CHECK(condition) FATAL_IF(condition) << "Check failed: " #condition " "
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:765: warning: "CHECK_OP" redefined
+  765 | #define CHECK_OP(name, op, val1, val2) \
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:141: note: this is the location of the previous definition
+  141 | #define CHECK_OP(val1, val2, op)                                              \
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:790: warning: "CHECK_EQ" redefined
+  790 | #define CHECK_EQ(val1, val2) CHECK_OP(_EQ, ==, val1, val2)
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:146: note: this is the location of the previous definition
+  146 | #define CHECK_EQ(val1, val2) CHECK_OP(val1, val2, ==)
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:791: warning: "CHECK_NE" redefined
+  791 | #define CHECK_NE(val1, val2) CHECK_OP(_NE, !=, val1, val2)
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:147: note: this is the location of the previous definition
+  147 | #define CHECK_NE(val1, val2) CHECK_OP(val1, val2, !=)
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:792: warning: "CHECK_LE" redefined
+  792 | #define CHECK_LE(val1, val2) CHECK_OP(_LE, <=, val1, val2)
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:148: note: this is the location of the previous definition
+  148 | #define CHECK_LE(val1, val2) CHECK_OP(val1, val2, <=)
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:793: warning: "CHECK_LT" redefined
+  793 | #define CHECK_LT(val1, val2) CHECK_OP(_LT, < , val1, val2)
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:149: note: this is the location of the previous definition
+  149 | #define CHECK_LT(val1, val2) CHECK_OP(val1, val2, <)
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:794: warning: "CHECK_GE" redefined
+  794 | #define CHECK_GE(val1, val2) CHECK_OP(_GE, >=, val1, val2)
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:150: note: this is the location of the previous definition
+  150 | #define CHECK_GE(val1, val2) CHECK_OP(val1, val2, >=)
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:795: warning: "CHECK_GT" redefined
+  795 | #define CHECK_GT(val1, val2) CHECK_OP(_GT, > , val1, val2)
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:151: note: this is the location of the previous definition
+  151 | #define CHECK_GT(val1, val2) CHECK_OP(val1, val2, >)
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:800: warning: "CHECK_NOTNULL" redefined
+  800 | #define CHECK_NOTNULL(val) \
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:184: note: this is the location of the previous definition
+  184 | #define CHECK_NOTNULL(val) \
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:1009: warning: "DLOG" redefined
+ 1009 | #define DLOG(severity)  \
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:134: note: this is the location of the previous definition
+  134 | #define DLOG(n)                                                            \
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:1035: warning: "DCHECK" redefined
+ 1035 | #define DCHECK(condition) \
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:130: note: this is the location of the previous definition
+  130 | #define DCHECK(condition) \
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:1040: warning: "DCHECK_EQ" redefined
+ 1040 | #define DCHECK_EQ(val1, val2) \
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:163: note: this is the location of the previous definition
+  163 | #define DCHECK_EQ(val1, val2) \
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:1045: warning: "DCHECK_NE" redefined
+ 1045 | #define DCHECK_NE(val1, val2) \
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:166: note: this is the location of the previous definition
+  166 | #define DCHECK_NE(val1, val2) \
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:1050: warning: "DCHECK_LE" redefined
+ 1050 | #define DCHECK_LE(val1, val2) \
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:169: note: this is the location of the previous definition
+  169 | #define DCHECK_LE(val1, val2) \
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:1055: warning: "DCHECK_LT" redefined
+ 1055 | #define DCHECK_LT(val1, val2) \
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:172: note: this is the location of the previous definition
+  172 | #define DCHECK_LT(val1, val2) \
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:1060: warning: "DCHECK_GE" redefined
+ 1060 | #define DCHECK_GE(val1, val2) \
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:175: note: this is the location of the previous definition
+  175 | #define DCHECK_GE(val1, val2) \
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:1065: warning: "DCHECK_GT" redefined
+ 1065 | #define DCHECK_GT(val1, val2) \
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:178: note: this is the location of the previous definition
+  178 | #define DCHECK_GT(val1, val2) \
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:1072: warning: "DCHECK_NOTNULL" redefined
+ 1072 | #define DCHECK_NOTNULL(val) (val)
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:195: note: this is the location of the previous definition
+  195 | #define DCHECK_NOTNULL(val) \
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:1098: warning: "VLOG" redefined
+ 1098 | #define VLOG(verboselevel) LOG_IF(INFO, VLOG_IS_ON(verboselevel))
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:95: note: this is the location of the previous definition
+   95 | #define VLOG(n)                   \
+      | 
+In file included from ./cyber/common/log.h:27,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:25:
+bazel-out/k8-opt/bin/external/com_github_google_glog/_virtual_includes/glog/glog/logging.h:1100: warning: "VLOG_IF" redefined
+ 1100 | #define VLOG_IF(verboselevel, condition) \
+      | 
+In file included from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/Logging.h:28,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/TensorImpl.h:14,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/core/GeneratorImpl.h:12,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/core/Generator.h:22,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/Context.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/ATen/ATen.h:9,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/types.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader_options.h:4,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/base.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader/stateful.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data/dataloader.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/data.h:3,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu_headers/torch/all.h:8,
+                 from bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/torch/extension.h:4,
+                 from ./modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.h:26,
+                 from modules/planning/planning_base/learning_based/model_inference/trajectory_imitation_libtorch_inference.cc:17:
+bazel-out/k8-opt/bin/external/libtorch_cpu/_virtual_includes/libtorch_cpu/c10/util/logging_is_not_google_glog.h:102: note: this is the location of the previous definition
+  102 | #define VLOG_IF(n, condition)                    \
+      | 
+(07:52:40) INFO: From Compiling modules/planning/planning_base/common/frame.cc:
+In file included from ./cyber/transport/transport.h:29,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/node/node.h:25,
+                 from ./cyber/component/component_base.h:32,
+                 from ./cyber/component/component.h:29,
+                 from ./cyber/cyber.h:25,
+                 from ./modules/common/monitor_log/monitor_logger.h:29,
+                 from ./modules/common/monitor_log/monitor_log_buffer.h:31,
+                 from ./modules/planning/planning_base/common/frame.h:42,
+                 from modules/planning/planning_base/common/frame.cc:20:
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/condition_variable.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/condition_variable.hpp:16,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/shared_mutex.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/shared_mutex.hpp:28,
+                 from ./modules/planning/planning_base/common/indexed_list.h:26,
+                 from ./modules/planning/planning_base/common/obstacle.h:37,
+                 from ./modules/planning/planning_base/common/ego_info.h:30,
+                 from ./modules/planning/planning_base/common/frame.h:44,
+                 from modules/planning/planning_base/common/frame.cc:20:
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp: In member function 'void boost::thread_attributes::set_stack_size(std::size_t)':
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp:61:19: warning: comparison of integer expressions of different signedness: 'std::size_t' {aka 'long unsigned int'} and 'long int' [-Wsign-compare]
+   61 |           if (size<PTHREAD_STACK_MIN) size=PTHREAD_STACK_MIN;
+      |                   ^
+(07:52:41) INFO: From Compiling modules/planning/planning_base/common/ego_info.cc:
+In file included from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/condition_variable.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/condition_variable.hpp:16,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/shared_mutex.hpp:15,
+                 from bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/shared_mutex.hpp:28,
+                 from ./modules/planning/planning_base/common/indexed_list.h:26,
+                 from ./modules/planning/planning_base/common/obstacle.h:37,
+                 from ./modules/planning/planning_base/common/ego_info.h:30,
+                 from modules/planning/planning_base/common/ego_info.cc:21:
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp: In member function 'void boost::thread_attributes::set_stack_size(std::size_t)':
+bazel-out/k8-opt/bin/external/boost/_virtual_includes/boost/boost/thread/pthread/thread_data.hpp:61:19: warning: comparison of integer expressions of different signedness: 'std::size_t' {aka 'long unsigned int'} and 'long int' [-Wsign-compare]
+   61 |           if (size<PTHREAD_STACK_MIN) size=PTHREAD_STACK_MIN;
+      |                   ^
+In file included from ./cyber/transport/transport.h:29,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/node/node.h:25,
+                 from ./cyber/component/component_base.h:32,
+                 from ./cyber/component/component.h:29,
+                 from ./cyber/cyber.h:25,
+                 from ./modules/planning/planning_base/reference_line/reference_line_provider.h:37,
+                 from ./modules/planning/planning_base/common/ego_info.h:33,
+                 from modules/planning/planning_base/common/ego_info.cc:21:
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+(07:52:42) [148 / 268] Compiling cyber/common/file.cc; 1s local ... (5 actions, 3 running)
+(07:52:43) INFO: From Compiling cyber/component/timer_component.cc:
+In file included from ./cyber/transport/transport.h:29,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/node/node.h:25,
+                 from ./cyber/component/component_base.h:32,
+                 from ./cyber/component/timer_component.h:22,
+                 from cyber/component/timer_component.cc:17:
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+(07:52:45) INFO: From Compiling modules/map/relative_map/relative_map.cc:
+In file included from ./cyber/transport/transport.h:29,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/node/node.h:25,
+                 from ./cyber/component/component_base.h:32,
+                 from ./cyber/component/component.h:29,
+                 from ./cyber/cyber.h:25,
+                 from ./modules/common/monitor_log/monitor_logger.h:29,
+                 from ./modules/common/monitor_log/monitor_log_buffer.h:31,
+                 from ./modules/map/relative_map/relative_map.h:21,
+                 from modules/map/relative_map/relative_map.cc:17:
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+(07:52:46) [165 / 268] Compiling modules/map/hdmap/hdmap_impl.cc; 1s local ... (5 actions, 4 running)
+(07:52:49) INFO: From Compiling cyber/transport/dispatcher/shm_dispatcher.cc:
+In file included from cyber/transport/dispatcher/shm_dispatcher.cc:17:
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cyber/transport/dispatcher/shm_dispatcher.cc: In member function 'void apollo::cyber::transport::ShmDispatcher::ThreadFunc()':
+cyber/transport/dispatcher/shm_dispatcher.cc:181:27: warning: comparison of integer expressions of different signedness: 'int32_t' {aka 'int'} and 'uint32_t' {aka 'unsigned int'} [-Wsign-compare]
+  181 |           if (block_index == previous_index) {
+      |               ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
+cyber/transport/dispatcher/shm_dispatcher.cc:184:34: warning: comparison of integer expressions of different signedness: 'int32_t' {aka 'int'} and 'uint32_t' {aka 'unsigned int'} [-Wsign-compare]
+  184 |           } else if (block_index < previous_index) {
+      |                      ~~~~~~~~~~~~^~~~~~~~~~~~~~~~
+cyber/transport/dispatcher/shm_dispatcher.cc:202:33: warning: comparison of integer expressions of different signedness: 'int32_t' {aka 'int'} and 'uint32_t' {aka 'unsigned int'} [-Wsign-compare]
+  202 |           if (arena_block_index == arena_previous_index) {
+      |               ~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~
+cyber/transport/dispatcher/shm_dispatcher.cc:205:40: warning: comparison of integer expressions of different signedness: 'int32_t' {aka 'int'} and 'uint32_t' {aka 'unsigned int'} [-Wsign-compare]
+  205 |           } else if (arena_block_index < arena_previous_index) {
+      |                      ~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~
+(07:52:50) INFO: From Compiling cyber/node/node.cc:
+In file included from ./cyber/transport/transport.h:29,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/node/node.h:25,
+                 from cyber/node/node.cc:17:
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+(07:52:50) [252 / 321] Compiling modules/map/hdmap/hdmap_impl.cc; 5s local ... (6 actions, 5 running)
+(07:52:50) INFO: From Compiling modules/map/hdmap/hdmap_impl.cc:
+modules/map/hdmap/hdmap_impl.cc: In member function 'int apollo::hdmap::HDMapImpl::GetStopSignAssociatedLanes(const apollo::hdmap::Id&, std::vector<std::shared_ptr<const apollo::hdmap::LaneInfo> >*) const':
+modules/map/hdmap/hdmap_impl.cc:1273:19: warning: loop variable 'lane_id' creates a copy from type 'const apollo::hdmap::Id' [-Wrange-loop-construct]
+ 1273 |   for (const auto lane_id : associate_lane_ids) {
+      |                   ^~~~~~~
+modules/map/hdmap/hdmap_impl.cc:1273:19: note: use reference type to prevent copying
+ 1273 |   for (const auto lane_id : associate_lane_ids) {
+      |                   ^~~~~~~
+      |                   &
+modules/map/hdmap/hdmap_impl.cc: In member function 'int apollo::hdmap::HDMapImpl::GetForwardNearestRSUs(const apollo::common::PointENU&, double, double, double, std::vector<std::shared_ptr<const apollo::hdmap::RSUInfo> >*) const':
+modules/map/hdmap/hdmap_impl.cc:1513:21: warning: loop variable 'suc_lane_id' creates a copy from type 'const apollo::hdmap::Id' [-Wrange-loop-construct]
+ 1513 |     for (const auto suc_lane_id : lane_ptr->lane().successor_id()) {
+      |                     ^~~~~~~~~~~
+modules/map/hdmap/hdmap_impl.cc:1513:21: note: use reference type to prevent copying
+ 1513 |     for (const auto suc_lane_id : lane_ptr->lane().successor_id()) {
+      |                     ^~~~~~~~~~~
+      |                     &
+(07:52:52) INFO: From Compiling cyber/transport/shm/protobuf_arena_manager.cc:
+cyber/transport/shm/protobuf_arena_manager.cc: In member function 'bool apollo::cyber::transport::ArenaSegment::Init(uint64_t, uint64_t)':
+cyber/transport/shm/protobuf_arena_manager.cc:63:12: warning: unused variable 'key_id' [-Wunused-variable]
+   63 |   uint64_t key_id = std::hash<std::string>{}("/apollo/__arena__/" +
+      |            ^~~~~~
+cyber/transport/shm/protobuf_arena_manager.cc: In member function 'bool apollo::cyber::transport::ProtobufArenaManager::Destroy()':
+cyber/transport/shm/protobuf_arena_manager.cc:495:19: warning: deleting 'void*' is undefined [-Wdelete-incomplete]
+  495 |     delete buffer.second;
+      |            ~~~~~~~^~~~~~
+(07:52:54) INFO: From Compiling cyber/transport/transport.cc:
+In file included from ./cyber/transport/transport.h:29,
+                 from cyber/transport/transport.cc:17:
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+(07:52:55) INFO: From Compiling modules/planning/planning_base/math/osqp_clock_test.cc:
+In file included from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/types.h:9,
+                 from bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/osqp.h:9,
+                 from ./modules/planning/planning_base/math/osqp_settings.h:3,
+                 from modules/planning/planning_base/math/osqp_clock_test.cc:1:
+bazel-out/k8-opt/bin/external/osqp/_virtual_includes/osqp/osqp/constants.h:38:20: warning: 'LINSYS_SOLVER_NAME' defined but not used [-Wunused-variable]
+   38 | static const char *LINSYS_SOLVER_NAME[] = {
+      |                    ^~~~~~~~~~~~~~~~~~
+(07:52:55) [286 / 328] Compiling cyber/parameter/parameter_client.cc; 8s local ... (5 actions, 4 running)
+(07:52:57) INFO: From Compiling cyber/parameter/parameter_client.cc:
+In file included from ./cyber/transport/transport.h:29,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/service/client.h:31,
+                 from ./cyber/parameter/parameter_client.h:27,
+                 from cyber/parameter/parameter_client.cc:17:
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from ./cyber/transport/transport.h:38,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/service/client.h:31,
+                 from ./cyber/parameter/parameter_client.h:27,
+                 from cyber/parameter/parameter_client.cc:17:
+./cyber/transport/transmitter/hybrid_transmitter.h: In instantiation of 'bool apollo::cyber::transport::HybridTransmitter<M>::Transmit(const MessagePtr&, const apollo::cyber::transport::MessageInfo&) [with M = apollo::cyber::proto::NodeName; apollo::cyber::transport::HybridTransmitter<M>::MessagePtr = std::shared_ptr<apollo::cyber::proto::NodeName>]':
+./cyber/transport/transmitter/hybrid_transmitter.h:165:6:   required from here
+./cyber/transport/transmitter/hybrid_transmitter.h:169:8: warning: unused variable 'return_val' [-Wunused-variable]
+  169 |   bool return_val = false;
+      |        ^~~~~~~~~~
+./cyber/transport/transmitter/hybrid_transmitter.h: In instantiation of 'bool apollo::cyber::transport::HybridTransmitter<M>::Transmit(const MessagePtr&, const apollo::cyber::transport::MessageInfo&) [with M = apollo::cyber::proto::Param; apollo::cyber::transport::HybridTransmitter<M>::MessagePtr = std::shared_ptr<apollo::cyber::proto::Param>]':
+./cyber/transport/transmitter/hybrid_transmitter.h:165:6:   required from here
+./cyber/transport/transmitter/hybrid_transmitter.h:169:8: warning: unused variable 'return_val' [-Wunused-variable]
+./cyber/transport/transmitter/hybrid_transmitter.h: In instantiation of 'bool apollo::cyber::transport::HybridTransmitter<M>::Transmit(const MessagePtr&, const apollo::cyber::transport::MessageInfo&) [with M = apollo::cyber::proto::ParamName; apollo::cyber::transport::HybridTransmitter<M>::MessagePtr = std::shared_ptr<apollo::cyber::proto::ParamName>]':
+./cyber/transport/transmitter/hybrid_transmitter.h:165:6:   required from here
+./cyber/transport/transmitter/hybrid_transmitter.h:169:8: warning: unused variable 'return_val' [-Wunused-variable]
+In file included from ./cyber/transport/transport.h:29,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/service/client.h:31,
+                 from ./cyber/parameter/parameter_client.h:27,
+                 from cyber/parameter/parameter_client.cc:17:
+./cyber/transport/dispatcher/shm_dispatcher.h: In instantiation of 'void apollo::cyber::transport::ShmDispatcher::AddListener(const apollo::cyber::proto::RoleAttributes&, apollo::cyber::transport::MessageListener<MessageT>&) [with MessageT = apollo::cyber::proto::Params; apollo::cyber::transport::MessageListener<MessageT> = std::function<void(const std::shared_ptr<apollo::cyber::proto::Params>&, const apollo::cyber::transport::MessageInfo&)>]':
+./cyber/transport/receiver/shm_receiver.h:78:30:   required from 'void apollo::cyber::transport::ShmReceiver<M>::Enable() [with M = apollo::cyber::proto::Params]'
+./cyber/transport/receiver/shm_receiver.h:62:6:   required from here
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In instantiation of 'void apollo::cyber::transport::ShmDispatcher::AddListener(const apollo::cyber::proto::RoleAttributes&, const apollo::cyber::proto::RoleAttributes&, apollo::cyber::transport::MessageListener<MessageT>&) [with MessageT = apollo::cyber::proto::Params; apollo::cyber::transport::MessageListener<MessageT> = std::function<void(const std::shared_ptr<apollo::cyber::proto::Params>&, const apollo::cyber::transport::MessageInfo&)>]':
+./cyber/transport/receiver/shm_receiver.h:106:30:   required from 'void apollo::cyber::transport::ShmReceiver<M>::Enable(const apollo::cyber::proto::RoleAttributes&) [with M = apollo::cyber::proto::Params]'
+./cyber/transport/receiver/shm_receiver.h:95:6:   required from here
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In instantiation of 'void apollo::cyber::transport::ShmDispatcher::AddListener(const apollo::cyber::proto::RoleAttributes&, apollo::cyber::transport::MessageListener<MessageT>&) [with MessageT = apollo::cyber::proto::BoolResult; apollo::cyber::transport::MessageListener<MessageT> = std::function<void(const std::shared_ptr<apollo::cyber::proto::BoolResult>&, const apollo::cyber::transport::MessageInfo&)>]':
+./cyber/transport/receiver/shm_receiver.h:78:30:   required from 'void apollo::cyber::transport::ShmReceiver<M>::Enable() [with M = apollo::cyber::proto::BoolResult]'
+./cyber/transport/receiver/shm_receiver.h:62:6:   required from here
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In instantiation of 'void apollo::cyber::transport::ShmDispatcher::AddListener(const apollo::cyber::proto::RoleAttributes&, const apollo::cyber::proto::RoleAttributes&, apollo::cyber::transport::MessageListener<MessageT>&) [with MessageT = apollo::cyber::proto::BoolResult; apollo::cyber::transport::MessageListener<MessageT> = std::function<void(const std::shared_ptr<apollo::cyber::proto::BoolResult>&, const apollo::cyber::transport::MessageInfo&)>]':
+./cyber/transport/receiver/shm_receiver.h:106:30:   required from 'void apollo::cyber::transport::ShmReceiver<M>::Enable(const apollo::cyber::proto::RoleAttributes&) [with M = apollo::cyber::proto::BoolResult]'
+./cyber/transport/receiver/shm_receiver.h:95:6:   required from here
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In instantiation of 'void apollo::cyber::transport::ShmDispatcher::AddListener(const apollo::cyber::proto::RoleAttributes&, apollo::cyber::transport::MessageListener<MessageT>&) [with MessageT = apollo::cyber::proto::Param; apollo::cyber::transport::MessageListener<MessageT> = std::function<void(const std::shared_ptr<apollo::cyber::proto::Param>&, const apollo::cyber::transport::MessageInfo&)>]':
+./cyber/transport/receiver/shm_receiver.h:78:30:   required from 'void apollo::cyber::transport::ShmReceiver<M>::Enable() [with M = apollo::cyber::proto::Param]'
+./cyber/transport/receiver/shm_receiver.h:62:6:   required from here
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In instantiation of 'void apollo::cyber::transport::ShmDispatcher::AddListener(const apollo::cyber::proto::RoleAttributes&, const apollo::cyber::proto::RoleAttributes&, apollo::cyber::transport::MessageListener<MessageT>&) [with MessageT = apollo::cyber::proto::Param; apollo::cyber::transport::MessageListener<MessageT> = std::function<void(const std::shared_ptr<apollo::cyber::proto::Param>&, const apollo::cyber::transport::MessageInfo&)>]':
+./cyber/transport/receiver/shm_receiver.h:106:30:   required from 'void apollo::cyber::transport::ShmReceiver<M>::Enable(const apollo::cyber::proto::RoleAttributes&) [with M = apollo::cyber::proto::Param]'
+./cyber/transport/receiver/shm_receiver.h:95:6:   required from here
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+(07:52:57) INFO: From Compiling cyber/parameter/parameter_server.cc:
+In file included from ./cyber/transport/transport.h:29,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/service/service.h:26,
+                 from ./cyber/parameter/parameter_server.h:28,
+                 from cyber/parameter/parameter_server.cc:16:
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In lambda function:
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from ./cyber/transport/transport.h:38,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/service/service.h:26,
+                 from ./cyber/parameter/parameter_server.h:28,
+                 from cyber/parameter/parameter_server.cc:16:
+./cyber/transport/transmitter/hybrid_transmitter.h: In instantiation of 'bool apollo::cyber::transport::HybridTransmitter<M>::Transmit(const MessagePtr&, const apollo::cyber::transport::MessageInfo&) [with M = apollo::cyber::proto::Params; apollo::cyber::transport::HybridTransmitter<M>::MessagePtr = std::shared_ptr<apollo::cyber::proto::Params>]':
+./cyber/transport/transmitter/hybrid_transmitter.h:165:6:   required from here
+./cyber/transport/transmitter/hybrid_transmitter.h:169:8: warning: unused variable 'return_val' [-Wunused-variable]
+  169 |   bool return_val = false;
+      |        ^~~~~~~~~~
+./cyber/transport/transmitter/hybrid_transmitter.h: In instantiation of 'bool apollo::cyber::transport::HybridTransmitter<M>::Transmit(const MessagePtr&, const apollo::cyber::transport::MessageInfo&) [with M = apollo::cyber::proto::BoolResult; apollo::cyber::transport::HybridTransmitter<M>::MessagePtr = std::shared_ptr<apollo::cyber::proto::BoolResult>]':
+./cyber/transport/transmitter/hybrid_transmitter.h:165:6:   required from here
+./cyber/transport/transmitter/hybrid_transmitter.h:169:8: warning: unused variable 'return_val' [-Wunused-variable]
+./cyber/transport/transmitter/hybrid_transmitter.h: In instantiation of 'bool apollo::cyber::transport::HybridTransmitter<M>::Transmit(const MessagePtr&, const apollo::cyber::transport::MessageInfo&) [with M = apollo::cyber::proto::Param; apollo::cyber::transport::HybridTransmitter<M>::MessagePtr = std::shared_ptr<apollo::cyber::proto::Param>]':
+./cyber/transport/transmitter/hybrid_transmitter.h:165:6:   required from here
+./cyber/transport/transmitter/hybrid_transmitter.h:169:8: warning: unused variable 'return_val' [-Wunused-variable]
+In file included from ./cyber/transport/transport.h:29,
+                 from ./cyber/node/reader_base.h:29,
+                 from ./cyber/node/reader.h:35,
+                 from ./cyber/blocker/intra_reader.h:26,
+                 from ./cyber/node/node_channel_impl.h:25,
+                 from ./cyber/service/service.h:26,
+                 from ./cyber/parameter/parameter_server.h:28,
+                 from cyber/parameter/parameter_server.cc:16:
+./cyber/transport/dispatcher/shm_dispatcher.h: In instantiation of 'void apollo::cyber::transport::ShmDispatcher::AddListener(const apollo::cyber::proto::RoleAttributes&, apollo::cyber::transport::MessageListener<MessageT>&) [with MessageT = apollo::cyber::proto::NodeName; apollo::cyber::transport::MessageListener<MessageT> = std::function<void(const std::shared_ptr<apollo::cyber::proto::NodeName>&, const apollo::cyber::transport::MessageInfo&)>]':
+./cyber/transport/receiver/shm_receiver.h:78:30:   required from 'void apollo::cyber::transport::ShmReceiver<M>::Enable() [with M = apollo::cyber::proto::NodeName]'
+./cyber/transport/receiver/shm_receiver.h:62:6:   required from here
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In instantiation of 'void apollo::cyber::transport::ShmDispatcher::AddListener(const apollo::cyber::proto::RoleAttributes&, const apollo::cyber::proto::RoleAttributes&, apollo::cyber::transport::MessageListener<MessageT>&) [with MessageT = apollo::cyber::proto::NodeName; apollo::cyber::transport::MessageListener<MessageT> = std::function<void(const std::shared_ptr<apollo::cyber::proto::NodeName>&, const apollo::cyber::transport::MessageInfo&)>]':
+./cyber/transport/receiver/shm_receiver.h:106:30:   required from 'void apollo::cyber::transport::ShmReceiver<M>::Enable(const apollo::cyber::proto::RoleAttributes&) [with M = apollo::cyber::proto::NodeName]'
+./cyber/transport/receiver/shm_receiver.h:95:6:   required from here
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In instantiation of 'void apollo::cyber::transport::ShmDispatcher::AddListener(const apollo::cyber::proto::RoleAttributes&, apollo::cyber::transport::MessageListener<MessageT>&) [with MessageT = apollo::cyber::proto::Param; apollo::cyber::transport::MessageListener<MessageT> = std::function<void(const std::shared_ptr<apollo::cyber::proto::Param>&, const apollo::cyber::transport::MessageInfo&)>]':
+./cyber/transport/receiver/shm_receiver.h:78:30:   required from 'void apollo::cyber::transport::ShmReceiver<M>::Enable() [with M = apollo::cyber::proto::Param]'
+./cyber/transport/receiver/shm_receiver.h:62:6:   required from here
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In instantiation of 'void apollo::cyber::transport::ShmDispatcher::AddListener(const apollo::cyber::proto::RoleAttributes&, const apollo::cyber::proto::RoleAttributes&, apollo::cyber::transport::MessageListener<MessageT>&) [with MessageT = apollo::cyber::proto::Param; apollo::cyber::transport::MessageListener<MessageT> = std::function<void(const std::shared_ptr<apollo::cyber::proto::Param>&, const apollo::cyber::transport::MessageInfo&)>]':
+./cyber/transport/receiver/shm_receiver.h:106:30:   required from 'void apollo::cyber::transport::ShmReceiver<M>::Enable(const apollo::cyber::proto::RoleAttributes&) [with M = apollo::cyber::proto::Param]'
+./cyber/transport/receiver/shm_receiver.h:95:6:   required from here
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In instantiation of 'void apollo::cyber::transport::ShmDispatcher::AddListener(const apollo::cyber::proto::RoleAttributes&, apollo::cyber::transport::MessageListener<MessageT>&) [with MessageT = apollo::cyber::proto::ParamName; apollo::cyber::transport::MessageListener<MessageT> = std::function<void(const std::shared_ptr<apollo::cyber::proto::ParamName>&, const apollo::cyber::transport::MessageInfo&)>]':
+./cyber/transport/receiver/shm_receiver.h:78:30:   required from 'void apollo::cyber::transport::ShmReceiver<M>::Enable() [with M = apollo::cyber::proto::ParamName]'
+./cyber/transport/receiver/shm_receiver.h:62:6:   required from here
+./cyber/transport/dispatcher/shm_dispatcher.h:196:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  196 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./cyber/transport/dispatcher/shm_dispatcher.h: In instantiation of 'void apollo::cyber::transport::ShmDispatcher::AddListener(const apollo::cyber::proto::RoleAttributes&, const apollo::cyber::proto::RoleAttributes&, apollo::cyber::transport::MessageListener<MessageT>&) [with MessageT = apollo::cyber::proto::ParamName; apollo::cyber::transport::MessageListener<MessageT> = std::function<void(const std::shared_ptr<apollo::cyber::proto::ParamName>&, const apollo::cyber::transport::MessageInfo&)>]':
+./cyber/transport/receiver/shm_receiver.h:106:30:   required from 'void apollo::cyber::transport::ShmReceiver<M>::Enable(const apollo::cyber::proto::RoleAttributes&) [with M = apollo::cyber::proto::ParamName]'
+./cyber/transport/receiver/shm_receiver.h:95:6:   required from here
+./cyber/transport/dispatcher/shm_dispatcher.h:310:25: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<long unsigned int>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  310 |       for (int i = 0; i < related_blocks_for_lock.size(); ++i) {
+      |                       ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+(07:52:58) INFO: Elapsed time: 39.461s, Critical Path: 11.49s
+(07:52:58) INFO: 244 processes: 2 internal, 242 local.
+(07:52:58) INFO: Build completed successfully, 244 total actions
+//modules/map:path_projection_test                              (cached) PASSED in 0.1s
+//modules/planning/planning_base:osqp_clock_test                         PASSED in 0.4s
+//modules/planning/planning_base:reference_line_get_sl_boundary_dest_test PASSED in 0.4s
+//modules/planning/planning_base:trajectory_stitcher_test                PASSED in 0.4s
+
+Executed 3 out of 4 tests: 4 tests pass.
+(07:52:58) INFO: Build completed successfully, 244 total actions

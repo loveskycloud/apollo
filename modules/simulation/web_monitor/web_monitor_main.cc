@@ -2,12 +2,15 @@
 #include <ifaddrs.h>
 #include <net/if.h>
 #include <netinet/in.h>
-#include <sys/wait.h>
 #include <unistd.h>
 
+#include <cerrno>
+#include <cstring>
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
 #include <string>
+#include <vector>
 
 #include "gflags/gflags.h"
 
@@ -32,6 +35,24 @@ DEFINE_int32(web_port, 0,
              "Env: WEB_MONITOR_WEB_PORT");
 
 namespace {
+
+std::string ExecutableDirectory() {
+  std::vector<char> path(4096);
+  const ssize_t length = readlink("/proc/self/exe", path.data(), path.size());
+  if (length <= 0 || static_cast<size_t>(length) >= path.size()) {
+    return "";
+  }
+  const std::string executable(path.data(), length);
+  return executable.substr(0, executable.find_last_of('/'));
+}
+
+std::string ShellQuote(const std::string& value) {
+  std::string quoted = "'";
+  for (const char c : value) {
+    quoted += c == '\'' ? "'\\''" : std::string(1, c);
+  }
+  return quoted + "'";
+}
 
 // AD: return the first non-loopback IPv4 address found on any interface,
 // or empty string on failure.
@@ -64,7 +85,20 @@ std::string DetectFirstNonLoopbackIPv4() {
 
 std::string ResolveRerunBinary() {
   if (const char* env = std::getenv("WEB_MONITOR_RERUN")) {
-    return env;
+    if (access(env, X_OK) == 0) {
+      return env;
+    }
+    std::cerr << "[web_monitor] WEB_MONITOR_RERUN is not executable: "
+              << env << std::endl;
+    return "";
+  }
+  const std::string directory = ExecutableDirectory();
+  if (!directory.empty()) {
+    for (const std::string& path : {directory + "/rerun", directory + "/bin/rerun"}) {
+      if (access(path.c_str(), X_OK) == 0) {
+        return path;
+      }
+    }
   }
   const char* candidates[] = {
       "/apollo_workspace/modules/simulation/web_monitor/bin/rerun",
@@ -81,10 +115,33 @@ std::string ResolveRerunBinary() {
       return path;
     }
   }
-  return "rerun";
+  if (const char* env = std::getenv("PATH")) {
+    std::istringstream paths(env);
+    std::string directory;
+    while (std::getline(paths, directory, ':')) {
+      const std::string path = (directory.empty() ? "." : directory) + "/rerun";
+      if (access(path.c_str(), X_OK) == 0) {
+        return path;
+      }
+    }
+  }
+  std::cerr << "[web_monitor] Forked Rerun Viewer is missing. The runtime package "
+               "must contain bin/rerun beside web_monitor_main, or set "
+               "WEB_MONITOR_RERUN to its executable path.\n";
+  return "";
 }
 
 std::string DefaultLayoutDir() {
+  const std::string directory = ExecutableDirectory();
+  if (!directory.empty()) {
+    for (const std::string& path : {
+             directory + "/../modules/simulation/web_monitor/layouts",
+             directory + "/layouts"}) {
+      if (access(path.c_str(), R_OK) == 0) {
+        return path;
+      }
+    }
+  }
   const char* candidates[] = {
       "/apollo_workspace/modules/simulation/web_monitor/layouts",
       "/apollo_workspace/simulation/web_monitor/layouts",
@@ -98,7 +155,7 @@ std::string DefaultLayoutDir() {
       return path;
     }
   }
-  return "/apollo_workspace/modules/simulation/web_monitor/layouts";
+  return "";
 }
 
 }  // namespace
@@ -153,23 +210,27 @@ int main(int argc, char** argv) {
   const int public_grpc_port = FLAGS_port;
 
   const std::string rerun = ResolveRerunBinary();
-  std::string cmd;
-  if (!FLAGS_layout_dir.empty()) {
-    cmd += "AD_LAYOUT_DIR=\"";
-    cmd += FLAGS_layout_dir;
-    cmd += "\" ";
-  } else {
-    cmd += "AD_LAYOUT_DIR=\"";
-    cmd += DefaultLayoutDir();
-    cmd += "\" ";
+  if (rerun.empty()) {
+    return 1;
   }
-
-  cmd += "\"";
-  cmd += rerun;
-  cmd += "\"";
-  cmd += " --bind 0.0.0.0";
-  cmd += " --port ";
-  cmd += std::to_string(FLAGS_port);
+  std::string layout_dir = FLAGS_layout_dir;
+  if (layout_dir.empty()) {
+    layout_dir = env_or_empty("AD_LAYOUT_DIR");
+  }
+  if (layout_dir.empty()) {
+    layout_dir = DefaultLayoutDir();
+  }
+  if (layout_dir.empty() || access(layout_dir.c_str(), R_OK) != 0) {
+    std::cerr << "[web_monitor] Layout directory is missing or unreadable: "
+              << layout_dir << "; provide --layout_dir or package layouts.\n";
+    return 1;
+  }
+  if (setenv("AD_LAYOUT_DIR", layout_dir.c_str(), 1) != 0) {
+    std::cerr << "[web_monitor] Cannot set AD_LAYOUT_DIR: " << strerror(errno) << '\n';
+    return 1;
+  }
+  std::vector<std::string> arguments = {rerun, "--bind", "0.0.0.0", "--port",
+                                        std::to_string(FLAGS_port)};
   // Rerun 0.37+: no --ws-server-port. Viewer connects via
   //   http://HOST:WEB_PORT/  (index.html auto-fills ?url=rerun+http://HOST:PORT/proxy)
   if (FLAGS_ws_server_port != 9877) {
@@ -180,24 +241,26 @@ int main(int argc, char** argv) {
   const bool use_web = FLAGS_web_viewer && !FLAGS_native;
   if (use_web) {
     // --web-viewer implies --serve-web (HTTP UI + gRPC proxy)
-    cmd += " --web-viewer --web-viewer-port ";
-    cmd += std::to_string(FLAGS_web_viewer_port);
-    cmd += " --hide-welcome-screen";
+    arguments.insert(arguments.end(), {"--web-viewer", "--web-viewer-port",
+        std::to_string(FLAGS_web_viewer_port), "--hide-welcome-screen"});
     // Large Apollo bags (~1GiB+) must stay in proxy history for late/slow web clients.
-    cmd += " --server-memory-limit 8GiB";
+    arguments.insert(arguments.end(), {"--server-memory-limit", "8GiB"});
     // Browser origin is http://<LAN-IP>:9090, not localhost. Without this the
     // WASM client cannot fetch rerun+http://HOST:9876/proxy (Failed to fetch).
-    cmd += " --cors-allow-origin http://* --cors-allow-origin http://*:*";
-    cmd += " --cors-allow-origin https://* --cors-allow-origin https://*:*";
+    for (const char* origin : {"http://*", "http://*:*", "https://*", "https://*:*"}) {
+      arguments.insert(arguments.end(), {"--cors-allow-origin", origin});
+    }
   }
 
   if (!FLAGS_recording.empty()) {
-    cmd += " \"";
-    cmd += FLAGS_recording;
-    cmd += "\"";
+    arguments.push_back(FLAGS_recording);
   }
 
-  std::cout << "[web_monitor] exec: " << cmd << std::endl;
+  std::cout << "[web_monitor] exec: AD_LAYOUT_DIR=" << ShellQuote(layout_dir);
+  for (const std::string& argument : arguments) {
+    std::cout << ' ' << ShellQuote(argument);
+  }
+  std::cout << std::endl;
   if (use_web) {
     std::cout << "[web_monitor] Open in browser:  http://" << public_host << ":"
               << public_web_port << "/\n"
@@ -205,10 +268,13 @@ int main(int argc, char** argv) {
               << public_grpc_port
               << " -- override via ?grpc_host=&grpc_port=)" << std::endl;
   }
-  const int ret = std::system(cmd.c_str());
-  if (ret == -1) {
-    std::cerr << "[web_monitor] failed to launch viewer" << std::endl;
-    return 1;
+  std::vector<char*> argv_viewer;
+  for (std::string& argument : arguments) {
+    argv_viewer.push_back(&argument[0]);
   }
-  return WEXITSTATUS(ret);
+  argv_viewer.push_back(nullptr);
+  execv(rerun.c_str(), argv_viewer.data());
+  std::cerr << "[web_monitor] Cannot execute " << rerun << ": "
+            << strerror(errno) << std::endl;
+  return 1;
 }

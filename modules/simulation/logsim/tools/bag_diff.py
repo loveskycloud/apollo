@@ -16,7 +16,9 @@ from decimal import Decimal
 os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 
 ROOT = Path(__file__).resolve().parents[2]  # simulation/
-TOOL = ROOT / "tools/apollo_record_tools/bin/apollo_record_tool"
+_distribution = Path(os.environ.get("APOLLO_DISTRIBUTION_HOME", "/opt/apollo/neo"))
+TOOL = (_distribution / "bin/apollo_record_tool" if (_distribution / "manifest.json").is_file()
+        else ROOT / "tools/apollo_record_tools/bin/apollo_record_tool")
 
 EXCLUDED_WALL_FIELDS = [
     "planning.latency_stats.total_time_ms", "planning.latency_stats.init_frame_time_ms",
@@ -32,8 +34,8 @@ def algorithm_payload(channel, payload):
     """
     if channel not in ("/apollo/planning", "/apollo/control"):
         return payload
-    if "/opt/apollo/neo/python" not in sys.path:
-        sys.path.insert(0, "/opt/apollo/neo/python")
+    if str(Path(os.environ.get("APOLLO_DISTRIBUTION_HOME", "/opt/apollo/neo")) / "python") not in sys.path:
+        sys.path.insert(0, str(Path(os.environ.get("APOLLO_DISTRIBUTION_HOME", "/opt/apollo/neo")) / "python"))
     if channel == "/apollo/planning":
         from modules.common_msgs.planning_msgs.planning_pb2 import ADCTrajectory
         message = ADCTrajectory.FromString(payload)
@@ -80,8 +82,8 @@ class RecordSchemas:
     def decode(self, channel, payload):
         from google.protobuf import descriptor_pool, message_factory
         if channel not in self.classes:
-            if "/opt/apollo/neo/python" not in sys.path:
-                sys.path.insert(0, "/opt/apollo/neo/python")
+            if str(Path(os.environ.get("APOLLO_DISTRIBUTION_HOME", "/opt/apollo/neo")) / "python") not in sys.path:
+                sys.path.insert(0, str(Path(os.environ.get("APOLLO_DISTRIBUTION_HOME", "/opt/apollo/neo")) / "python"))
             from cyber.proto.proto_desc_pb2 import ProtoDesc
             if channel not in self.schemas:
                 raise ValueError(f"Record has no protobuf schema for {channel}")

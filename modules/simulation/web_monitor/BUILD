@@ -14,6 +14,9 @@ apollo_cc_binary(
     data = [
         ":layout_files",
         ":rerun_cli",
+        "//modules/simulation/simulator:task_service_runtime",
+        "//modules/simulation/tools/apollo_record_tools:apollo_record_tool",
+        "//modules/simulation/tools/apollo_record_tools:web_monitor_runtime",
     ],
     deps = [
         "@com_github_gflags_gflags//:gflags",

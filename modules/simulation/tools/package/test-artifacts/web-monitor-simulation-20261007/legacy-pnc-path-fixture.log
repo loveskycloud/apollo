@@ -1,0 +1,19 @@
+exec ${PAGER:-/usr/bin/less} "$0" || exit 1
+Executing tests from //modules/map:pnc_path_test
+-----------------------------------------------------------------------------
+Running main() from gmock_main.cc
+[==========] Running 10 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 10 tests from TestSuite
+[ RUN      ] TestSuite.LaneSegment
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+E1007 07:38:56.935456 2257161 hdmap_common.cc:169] [map]lane_[id = id: "lane1"
+] has NO type.
+E1007 07:38:56.935720 2257161 hdmap_common.cc:169] [map]lane_[id = id: "lane2"
+] has NO type.
+[       OK ] TestSuite.LaneSegment (0 ms)
+[ RUN      ] TestSuite.hdmap_line_path
+E1007 07:38:56.935735 2257161 hdmap_common.cc:169] [map]lane_[id = id: "id"
+] has NO type.
+[       OK ] TestSuite.hdmap_line_path (0 ms)
+[ RUN      ] TestSuite.hdmap_curvy_path

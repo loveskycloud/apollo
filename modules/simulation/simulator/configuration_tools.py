@@ -29,8 +29,8 @@ def resolve_global_flagfile(workspace):
 
 def vehicle_geometry(path):
     os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
-    if "/opt/apollo/neo/python" not in sys.path:
-        sys.path.insert(0, "/opt/apollo/neo/python")
+    if str(Path(os.environ.get("APOLLO_DISTRIBUTION_HOME", "/opt/apollo/neo")) / "python") not in sys.path:
+        sys.path.insert(0, str(Path(os.environ.get("APOLLO_DISTRIBUTION_HOME", "/opt/apollo/neo")) / "python"))
     from google.protobuf import text_format
     from modules.common_msgs.config_msgs.vehicle_config_pb2 import VehicleConfig
     message = VehicleConfig()

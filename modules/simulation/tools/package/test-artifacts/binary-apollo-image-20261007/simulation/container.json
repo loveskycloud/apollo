@@ -1,0 +1,15 @@
+{
+  "name": "apollo-binary-layout-cpu-20261007",
+  "image_id": "sha256:7c33b27bf30bccf5c13f4d1058c72437930681b646ee0b7bfece979f482a2530",
+  "mounts": [],
+  "network_mode": "none",
+  "gpu_device_requests": null,
+  "changes_outside_tmp": [],
+  "clean_base_checks": {
+    "uid": 1000,
+    "workspace_entries": [],
+    "base_neo_library_entries": [
+      "3rd-boost"
+    ]
+  }
+}

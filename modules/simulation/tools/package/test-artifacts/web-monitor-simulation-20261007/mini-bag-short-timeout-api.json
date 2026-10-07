@@ -1,0 +1,466 @@
+{
+  "catalog": {
+    "status": "ok",
+    "catalog": {
+      "source_maps": {},
+      "suites": [],
+      "max_concurrency": 30,
+      "modules": [
+        "LOCALIZATION",
+        "PERCEPTION",
+        "PREDICTION",
+        "fake_prediction",
+        "PLANNING",
+        "ML_PLANNING",
+        "CONTROL",
+        "ROUTING"
+      ],
+      "bags": [],
+      "worlds": [
+        "/tmp/mini-simulation/binary/data/scenarios/ranger_mini_v3_1haolou_smoke.scenario.json"
+      ],
+      "maps": [
+        "/tmp/mini-simulation/binary/data/map_data/1haolou_202608241047qh"
+      ],
+      "profiles": [
+        "/tmp/mini-simulation/binary/profiles/ranger_mini_v3"
+      ],
+      "vehicles": [
+        "/tmp/mini-simulation/binary/profiles/ranger_mini_v3"
+      ],
+      "stages": [
+        "queued",
+        "data_preparation",
+        "map_update",
+        "profile_update",
+        "model_update",
+        "simulation_start",
+        "simulation_running",
+        "simulation_end",
+        "result_analysis",
+        "completed"
+      ],
+      "models": [
+        "perfect_planning",
+        "kinematic_control"
+      ]
+    }
+  },
+  "initial_jobs": {
+    "status": "ok",
+    "jobs": [
+      {
+        "id": "7f95e173be824cd9",
+        "stage": "failed",
+        "config": {
+          "kind": "world",
+          "map": "/tmp/mini-simulation/binary/data/map_data/1haolou_202608241047qh",
+          "model": "kinematic_control",
+          "modules": [
+            "PREDICTION",
+            "PLANNING",
+            "CONTROL",
+            "ROUTING"
+          ],
+          "profile": "/tmp/mini-simulation/binary/profiles/ranger_mini_v3",
+          "repeat": 1,
+          "seed": 1,
+          "source": "/tmp/mini-simulation/binary/data/scenarios/ranger_mini_v3_1haolou_smoke.scenario.json",
+          "step_ms": 10,
+          "timeout_s": 60,
+          "vehicle": "/tmp/mini-simulation/binary/profiles/ranger_mini_v3/modules/common/data/vehicle_param.pb.txt",
+          "evaluation": {
+            "expectation": "reach_goal",
+            "reason": "Legacy scene: reach the route destination"
+          },
+          "begin_s": 0.0,
+          "end_s": 0.0
+        },
+        "created_at": 1791356691.5298939,
+        "progress": 100,
+        "history": [
+          {
+            "stage": "queued",
+            "wall_time": 1791356691.5298939
+          },
+          {
+            "stage": "data_preparation",
+            "wall_time": 1791356691.5301032
+          },
+          {
+            "stage": "map_update",
+            "wall_time": 1791356691.541989
+          },
+          {
+            "stage": "profile_update",
+            "wall_time": 1791356691.5432465
+          },
+          {
+            "stage": "model_update",
+            "wall_time": 1791356691.5890782
+          },
+          {
+            "stage": "simulation_start",
+            "wall_time": 1791356693.1814597
+          },
+          {
+            "stage": "simulation_running",
+            "wall_time": 1791356693.1820912
+          },
+          {
+            "stage": "simulation_end",
+            "wall_time": 1791356710.0094216
+          },
+          {
+            "stage": "result_analysis",
+            "wall_time": 1791356710.009452
+          },
+          {
+            "stage": "failed",
+            "wall_time": 1791356714.8183923
+          }
+        ],
+        "outputs": [
+          "/tmp/mini-simulation/binary/data/binary-verification/web-monitor-jobs/7f95e173be824cd9/run-1/simulation.record"
+        ],
+        "error": "Planning trajectory continuity failed: empty/invalid trajectory or missing publication; see planning_continuity evidence",
+        "analysis": {
+          "collision": {
+            "status": "PASS",
+            "collision_count": 0,
+            "runs": [
+              {
+                "method": "world_ground_truth_obb_sat",
+                "status": "PASS",
+                "step_ms": 10,
+                "contacts": [],
+                "complete": true,
+                "checked_frames": 3541,
+                "collision_count": 0,
+                "run": 1
+              }
+            ]
+          },
+          "topic_message_counts": {
+            "/apollo/raw_routing_response": 1,
+            "/apollo/planning/command": 1,
+            "/apollo/raw_routing_request": 1,
+            "/apollo/canbus/chassis": 3541,
+            "/apollo/localization/pose": 3541,
+            "/apollo/planning": 355,
+            "/apollo/planning/command_status": 355,
+            "/apollo/prediction": 355,
+            "/apollo/perception/obstacles": 355,
+            "/apollo/control": 3541
+          },
+          "missing_module_outputs": [],
+          "effective_configuration": {
+            "configuration_scope": "task",
+            "profile": "/tmp/mini-simulation/binary/profiles/ranger_mini_v3",
+            "map_dir": "/tmp/mini-simulation/binary/data/map_data/1haolou_202608241047qh",
+            "vehicle_config_path": "/tmp/mini-simulation/binary/profiles/ranger_mini_v3/modules/common/data/vehicle_param.pb.txt",
+            "vehicle_width": 0.5,
+            "half_vehicle_width": 0.25,
+            "runtime_global_flagfile": "/tmp/mini-simulation/binary/data/binary-verification/web-monitor-jobs/7f95e173be824cd9/.runtime/modules/common/data/global_flagfile.txt",
+            "runtime_map_dir": "/tmp/mini-simulation/binary/data/binary-verification/web-monitor-jobs/7f95e173be824cd9/map",
+            "runtime_vehicle_config_path": "/tmp/mini-simulation/binary/data/binary-verification/web-monitor-jobs/7f95e173be824cd9/.runtime/modules/common/data/vehicle_param.pb.txt",
+            "task_vehicle_config_path": "/tmp/mini-simulation/binary/data/binary-verification/web-monitor-jobs/7f95e173be824cd9/vehicle/vehicle_param.pb.txt"
+          },
+          "algorithm_status_counts": {
+            "/apollo/planning:0": 355,
+            "/apollo/control:1002": 10,
+            "/apollo/control:0": 3531
+          },
+          "valid_planning_frames": 355,
+          "estop_frames": 0,
+          "ego_displacement_m": 30.523260324638876,
+          "determinism": "not_tested",
+          "comparisons": [],
+          "manifest": "/tmp/mini-simulation/binary/data/binary-verification/web-monitor-jobs/7f95e173be824cd9/manifest.json",
+          "scope": "Exact ordered messages, nanosecond timestamps and protobuf values; only listed wall profiling fields excluded and map ordering canonicalized; raw differences retained. Same runtime environment.",
+          "goal_distance_m": 1.4768108210433069,
+          "planning_continuity": {
+            "status": "FAIL",
+            "runs": [
+              {
+                "status": "FAIL",
+                "frames": 355,
+                "empty_frames": 0,
+                "invalid_frames": 5,
+                "publication_gaps": 0,
+                "boundary_missing": false,
+                "expected_period_s": 0.1,
+                "first_failures": [
+                  {
+                    "time_s": 1.0,
+                    "reason": "Unusable trajectory: status/estop/points/time horizon"
+                  },
+                  {
+                    "time_s": 1.1,
+                    "reason": "Unusable trajectory: status/estop/points/time horizon"
+                  },
+                  {
+                    "time_s": 1.2,
+                    "reason": "Unusable trajectory: status/estop/points/time horizon"
+                  },
+                  {
+                    "time_s": 1.3,
+                    "reason": "Unusable trajectory: status/estop/points/time horizon"
+                  },
+                  {
+                    "time_s": 1.4,
+                    "reason": "Unusable trajectory: status/estop/points/time horizon"
+                  }
+                ],
+                "omitted_failure_details": 0
+              }
+            ]
+          },
+          "scenario_expectation": {
+            "expectation": "reach_goal",
+            "reason": "Legacy scene: reach the route destination",
+            "status": "FAIL",
+            "runs": [
+              {
+                "expectation": "reach_goal",
+                "goal_distance_m": 1.4768108210433069,
+                "status": "FAIL",
+                "reason": "Route destination must be reached within 0.4 m and speed below 0.05 m/s"
+              }
+            ]
+          },
+          "quality_metrics": {
+            "version": "closed-loop-v1",
+            "status": "FAIL",
+            "runs": [
+              {
+                "version": "closed-loop-v1",
+                "status": "PASS",
+                "scope": "Recorded executed poses; geometry/TTC sampled at 100 ms; perfect_planning is not Control validation",
+                "motion": {
+                  "status": "MEASURED",
+                  "elapsed_s": 35.4,
+                  "distance_travelled_m": 30.523284026903596,
+                  "sample_period_s": 0.10000000000000009,
+                  "longitudinal_acceleration_mps2": {
+                    "p95": 0.16162649830416875,
+                    "max": 1.0957128123993352
+                  },
+                  "lateral_acceleration_mps2": {
+                    "p95": 0.0005697877427918634,
+                    "max": 0.0027376700763380277
+                  },
+                  "jerk_mps3": {
+                    "p95": 0.055444355963682655,
+                    "max": 9.893234645456223
+                  },
+                  "yaw_rate_radps": {
+                    "p95": 0.0005787858941772473,
+                    "max": 0.0023674160999042843
+                  },
+                  "max_speed_mps": 1.2772828550498907,
+                  "final_speed_mps": 0.0,
+                  "longest_stop_s": 0.19999999999999996,
+                  "stops_over_10s": 0,
+                  "reverse_distance_m": 0.0
+                },
+                "route_progress": {
+                  "status": "NOT_EVALUATED"
+                },
+                "passing_return": {
+                  "status": "NOT_EVALUATED",
+                  "early_return_frames": 0,
+                  "minimum_rear_clearance_m": null,
+                  "required_rear_clearance_m": 0.35,
+                  "scope": "Same-heading vehicle passes with lateral return; not applicable to every static nudge"
+                },
+                "kinematics": {
+                  "status": "PASS",
+                  "violating_intervals": 0,
+                  "maximum_measured_curvature_per_m": 0.0020472545377263965,
+                  "maximum_vehicle_curvature_per_m": 1.863376803081589
+                },
+                "road": {
+                  "status": "PASS",
+                  "outside_frames": 0,
+                  "sample_count": 355,
+                  "first_outside_s": null,
+                  "minimum_boundary_distance_m": 0.5709642415844507
+                },
+                "interaction": {
+                  "status": "NOT_EVALUATED",
+                  "minimum_body_gap_m": null,
+                  "min_ttc_3s": null,
+                  "gap_below_025m_pair_frames": 0,
+                  "ttc_below_1s_pair_frames": 0,
+                  "near_obstacle_pair_frames": 0,
+                  "oncoming_pair_frames": 0,
+                  "oncoming_min_gap_m": null,
+                  "observed_recovery_delay_s": [],
+                  "unrecovered_after_clear_s": null,
+                  "clear_definition": "All observed actors at least 1.5 m from ego body; diagnostic, not right-of-way proof"
+                },
+                "policy": {
+                  "status": "NOT_EVALUATED",
+                  "safety_intervention_fraction": null
+                },
+                "runtime": {
+                  "status": "MEASURED",
+                  "startup_planning_latency_ms": 182.31558799743652,
+                  "planning_latency_ms_p95": 3.9365291595458984,
+                  "planning_latency_ms_p99": 4.348235130310057,
+                  "over_100ms_frames": 1
+                }
+              }
+            ]
+          },
+          "analysis_resources": {
+            "wall_s": 4.559313894002116,
+            "cpu_s": 4.450363046,
+            "peak_rss_kib": 53244
+          }
+        },
+        "effective_configuration": {
+          "configuration_scope": "task",
+          "profile": "/tmp/mini-simulation/binary/profiles/ranger_mini_v3",
+          "map_dir": "/tmp/mini-simulation/binary/data/map_data/1haolou_202608241047qh",
+          "vehicle_config_path": "/tmp/mini-simulation/binary/profiles/ranger_mini_v3/modules/common/data/vehicle_param.pb.txt",
+          "vehicle_width": 0.5,
+          "half_vehicle_width": 0.25,
+          "runtime_global_flagfile": "/tmp/mini-simulation/binary/data/binary-verification/web-monitor-jobs/7f95e173be824cd9/.runtime/modules/common/data/global_flagfile.txt",
+          "runtime_map_dir": "/tmp/mini-simulation/binary/data/binary-verification/web-monitor-jobs/7f95e173be824cd9/map",
+          "runtime_vehicle_config_path": "/tmp/mini-simulation/binary/data/binary-verification/web-monitor-jobs/7f95e173be824cd9/.runtime/modules/common/data/vehicle_param.pb.txt",
+          "task_vehicle_config_path": "/tmp/mini-simulation/binary/data/binary-verification/web-monitor-jobs/7f95e173be824cd9/vehicle/vehicle_param.pb.txt"
+        },
+        "run": 1,
+        "simulation": {
+          "sim_time_s": 36.4,
+          "percent": 100,
+          "events_done": 7082,
+          "events_total": 0,
+          "speedup": 2.353004871351942
+        },
+        "log_path": "/tmp/mini-simulation/binary/data/binary-verification/web-monitor-jobs/7f95e173be824cd9/run-1/runtime.log",
+        "process_id": 74361,
+        "analysis_process_id": 74790,
+        "execution": {
+          "status": "FAIL",
+          "failure_class": "ALGORITHM_OR_RUNTIME_FAILURE",
+          "behavior_evaluation": "SEE_ANALYSIS",
+          "reason": "Planning trajectory continuity failed: empty/invalid trajectory or missing publication; see planning_continuity evidence"
+        }
+      }
+    ]
+  },
+  "request": {
+    "kind": "bag",
+    "source": "/tmp/mini-simulation/binary/data/binary-verification/task-96o82684/output.record",
+    "map": "/tmp/mini-simulation/binary/data/map_data/1haolou_202608241047qh",
+    "vehicle": "/tmp/mini-simulation/binary/profiles/ranger_mini_v3/modules/common/data/vehicle_param.pb.txt",
+    "profile": "/tmp/mini-simulation/binary/profiles/ranger_mini_v3",
+    "modules": [
+      "PREDICTION",
+      "PLANNING",
+      "CONTROL",
+      "ROUTING"
+    ],
+    "model": "kinematic_control",
+    "step_ms": 10,
+    "repeat": 1,
+    "seed": 1,
+    "timeout_s": 10
+  },
+  "enqueue": {
+    "status": "ok",
+    "id": "297e3ed67bbf4319",
+    "ids": [
+      "297e3ed67bbf4319"
+    ],
+    "suite_id": null
+  },
+  "job": {
+    "id": "297e3ed67bbf4319",
+    "stage": "failed",
+    "config": {
+      "kind": "bag",
+      "map": "/tmp/mini-simulation/binary/data/map_data/1haolou_202608241047qh",
+      "model": "kinematic_control",
+      "modules": [
+        "PREDICTION",
+        "PLANNING",
+        "CONTROL",
+        "ROUTING"
+      ],
+      "profile": "/tmp/mini-simulation/binary/profiles/ranger_mini_v3",
+      "repeat": 1,
+      "seed": 1,
+      "source": "/tmp/mini-simulation/binary/data/binary-verification/task-96o82684/output.record",
+      "step_ms": 10,
+      "timeout_s": 10,
+      "vehicle": "/tmp/mini-simulation/binary/profiles/ranger_mini_v3/modules/common/data/vehicle_param.pb.txt",
+      "begin_s": 0.0,
+      "end_s": 0.0
+    },
+    "created_at": 1791356939.4687932,
+    "progress": 0,
+    "history": [
+      {
+        "stage": "queued",
+        "wall_time": 1791356939.4687932
+      },
+      {
+        "stage": "data_preparation",
+        "wall_time": 1791356939.4691215
+      },
+      {
+        "stage": "map_update",
+        "wall_time": 1791356939.472273
+      },
+      {
+        "stage": "profile_update",
+        "wall_time": 1791356939.473351
+      },
+      {
+        "stage": "model_update",
+        "wall_time": 1791356939.522555
+      },
+      {
+        "stage": "simulation_start",
+        "wall_time": 1791356941.1252198
+      },
+      {
+        "stage": "simulation_running",
+        "wall_time": 1791356941.1259735
+      },
+      {
+        "stage": "failed",
+        "wall_time": 1791356951.2519495
+      }
+    ],
+    "outputs": [],
+    "error": "Simulation exceeded its wall-time limit; see runtime.log",
+    "analysis": null,
+    "effective_configuration": {
+      "configuration_scope": "task",
+      "profile": "/tmp/mini-simulation/binary/profiles/ranger_mini_v3",
+      "map_dir": "/tmp/mini-simulation/binary/data/map_data/1haolou_202608241047qh",
+      "vehicle_config_path": "/tmp/mini-simulation/binary/profiles/ranger_mini_v3/modules/common/data/vehicle_param.pb.txt",
+      "vehicle_width": 0.5,
+      "half_vehicle_width": 0.25,
+      "runtime_global_flagfile": "/tmp/mini-simulation/binary/data/binary-verification/web-monitor-jobs/297e3ed67bbf4319/.runtime/modules/common/data/global_flagfile.txt",
+      "runtime_map_dir": "/tmp/mini-simulation/binary/data/binary-verification/web-monitor-jobs/297e3ed67bbf4319/map",
+      "runtime_vehicle_config_path": "/tmp/mini-simulation/binary/data/binary-verification/web-monitor-jobs/297e3ed67bbf4319/.runtime/modules/common/data/vehicle_param.pb.txt",
+      "task_vehicle_config_path": "/tmp/mini-simulation/binary/data/binary-verification/web-monitor-jobs/297e3ed67bbf4319/vehicle/vehicle_param.pb.txt"
+    },
+    "run": 1,
+    "simulation": {},
+    "log_path": "/tmp/mini-simulation/binary/data/binary-verification/web-monitor-jobs/297e3ed67bbf4319/run-1/runtime.log",
+    "process_id": 79814,
+    "execution": {
+      "status": "FAIL",
+      "failure_class": "ALGORITHM_OR_RUNTIME_FAILURE",
+      "behavior_evaluation": "SEE_ANALYSIS",
+      "reason": "Simulation exceeded its wall-time limit; see runtime.log"
+    }
+  }
+}

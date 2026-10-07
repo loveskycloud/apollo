@@ -1,0 +1,29 @@
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I1007 02:24:26.027415 69341 object_pool_types.cc:33] []Initialize base object pool (malloc).
+I1007 02:24:26.027558 69341 lidar_frame_pool.cc:27] []Initialize lidar frame pool.
+I1007 02:24:26.028342 69341 class_loader_utility.h:79] [perception]registerclass:apollo::perception::lidar::BackgroundFilter,BaseObjectFilter,
+I1007 02:24:26.043650 69341 class_loader_utility.h:79] [perception]registerclass:apollo::perception::lidar::StrategyFilter,BaseObjectFilter,
+{
+  "result": "PASS",
+  "mode": "RTLD_NOW | RTLD_GLOBAL",
+  "process_count": 1,
+  "libraries": [
+    "libmodules__perception__lidar_detection__libanchor_mask_cuda.so",
+    "libmodules__perception__lidar_detection__libnms_cuda.so",
+    "libmodules__perception__lidar_detection__libpfe_cuda.so",
+    "libmodules__perception__lidar_detection__libpoint_pillars_common.so",
+    "libmodules__perception__lidar_detection__libpoint_pillars_postprocess_cuda.so",
+    "libmodules__perception__lidar_detection__libpreprocess_points_cuda.so",
+    "libmodules__perception__lidar_detection__libscatter_cuda.so",
+    "libmodules__perception__lidar_detection_filter__object_filter_bank__background_filter__liblib_bf.so",
+    "libmodules__perception__lidar_detection_filter__object_filter_bank__strategy_filter__liblib_bf.so",
+    "libmodules__perception__radar4d_detection__libanchor_mask_cuda.so",
+    "libmodules__perception__radar4d_detection__libnms_cuda.so",
+    "libmodules__perception__radar4d_detection__libpfe_cuda.so",
+    "libmodules__perception__radar4d_detection__libpoint_pillars_common.so",
+    "libmodules__perception__radar4d_detection__libpoint_pillars_postprocess_cuda.so",
+    "libmodules__perception__radar4d_detection__libpreprocess_points_cuda.so",
+    "libmodules__perception__radar4d_detection__libscatter_cuda.so"
+  ],
+  "distinct_handles": 16
+}

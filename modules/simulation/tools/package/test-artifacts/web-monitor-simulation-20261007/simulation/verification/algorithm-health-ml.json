@@ -1,0 +1,19 @@
+{
+  "result": "PASS",
+  "runs": [
+    {
+      "record": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/0bff47700172422e/run-1/simulation.record",
+      "planning_ok": 388,
+      "control_ok": 0,
+      "control_initial_wait": [],
+      "control_errors_after_initial_wait": 0
+    },
+    {
+      "record": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/0bff47700172422e/run-2/simulation.record",
+      "planning_ok": 388,
+      "control_ok": 0,
+      "control_initial_wait": [],
+      "control_errors_after_initial_wait": 0
+    }
+  ]
+}

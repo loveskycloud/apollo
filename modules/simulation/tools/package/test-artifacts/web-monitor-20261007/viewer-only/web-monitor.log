@@ -1,0 +1,7 @@
+[web_monitor] exec: AD_LAYOUT_DIR='/tmp/moved viewer package/binary/bin/../modules/simulation/web_monitor/layouts' '/tmp/moved viewer package/binary/bin/rerun' '--bind' '0.0.0.0' '--port' '9876' '--web-viewer' '--web-viewer-port' '9090' '--hide-welcome-screen' '--server-memory-limit' '8GiB' '--cors-allow-origin' 'http://*' '--cors-allow-origin' 'http://*:*' '--cors-allow-origin' 'https://*' '--cors-allow-origin' 'https://*:*'
+[web_monitor] Open in browser:  http://127.0.0.1:9090/
+[web_monitor] (gRPC proxy on 127.0.0.1:9876 -- override via ?grpc_host=&grpc_port=)
+[2m2026-10-07T05:45:39.377975Z[0m [33m WARN[0m [2mre_analytics[0m[2m:[0m failed to load analytics config file: Couldn't compute config location
+[2m2026-10-07T05:45:39.378022Z[0m [31mERROR[0m [2mre_analytics[0m[2m:[0m Failed to initialize analytics: Couldn't compute config location
+[2m2026-10-07T05:45:39.379996Z[0m [32m INFO[0m [2mre_grpc_server[0m[2m:[0m Listening for gRPC connections on 0.0.0.0:9876. Connect by running `rerun --connect rerun+http://127.0.0.1:9876/proxy`
+[2m2026-10-07T05:45:39.380058Z[0m [32m INFO[0m [2mre_sdk::web_viewer[0m[2m:[0m Hosting a web-viewer at http://0.0.0.0:9090 - connect at http://127.0.0.1:9090

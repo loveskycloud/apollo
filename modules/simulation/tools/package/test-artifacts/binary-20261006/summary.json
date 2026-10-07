@@ -1,0 +1,114 @@
+{
+  "date": "2026-10-06",
+  "base_image": "registry.baidubce.com/apollo/apollo-env-gpu:10.0-u22",
+  "verification_uid": 1000,
+  "unit_tests_passed": 14,
+  "profiles": {
+    "simulation": {
+      "archive": "binary.tar.gz",
+      "archive_bytes": 669387085,
+      "archive_sha256": "e636a323cafaa304a71f10159b5fd554ee5785dba9ec6227a2853f95559507b2",
+      "archive_checksum_verification": "PASS",
+      "config": "cpu",
+      "targets": 146,
+      "cpu_requirements": [],
+      "container_name": "apollo-binary-verify-20261006",
+      "container_image_id": "sha256:7c33b27bf30bccf5c13f4d1058c72437930681b646ee0b7bfece979f482a2530",
+      "mounts": [],
+      "network_mode": "none",
+      "gpu_device_requests": null,
+      "clean_base_checks": {
+        "uid": 1000,
+        "workspace_entries": [],
+        "base_neo_library_entries": [
+          "3rd-boost"
+        ]
+      },
+      "container_changes_outside_tmp": [],
+      "elf_files": 747,
+      "checksum_files": 2338,
+      "runtime_result": "PASS",
+      "simulation_duration_s": 3,
+      "record_bytes": 2265787
+    },
+    "all": {
+      "archive": "binary-all.tar.gz",
+      "archive_bytes": 4114331591,
+      "archive_sha256": "14e4912ae381fdbf7860db3407229c39bc7b3298f16063e0c5160279fe3d7a4f",
+      "archive_checksum_verification": "PASS",
+      "config": "gpu",
+      "targets": 466,
+      "cpu_requirements": [
+        "sse4_1",
+        "avx2"
+      ],
+      "container_name": "apollo-binary-all-verify-20261006",
+      "container_image_id": "sha256:7c33b27bf30bccf5c13f4d1058c72437930681b646ee0b7bfece979f482a2530",
+      "mounts": [],
+      "network_mode": "none",
+      "gpu_device_requests": [
+        {
+          "Driver": "",
+          "Count": -1,
+          "DeviceIDs": null,
+          "Capabilities": [
+            [
+              "gpu"
+            ]
+          ],
+          "Options": {}
+        }
+      ],
+      "clean_base_checks": {
+        "uid": 1000,
+        "workspace_entries": [],
+        "base_neo_library_entries": [
+          "3rd-boost"
+        ]
+      },
+      "container_changes_outside_tmp": [
+        "C /run",
+        "A /run/nvidia-persistenced",
+        "A /run/nvidia-persistenced/socket",
+        "C /var",
+        "C /var/cache",
+        "C /var/cache/ldconfig",
+        "C /var/cache/ldconfig/aux-cache",
+        "C /usr",
+        "C /usr/lib",
+        "C /usr/lib/firmware",
+        "C /usr/lib/firmware/nvidia",
+        "A /usr/lib/firmware/nvidia/580.178.04",
+        "A /usr/lib/firmware/nvidia/580.178.04/gsp_ga10x.bin",
+        "A /usr/lib/firmware/nvidia/580.178.04/gsp_tu10x.bin",
+        "C /usr/lib/x86_64-linux-gnu",
+        "A /usr/lib/x86_64-linux-gnu/libnvidia-allocator.so.580.178.04",
+        "C /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so.1",
+        "C /usr/lib/x86_64-linux-gnu/libcudadebugger.so.1",
+        "C /usr/lib/x86_64-linux-gnu/libnvidia-ptxjitcompiler.so.1",
+        "A /usr/lib/x86_64-linux-gnu/libnvidia-nvvm.so.580.178.04",
+        "A /usr/lib/x86_64-linux-gnu/libnvidia-pkcs11-openssl3.so.580.178.04",
+        "A /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.580.178.04",
+        "C /usr/lib/x86_64-linux-gnu/libnvidia-nvvm.so.4",
+        "C /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1",
+        "A /usr/lib/x86_64-linux-gnu/libcudadebugger.so.580.178.04",
+        "A /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so.580.178.04",
+        "C /usr/lib/x86_64-linux-gnu/libnvidia-opencl.so.1",
+        "A /usr/lib/x86_64-linux-gnu/libnvidia-ptxjitcompiler.so.580.178.04",
+        "A /usr/lib/x86_64-linux-gnu/libnvidia-pkcs11.so.580.178.04",
+        "A /usr/lib/x86_64-linux-gnu/libcuda.so.580.178.04",
+        "C /usr/lib/x86_64-linux-gnu/libnvidia-allocator.so.1",
+        "A /usr/lib/x86_64-linux-gnu/libnvidia-opencl.so.580.178.04",
+        "A /usr/lib/x86_64-linux-gnu/libnvidia-gpucomp.so.580.178.04",
+        "C /usr/lib/x86_64-linux-gnu/libcuda.so.1",
+        "C /etc",
+        "C /etc/ld.so.cache"
+      ],
+      "elf_files": 10055,
+      "checksum_files": 39133,
+      "runtime_result": "PASS",
+      "simulation_duration_s": 3,
+      "record_bytes": 2265729
+    }
+  }
+}

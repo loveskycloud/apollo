@@ -1,0 +1,23 @@
+exec ${PAGER:-/usr/bin/less} "$0" || exit 1
+Executing tests from //modules/map:path_projection_test
+-----------------------------------------------------------------------------
+Running main() from gmock_main.cc
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from PathProjectionTest
+[ RUN      ] PathProjectionTest.HeuristicProjectionAtPathEndpoints
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+E1007 07:41:18.707574 2257885 hdmap_common.cc:149] [map]lane[id = id: "projection-lane"
+]. sampled_left_width_[1] is too small. It should be larger than half vehicle width[1.05].
+E1007 07:41:18.707860 2257885 hdmap_common.cc:158] [map]lane[id = id: "projection-lane"
+]. sampled_right_width_[1] is too small. It should be larger than half vehicle width[1.05].
+E1007 07:41:18.707883 2257885 hdmap_common.cc:149] [map]lane[id = id: "projection-lane"
+]. sampled_left_width_[1] is too small. It should be larger than half vehicle width[1.05].
+E1007 07:41:18.707885 2257885 hdmap_common.cc:158] [map]lane[id = id: "projection-lane"
+]. sampled_right_width_[1] is too small. It should be larger than half vehicle width[1.05].
+[       OK ] PathProjectionTest.HeuristicProjectionAtPathEndpoints (0 ms)
+[----------] 1 test from PathProjectionTest (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (0 ms total)
+[  PASSED  ] 1 test.

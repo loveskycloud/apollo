@@ -1,0 +1,101 @@
+{
+  "result": "PASS",
+  "runs": [
+    {
+      "record": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/2cdd907234cc44e0/run-1/simulation.record",
+      "planning_ok": 354,
+      "control_ok": 3521,
+      "control_initial_wait": [
+        {
+          "stamp_ns": 1000000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1010000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1020000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1030000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1040000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1050000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1060000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1070000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1080000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1090000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        }
+      ],
+      "control_errors_after_initial_wait": 0
+    },
+    {
+      "record": "/tmp/final-v6/binary/data/binary-verification/web-monitor-jobs/2cdd907234cc44e0/run-2/simulation.record",
+      "planning_ok": 354,
+      "control_ok": 3521,
+      "control_initial_wait": [
+        {
+          "stamp_ns": 1000000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1010000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1020000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1030000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1040000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1050000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1060000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1070000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1080000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        },
+        {
+          "stamp_ns": 1090000000,
+          "status": "error_code: CONTROL_COMPUTE_ERROR\nmsg: \"planning has no trajectory point. planning_seq_num:0\"\n"
+        }
+      ],
+      "control_errors_after_initial_wait": 0
+    }
+  ]
+}

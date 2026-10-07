@@ -1,0 +1,5 @@
+I1007 16:00:34.244420 11228 third_party/var/bvar/variable.cpp:792] Write all bvar to dumps/bvar.python3.data every 10 seconds.
+Usage: cyber_channel list
+
+Options:
+  -h, --help  show this help message and exit

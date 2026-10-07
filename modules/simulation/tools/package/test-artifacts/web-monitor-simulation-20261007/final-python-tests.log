@@ -1,0 +1,34 @@
+.............................
+----------------------------------------------------------------------
+Ran 29 tests in 0.365s
+
+OK
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.000s
+
+OK
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.014s
+
+OK
+.............
+----------------------------------------------------------------------
+Ran 13 tests in 0.154s
+
+OK
+.....[gen_binary] Resolving dynamic dependencies of 2 ELF outputs
+[gen_binary] Relocating 5 ELF files
+.[gen_binary] Collecting runtime resources
+....[gen_binary] Resolving dynamic dependencies of 2 ELF outputs
+.[gen_binary] Collecting runtime resources
+..[gen_binary] Resolving dynamic dependencies of 2 ELF outputs
+[gen_binary] Relocating 142 ELF files
+......[gen_binary] Resolving dynamic dependencies of 2 ELF outputs
+[gen_binary] Relocating 4 ELF files
+.........
+----------------------------------------------------------------------
+Ran 28 tests in 3.754s
+
+OK

@@ -4,6 +4,11 @@ load("//tools/install:install.bzl", "install_src_files")
 
 package(default_visibility = ["//visibility:public"])
 
+filegroup(
+    name = "model_selector",
+    srcs = ["model_selection.py", "verify_policy.py", "interaction_observation.py"],
+)
+
 apollo_cc_library(
     name = "planner",
     hdrs = ["planner.h", "reference_line.h", "model_config.h", "parking_planner.h", "parking_motion.h"],

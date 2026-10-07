@@ -1,0 +1,4 @@
+[2m2026-10-07T05:45:39.349414Z[0m [33m WARN[0m [2mre_analytics[0m[2m:[0m failed to load analytics config file: Couldn't compute config location
+[2m2026-10-07T05:45:39.349456Z[0m [31mERROR[0m [2mre_analytics[0m[2m:[0m Failed to initialize analytics: Couldn't compute config location
+rerun-cli 0.37.1 (native_viewer web_viewer) [rustc 1.96.0 (ac68faa20 2026-05-25), LLVM 22.1.2] x86_64-unknown-linux-gnu
+Video features: av1 ffmpeg

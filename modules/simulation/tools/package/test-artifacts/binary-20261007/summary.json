@@ -1,0 +1,152 @@
+{
+  "date": "2026-10-07",
+  "format": 3,
+  "base_image": "registry.baidubce.com/apollo/apollo-env-gpu:10.0-u22",
+  "verification_uid": 1000,
+  "packaging_tests_passed": 21,
+  "cli_tests_passed": 3,
+  "profiles": {
+    "simulation": {
+      "archive": "binary.tar.gz",
+      "archive_bytes": 666367580,
+      "archive_sha256": "57d10d1c2bbf8a71284ea4861ac838d1a70874a1fde26f07db3146d0b858c869",
+      "archive_checksum_verification": "PASS",
+      "config": "cpu",
+      "targets": 146,
+      "cpu_requirements": [],
+      "elf_files": 745,
+      "checksum_files": 2336,
+      "runtime_libraries": 489,
+      "runtime_subdirectories": 0,
+      "bazel_bin_present": false,
+      "selected_public_libraries_checked": 157,
+      "simulation": "PASS",
+      "simulation_duration_s": 3,
+      "record_bytes": 2265625,
+      "container": {
+        "name": "apollo-binary-layout-cpu-20261007",
+        "image_id": "sha256:7c33b27bf30bccf5c13f4d1058c72437930681b646ee0b7bfece979f482a2530",
+        "mounts": [],
+        "network_mode": "none",
+        "gpu_device_requests": null,
+        "changes_outside_tmp": [],
+        "clean_base_checks": {
+          "uid": 1000,
+          "workspace_entries": [],
+          "base_neo_library_entries": [
+            "3rd-boost"
+          ]
+        }
+      }
+    },
+    "all": {
+      "archive": "binary-all.tar.gz",
+      "archive_bytes": 3979440704,
+      "archive_sha256": "9134e8554d35f672e4ca716305a286ba398175be5713ea2cb00a7445219f6141",
+      "archive_checksum_verification": "PASS",
+      "config": "gpu",
+      "targets": 466,
+      "cpu_requirements": [
+        "sse4_1",
+        "avx2"
+      ],
+      "elf_files": 10013,
+      "checksum_files": 39091,
+      "runtime_libraries": 1055,
+      "runtime_subdirectories": 0,
+      "bazel_bin_present": false,
+      "selected_public_libraries_checked": 412,
+      "simulation": "PASS",
+      "simulation_duration_s": 3,
+      "record_bytes": 2265910,
+      "container": {
+        "name": "apollo-binary-layout-gpu-20261007",
+        "image_id": "sha256:7c33b27bf30bccf5c13f4d1058c72437930681b646ee0b7bfece979f482a2530",
+        "mounts": [],
+        "network_mode": "none",
+        "gpu_device_requests": [
+          {
+            "Driver": "",
+            "Count": -1,
+            "DeviceIDs": null,
+            "Capabilities": [
+              [
+                "gpu"
+              ]
+            ],
+            "Options": {}
+          }
+        ],
+        "changes_outside_tmp": [
+          "C /etc",
+          "C /etc/ld.so.cache",
+          "C /usr",
+          "C /usr/lib",
+          "C /usr/lib/firmware",
+          "C /usr/lib/firmware/nvidia",
+          "A /usr/lib/firmware/nvidia/580.178.04",
+          "A /usr/lib/firmware/nvidia/580.178.04/gsp_ga10x.bin",
+          "A /usr/lib/firmware/nvidia/580.178.04/gsp_tu10x.bin",
+          "C /usr/lib/x86_64-linux-gnu",
+          "A /usr/lib/x86_64-linux-gnu/libnvidia-gpucomp.so.580.178.04",
+          "C /usr/lib/x86_64-linux-gnu/libcuda.so.1",
+          "C /usr/lib/x86_64-linux-gnu/libnvidia-allocator.so.1",
+          "A /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.580.178.04",
+          "C /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1",
+          "A /usr/lib/x86_64-linux-gnu/libnvidia-nvvm.so.580.178.04",
+          "A /usr/lib/x86_64-linux-gnu/libnvidia-opencl.so.580.178.04",
+          "A /usr/lib/x86_64-linux-gnu/libcudadebugger.so.580.178.04",
+          "A /usr/lib/x86_64-linux-gnu/libnvidia-pkcs11.so.580.178.04",
+          "A /usr/lib/x86_64-linux-gnu/libnvidia-ptxjitcompiler.so.580.178.04",
+          "A /usr/lib/x86_64-linux-gnu/libnvidia-pkcs11-openssl3.so.580.178.04",
+          "C /usr/lib/x86_64-linux-gnu/libcudadebugger.so.1",
+          "C /usr/lib/x86_64-linux-gnu/libnvidia-opencl.so.1",
+          "A /usr/lib/x86_64-linux-gnu/libcuda.so.580.178.04",
+          "A /usr/lib/x86_64-linux-gnu/libnvidia-allocator.so.580.178.04",
+          "C /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so.1",
+          "C /usr/lib/x86_64-linux-gnu/libnvidia-nvvm.so.4",
+          "C /usr/lib/x86_64-linux-gnu/libnvidia-ptxjitcompiler.so.1",
+          "A /usr/lib/x86_64-linux-gnu/libnvidia-cfg.so.580.178.04",
+          "C /var",
+          "C /var/cache",
+          "C /var/cache/ldconfig",
+          "C /var/cache/ldconfig/aux-cache",
+          "C /run",
+          "A /run/nvidia-persistenced",
+          "A /run/nvidia-persistenced/socket"
+        ],
+        "clean_base_checks": {
+          "uid": 1000,
+          "workspace_entries": [],
+          "base_neo_library_entries": [
+            "3rd-boost"
+          ]
+        }
+      },
+      "private_libraries": {
+        "result": "PASS",
+        "mode": "RTLD_NOW | RTLD_GLOBAL",
+        "process_count": 1,
+        "libraries": [
+          "libmodules__perception__lidar_detection__libanchor_mask_cuda.so",
+          "libmodules__perception__lidar_detection__libnms_cuda.so",
+          "libmodules__perception__lidar_detection__libpfe_cuda.so",
+          "libmodules__perception__lidar_detection__libpoint_pillars_common.so",
+          "libmodules__perception__lidar_detection__libpoint_pillars_postprocess_cuda.so",
+          "libmodules__perception__lidar_detection__libpreprocess_points_cuda.so",
+          "libmodules__perception__lidar_detection__libscatter_cuda.so",
+          "libmodules__perception__lidar_detection_filter__object_filter_bank__background_filter__liblib_bf.so",
+          "libmodules__perception__lidar_detection_filter__object_filter_bank__strategy_filter__liblib_bf.so",
+          "libmodules__perception__radar4d_detection__libanchor_mask_cuda.so",
+          "libmodules__perception__radar4d_detection__libnms_cuda.so",
+          "libmodules__perception__radar4d_detection__libpfe_cuda.so",
+          "libmodules__perception__radar4d_detection__libpoint_pillars_common.so",
+          "libmodules__perception__radar4d_detection__libpoint_pillars_postprocess_cuda.so",
+          "libmodules__perception__radar4d_detection__libpreprocess_points_cuda.so",
+          "libmodules__perception__radar4d_detection__libscatter_cuda.so"
+        ],
+        "distinct_handles": 16
+      }
+    }
+  }
+}

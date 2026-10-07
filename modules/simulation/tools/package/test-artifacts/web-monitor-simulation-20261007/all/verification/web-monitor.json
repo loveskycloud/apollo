@@ -1,0 +1,112 @@
+{
+  "result": "PASS",
+  "rerun_version": "\u001b[2m2026-10-07T08:18:03.895123Z\u001b[0m \u001b[33m WARN\u001b[0m \u001b[2mre_analytics\u001b[0m\u001b[2m:\u001b[0m failed to load analytics config file: Couldn't compute config location\n\u001b[2m2026-10-07T08:18:03.895160Z\u001b[0m \u001b[31mERROR\u001b[0m \u001b[2mre_analytics\u001b[0m\u001b[2m:\u001b[0m Failed to initialize analytics: Couldn't compute config location\nrerun-cli 0.37.1 (native_viewer web_viewer) [rustc 1.96.0 (ac68faa20 2026-05-25), LLVM 22.1.2] x86_64-unknown-linux-gnu\nVideo features: av1 ffmpeg",
+  "cwd": "/tmp",
+  "http_port": 9090,
+  "grpc_port": 9876,
+  "assets": {
+    "/": {
+      "bytes": 21408,
+      "sha256": "d03e4a3664cf09df7f6a9f45b0a3f8303615ab47285186323ae95020c594a26d"
+    },
+    "/re_viewer.js": {
+      "bytes": 236342,
+      "content_type": "text/javascript",
+      "sha256": "d3f4632f612e2aa84bdb5c8d8c11ebe3c9a0c24eee54d8e22e0a64c13f8c28ea"
+    },
+    "/re_viewer_bg.wasm": {
+      "bytes": 56064021,
+      "content_type": "application/wasm",
+      "sha256": "7c1d725e8c7526ecfa9eb09fee5ec8ce7ebafde685c609a2881fb8bbbc4e72b5"
+    },
+    "/favicon.ico": {
+      "bytes": 433554,
+      "content_type": "image/png",
+      "sha256": "d16b12a3a96a13d03b149ecea4933a944d0e528ab8417d66ea2e94adc48f57e1"
+    }
+  },
+  "simulation_api": {
+    "result": "PASS",
+    "catalog": "PASS",
+    "list": "PASS",
+    "tasks": {
+      "pnc": {
+        "result": "PASS",
+        "task_id": "7a93345c13e34554",
+        "stage": "completed",
+        "determinism": "PASS",
+        "goal_distance_m": 0.3048279885332992,
+        "topic_message_counts": {
+          "/apollo/raw_routing_response": 1,
+          "/apollo/planning/command": 1,
+          "/apollo/raw_routing_request": 1,
+          "/apollo/canbus/chassis": 3531,
+          "/apollo/localization/pose": 3531,
+          "/apollo/planning": 354,
+          "/apollo/planning/command_status": 354,
+          "/apollo/prediction": 354,
+          "/apollo/perception/obstacles": 354,
+          "/apollo/control": 3531
+        },
+        "replay": {
+          "result": "PASS",
+          "conversion": "PASS",
+          "topic_decode": "PASS",
+          "playback_window": "PASS",
+          "mcap_bytes": 11613226,
+          "evidence": "/tmp/package-check/binary/data/binary-verification/replay-pnc.json"
+        }
+      },
+      "ml": {
+        "result": "PASS",
+        "task_id": "130d1a91b1c34694",
+        "stage": "completed",
+        "determinism": "PASS",
+        "goal_distance_m": 0.23575723133401386,
+        "topic_message_counts": {
+          "/apollo/raw_routing_response": 1,
+          "/apollo/planning/command_status": 389,
+          "/apollo/planning/command": 1,
+          "/apollo/raw_routing_request": 1,
+          "/apollo/canbus/chassis": 3872,
+          "/apollo/localization/pose": 3872,
+          "/apollo/planning": 388,
+          "/apollo/perception/obstacles": 388
+        },
+        "replay": {
+          "result": "PASS",
+          "conversion": "PASS",
+          "topic_decode": "PASS",
+          "playback_window": "PASS",
+          "mcap_bytes": 1737698,
+          "evidence": "/tmp/package-check/binary/data/binary-verification/replay-ml.json"
+        }
+      },
+      "ml-obstacle": {
+        "result": "PASS",
+        "task_id": "dbd77fee914a4757",
+        "stage": "completed",
+        "determinism": "PASS",
+        "goal_distance_m": 0.23828877906553095,
+        "topic_message_counts": {
+          "/apollo/raw_routing_response": 1,
+          "/apollo/planning/command_status": 404,
+          "/apollo/planning/command": 1,
+          "/apollo/raw_routing_request": 1,
+          "/apollo/canbus/chassis": 4022,
+          "/apollo/localization/pose": 4022,
+          "/apollo/planning": 403,
+          "/apollo/perception/obstacles": 403
+        },
+        "replay": {
+          "result": "PASS",
+          "conversion": "PASS",
+          "topic_decode": "PASS",
+          "playback_window": "PASS",
+          "mcap_bytes": 2712053,
+          "evidence": "/tmp/package-check/binary/data/binary-verification/replay-ml-obstacle.json"
+        }
+      }
+    }
+  }
+}
