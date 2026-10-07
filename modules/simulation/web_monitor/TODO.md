@@ -25,7 +25,7 @@
 
 ## Done
 
-- [x] 二进制包完整 WorldSim：任务服务/生成 schema/录包 decoder/转换 wheel 显式打包；mock 时间拼接、末端投影、OSQP 迭代及标准 PNC 停车语义修复。CPU/all 干净容器共 12 次 PNC/ML/静态避障运行、严格比较、算法状态与回放均通过，交付 v6；原失败证据保留，详见 package/test-artifacts/web-monitor-simulation-20261007。
+- [x] 二进制包完整 WorldSim：任务服务/生成 schema/录包 decoder/转换 wheel 显式打包；mock 时间拼接、末端投影、OSQP 迭代及标准 PNC 停车语义修复。CPU/all 干净容器共 12 次 PNC/ML/静态避障运行、严格比较、算法状态与回放均通过，交付 v6；测试包和原始产物已清理，历史摘要见 package/VALIDATION.md。
 
 - [x] 二进制包收集 forked Viewer 和源布局；原启动器按自身位置解析、直接 exec；移动路径/缺依赖回归及干净容器 HTTP/gRPC、JS/WASM、PNC 验收通过。
 

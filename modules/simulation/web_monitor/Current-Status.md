@@ -10,10 +10,10 @@
   完整 WORLD 验收同时修复 Planning mock 时钟重启时间、地图末端投影越界及 OSQP 宿主耗时造成的求解差异；停车检查按冻结配置独立核对 DEST 和 mission_complete。
   CPU/all 两种正式包在无挂载、无网络的干净容器中经 Web Monitor 各提交 PNC、ML 无障碍、ML 静态避障，每项两次，共 12 次运行；算法、碰撞/轨迹/到达/质量、确定性、推理一致性、真实转换/解码/回放窗口均通过。
   交付 binary-v6.tar.gz、binary-all-v6.tar.gz，副本校验通过。29 项打包/29 项任务服务及相关 Python、四个 C++ 目标通过；旧 path fixture 的独立失败保留。验收覆盖 API 完整流程及 ML 理想轨迹跟随。
-  证据：`../tools/package/test-artifacts/web-monitor-simulation-20261007/README.md`。
+  历史验收摘要（原始产物已清理）：`../tools/package/VALIDATION.md`。
 
 - 2026-10-07：修复二进制分发包 Web Monitor 启动失败：收集 forked Viewer 和布局；原启动器按自身位置解析依赖、直接 exec，缺失依赖时明确报错。
-  27 项打包回归、3 项启动器回归通过。独立 Viewer 运行包在无挂载 Apollo 容器中由 UID 1000 从其他目录启动，HTTP / gRPC、JS / WASM / 图标通过；全量 466 目标重建完成，最终包的 9887 ELF、Web Monitor 端口/网页资源、Cyber 和 3 秒 PNC 仿真全部通过；交付 binary-all-v5.tar.gz。证据：`../tools/package/test-artifacts/web-monitor-20261007/README.md`。
+  27 项打包回归、3 项启动器回归通过。独立 Viewer 运行包在无挂载 Apollo 容器中由 UID 1000 从其他目录启动，HTTP / gRPC、JS / WASM / 图标通过；全量 466 目标重建完成，最终包的 9887 ELF、Web Monitor 端口/网页资源、Cyber 和 3 秒 PNC 仿真全部通过；交付 binary-all-v5.tar.gz。历史验收摘要（原始产物已清理）：`../tools/package/VALIDATION.md`。
 
 - 2026-10-06：统一修复仿真菜单悬停：来源/状态筛选及共用资源选项移除固定背景，复用主题可选择按钮，覆盖地图、场景/场景集、车辆、仿真模型；任务/场景集操作菜单同样获得悬停反馈，选中项保留标记。
   20 项相关 Rust 测试、Clippy、发布构建及正式配置/任务/真实 308 条任务分页浏览器回归通过；截图验证高亮、移出恢复、选择值保留，回放菜单和窄屏操作正常；所有提交和任务修改请求均由测试拦截，308 条已完成任务逐项保留。

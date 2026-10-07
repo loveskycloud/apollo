@@ -136,4 +136,4 @@ In the left rail: **Layout** → **Planning** / **Perception** / **Control**.
 
 v6 的 CPU/all 正式包已通过干净容器完整 WORLD PNC、ML 无障碍及静态避障任务、
 两次重复比较、算法状态、结果转换/解码/回放窗口；验收命令、原始证据及边界见
-[完整流程验收](../tools/package/test-artifacts/web-monitor-simulation-20261007/README.md)。
+[完整流程验收](../tools/package/VALIDATION.md)。

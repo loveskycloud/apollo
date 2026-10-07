@@ -153,6 +153,7 @@ apollo_cc_binary(
     data = [
         ":task_service_runtime",
         "//modules/simulation/tools/apollo_record_tools:apollo_record_tool",
+        "//modules/simulation/tools/execution:cli_runtime",
     ],
     deps = [
         ":apollo_simulation_core",

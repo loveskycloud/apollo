@@ -22,11 +22,14 @@ modules/simulation/
   apps/
     _cli.py                     # 工作区定位、业务模块导入、错误和退出码
     gen_binary.py               # 参数解析、校验及调用业务实现
+    gen_simulation_task.py      # 解析场景/Binary，stdout 输出任务 JSON
+    launch.py                   # 接收 JSON，选择运行后端并执行
   tools/
     package/
       binary_packager.py        # 打包业务逻辑
       binary_profiles.json      # 可扩展打包类型
       test_gen_binary.py
+    execution/                  # Binary、任务协议和执行后端
 ```
 
 每个应用统一遵循：`make_parser → parse_args → validate_args → generate → 返回 0`。
@@ -82,9 +85,21 @@ if __name__ == "__main__":
     sys.exit(run_cli(main))
 ```
 
-迁移 `gen_simulation_task.py` 时，其 `simulation_manifest`、`perception_pipeline`
-等依赖应留在业务目录并使用模块路径导入；原来依赖 `os.getcwd()` 查找 Apollo
-资源的逻辑改用 `WORKSPACE_ROOT`。旧调用方需同步更新入口路径。
+新的 `gen_simulation_task.py` 使用 `tools/execution` 的 Binary 和任务协议：
+
+```bash
+# source 已解压 binary 的 setup.bash 后，可以直接调用包内入口。
+set -o pipefail
+gen_simulation_task.py -B -1 -f /path/to/scene.json --repeat 2 | launch.py -c local
+export BINARY_SERVICE_URL=http://127.0.0.1:8088
+gen_simulation_task.py -B 123143 -f /path/to/scene.json --repeat 2 | launch.py -c local
+```
+
+本地选择、ID 服务、ML、集群扩展和验收见
+[Binary 执行说明](../tools/execution/README.md)。入口遵循参数解析、业务校验、执行的流程，
+stdout 用于机器可读 JSON，stderr 用于进度和错误。
+原 `logsim/tools/gen_simulation_task.py` 保持原有 LogSim 生成接口，已有直接路径调用不变；
+PATH 中的新命令使用此处的任务协议。
 
 回归测试：
 
@@ -95,4 +110,4 @@ python3 -m unittest discover -s modules/simulation/tools/package -p test_gen_bin
 
 已通过 3 项 CLI 集成测试和 27 项打包回归测试。从 `/tmp` 直接执行新入口的
 真实编译打包也已通过：Cyber Recorder 运行包 29.9 MiB、104 个 ELF，解压并
-source 包内环境后运行成功。具体记录见 [CLI 验证结果](../tools/package/test-artifacts/cli-20261006/summary.json)。
+source 包内环境后运行成功。具体记录见 [CLI 验证结果](../tools/package/VALIDATION.md)。

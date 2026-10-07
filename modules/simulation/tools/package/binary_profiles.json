@@ -39,7 +39,8 @@
       ],
       "//modules/simulation/simulator:simulator_main": [
         "//modules/simulation/simulator:task_service_runtime",
-        "//modules/simulation/tools/apollo_record_tools:apollo_record_tool"
+        "//modules/simulation/tools/apollo_record_tools:apollo_record_tool",
+        "//modules/simulation/tools/execution:cli_runtime"
       ]
     },
     "python_runtimes": {
@@ -82,7 +83,8 @@
       ],
       "//modules/simulation/simulator:simulator_main": [
         "//modules/simulation/simulator:task_service_runtime",
-        "//modules/simulation/tools/apollo_record_tools:apollo_record_tool"
+        "//modules/simulation/tools/apollo_record_tools:apollo_record_tool",
+        "//modules/simulation/tools/execution:cli_runtime"
       ]
     },
     "python_runtimes": {

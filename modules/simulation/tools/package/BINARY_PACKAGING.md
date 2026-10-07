@@ -54,6 +54,17 @@ simulator_main --task_dir=/path/to/task
 web_monitor_main
 ```
 
+新包同时携带仿真 CLI，source 后可选择本地或服务 ID 对应的 binary：
+
+```bash
+set -o pipefail
+gen_simulation_task.py -B -1 -f /path/to/scene.json --repeat 2 | launch.py -c local
+```
+
+ID 服务、ML 参数、任务输出和后续集群接口见
+[Binary 执行说明](../execution/README.md)。这些入口通过明确的 runtime_dependencies
+收集进包，apps 目录加入包内 PATH。
+
 `setup.bash` 将工作目录切换到包根目录，配置程序/动态库/Python 路径及
 Apollo 的配置、DAG 和插件索引路径。解压目录可以移动，也可以包含空格。
 环境脚本依次配置包内运行库、明确声明的 Apollo 镜像库及 NVIDIA 驱动目录。
@@ -234,7 +245,7 @@ flagfile、Routing 和地图独立计算，误差仍要求 0.4 m 内、速度低
 ML 继续按场景请求的后轴目标检查 0.4 m。不会把远处停车当成成功或放宽碰撞/质量阈值。
 依赖图语义参见 [Bazel cquery 官方文档](https://bazel.build/query/cquery)。
 
-最新交付 v6：CPU 仿真包 711.8 MiB（147 目标、687 ELF、3556 校验文件）；
+历史 v6 验收（测试包和原始产物已清理）：CPU 仿真包 711.8 MiB（147 目标、687 ELF、3556 校验文件）；
 全量包 3744.2 MiB（467 目标、9920 ELF、40276 校验文件）。
 交付 `/home/wangsheng/workspace/binary-v6.tar.gz` 和 `binary-all-v6.tar.gz`，副本校验通过。
 两个无挂载、无网络的干净 Apollo 容器均通过上述完整 WORLD PNC/ML/避障及结果回放流程；
@@ -243,7 +254,7 @@ Planning 全程状态正常；Control 初始 100 ms 等待轨迹的消息保留�
 ML 使用 perfect_planning，本轮覆盖理想轨迹跟随及避障；传感器设备、其他 GPU 算法、
 ML + Control / 动力学和浏览器鼠标操作不在本次验收范围。
 29 项打包、29 项任务服务及相关分析回归与四个 C++ 测试目标通过，
-旧 pnc_path_test fixture 的独立失败及此前原始仿真失败均保留在证据中。
-详见 [WorldSim 完整流程验收](test-artifacts/web-monitor-simulation-20261007/README.md)。
-此前 [Viewer v5 验收](test-artifacts/web-monitor-20261007/README.md) 和
-[镜像依赖首次验收](test-artifacts/binary-apollo-image-20261007/README.md) 保留为历史记录。
+旧 pnc_path_test fixture 曾出现独立失败；原始仿真失败产物已清理，结论保留于摘要。
+详见 [WorldSim 完整流程验收](VALIDATION.md)。
+此前 [Viewer v5 验收](VALIDATION.md) 和
+[镜像依赖首次验收](VALIDATION.md) 保留为历史记录。
